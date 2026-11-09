@@ -15,4 +15,4 @@
 - الملف المضغوط على سطح المكتب: `C:\Users\adm.001\Desktop\BuffetHygieneDeskApp.zip`
 
 ## 3. أحدث رابط سحابي
-- **الرابط المباشر (v5):** https://ahmed-elbaz84.github.io/consultancy-group-facilities/
+- **الرابط المباشر (v5):** https://consultancygroup-eg.github.io/

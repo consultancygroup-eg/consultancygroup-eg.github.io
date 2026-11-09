@@ -13,7 +13,7 @@ Data lives in browser `localStorage` (`buffet_v9_*` keys). After login it also s
 - Testing: serve the folder over http://localhost and open it in the built-in browser. The lock screen is `#app-lock-overlay`. Do not log in from a test browser: login turns on cloud sync and would write to the real Firestore workspace.
 
 ## Live site
-GitHub Pages serves `main` (repo root) at https://ahmed-elbaz84.github.io/consultancy-group-facilities/. The QR/share link (`PUBLIC_WEB_URL`) points there, and that is what the user opens on their phone and home laptop.
+GitHub Pages serves `main` (repo root) at https://consultancygroup-eg.github.io/. The QR/share link (`PUBLIC_WEB_URL`) points there, and that is what the user opens on their phone and home laptop.
 Every change must be committed and pushed to `main`, or the phone keeps showing the old version. The user expects this without being asked. After pushing, wait for the "pages build and deployment" run to finish. The old ship.place and netlify copies are stale and unused.
 
 ## Gotchas
