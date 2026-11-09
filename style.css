@@ -2315,6 +2315,219 @@ body.role-viewer .viewer-banner {
     color: #0f172a;
 }
 
+/* Compact single-row filter bar in Custody */
+.custody-compact-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    background: var(--bg-surface-2);
+    padding: 0.45rem 0.75rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+.custody-compact-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.custody-compact-filter-item label {
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    margin: 0;
+}
+.custody-compact-filter-item .form-control {
+    height: 32px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.78rem;
+}
+
+/* Invoice Hover & Click Dropdown Menu in Custody Table */
+.custody-inv-cell-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    position: relative;
+}
+.custody-inv-dropdown {
+    position: relative;
+    display: inline-block;
+}
+.custody-inv-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.24rem 0.55rem;
+    font-size: 0.74rem;
+    font-weight: 800;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface-2);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.custody-inv-trigger:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.custody-inv-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 145px;
+    background: var(--bg-surface);
+    border: 1.5px solid var(--primary);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+    z-index: 120;
+    padding: 0.28rem;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.custody-inv-dropdown:hover .custody-inv-menu,
+.custody-inv-dropdown.open .custody-inv-menu {
+    display: flex;
+}
+.custody-inv-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.38rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    background: transparent;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: right;
+    white-space: nowrap;
+    transition: background 0.15s ease;
+}
+.custody-inv-menu-item:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+.custody-inv-view-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.22rem;
+    padding: 0.24rem 0.5rem;
+    font-size: 0.73rem;
+    font-weight: 900;
+    border-radius: 6px;
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.custody-inv-view-btn:hover {
+    background: var(--success);
+    color: #fff;
+}
+
+/* Strictly 2-line formatted Item Name & Notes in Custody Table */
+.custody-2line-input {
+    width: 100%;
+    height: 40px;
+    min-height: 38px;
+    max-height: 44px;
+    font-size: 0.81rem;
+    line-height: 1.32;
+    padding: 0.24rem 0.45rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-primary);
+    resize: none;
+    overflow-y: auto;
+    font-family: inherit;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+.custody-2line-input:hover,
+.custody-2line-input:focus {
+    border-color: var(--border-color);
+    background: var(--bg-surface-2);
+    outline: none;
+}
+.custody-2line-static {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.35;
+    max-height: 2.75em;
+    word-break: break-word;
+}
+
+/* Eye-friendly High-Contrast Balance Cells & Sticky Table Headers (Light & Dark Modes) */
+.data-table thead th {
+    background: var(--bg-subtle) !important;
+    z-index: 15;
+}
+body.dark .data-table thead th {
+    background: #1e293b !important;
+}
+
+/* Positive & Negative Balance Cells in Custody Table */
+.custody-balance-cell.is-pos {
+    background: #fef9c3;
+    color: #0f172a !important;
+}
+body.dark .custody-balance-cell.is-pos {
+    background: rgba(212, 175, 55, 0.14);
+    color: #fde047 !important;
+}
+.custody-balance-cell.is-neg {
+    background: #fee2e2;
+    color: #b91c1c !important;
+}
+body.dark .custody-balance-cell.is-neg {
+    background: rgba(239, 68, 68, 0.16);
+    color: #f87171 !important;
+}
+
+/* High-Contrast Active Buttons & Light Mode Readability */
+.sidebar-nav-item.active,
+.chip-btn.active {
+    background: var(--primary) !important;
+    color: #0f172a !important;
+    font-weight: 900 !important;
+}
+body:not(.dark) #nav-btn-portal {
+    color: #78350f !important;
+    background: #fef3c7 !important;
+    border-color: #d97706 !important;
+}
+body:not(.dark) #sidebar-audit-btn-purchased {
+    color: #065f46 !important;
+    background: #ecfdf5 !important;
+    border-color: #10b981 !important;
+}
+body:not(.dark) #sidebar-audit-btn-unpurchased {
+    color: #991b1b !important;
+    background: #fef2f2 !important;
+    border-color: #ef4444 !important;
+}
+body:not(.dark) #sidebar-audit-btn-extra {
+    color: #92400e !important;
+    background: #fffbeb !important;
+    border-color: #f59e0b !important;
+}
+body:not(.dark) .badge-warning {
+    color: #78350f !important;
+    background: #fde68a !important;
+}
+
 @media print {
     .print-invoices-gallery {
         margin-top: 1.2rem;

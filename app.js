@@ -853,7 +853,7 @@ const SEED_CUSTODY = [
     { id: 341, date: '2026-10-20', desc: 'شحن عدادات الكهرباء للدور السادس الى التاسع', inflow: 0, outflow: 36290.33, notes: '' },
     { id: 342, date: '2026-10-29', desc: 'حساب الهوس كيبنح', inflow: 0, outflow: 2000, notes: '' },
     { id: 343, date: '2026-10-29', desc: 'توصيل سجاد النساجون الشرقيون لشقة النيل', inflow: 0, outflow: 1800, notes: '' },
-    { id: 344, date: '2026-11-01', desc: 'حوالة على الجاري', inflow: 44477, outflow: 0, notes: 'حوالة مجمعة لشراء البنود المطلوبة', plannedItems: ['قهوة', 'توصيل السجاد لشقة النيل', 'شراء حوض وجه', 'حساب الهوس كيبنج', 'شهرية المهملات', 'فواتير الخطوط الأرضي', 'سباك لصيانة حمام الثامن والسادس'] },
+    { id: 344, date: '2026-11-01', desc: 'حوالة على الجاري — شراء قهوة وتوصيل سجاد وحوض وجه', inflow: 44477, outflow: 0, notes: '', plannedItems: ['قهوة', 'توصيل السجاد لشقة النيل', 'شراء حوض وجه', 'حساب الهوس كيبنج', 'شهرية المهملات', 'فواتير الخطوط الأرضي', 'سباك لصيانة حمام الثامن والسادس'] },
     { id: 345, date: '2026-11-01', desc: 'قهوة', inflow: 0, outflow: 16400, notes: '' },
     { id: 346, date: '2026-11-01', desc: 'شراء حوض وجه', inflow: 0, outflow: 1385, notes: '' },
     { id: 347, date: '2026-11-01', desc: 'شهرية المهملات', inflow: 0, outflow: 2200, notes: '' },
@@ -5917,12 +5917,81 @@ function doesExpenseMatchPlannedItem(expenseDesc, plannedItem) {
 }
 
 let activeCustodyAuditTab = null; // null (collapsed) | 'purchased' | 'unpurchased' | 'extra'
+let activeSidebarQuickSearchTerm = ''; // '' | frequent item term
+let directAttachTargetRowId = null;
+
+function resetCustodyToMainTable() {
+    activeCustodyAuditTab = null;
+    activeSidebarQuickSearchTerm = '';
+    const inp = document.getElementById('custody-search-input');
+    if (inp) inp.value = '';
+    if (activeTab !== 'custody') {
+        switchTab('custody');
+    } else {
+        renderCustodyView();
+    }
+}
+
+function onSidebarAuditHeaderClick() {
+    // If an audit view is currently open in place of the table, clicking the header immediately hides it and restores the table
+    if (activeCustodyAuditTab !== null) {
+        activeCustodyAuditTab = null;
+        renderCustodyView();
+        return;
+    }
+    const list = document.getElementById('sidebar-audit-items-list');
+    const chev = document.getElementById('sidebar-audit-chevron');
+    if (list) {
+        const isHidden = list.style.display === 'none';
+        list.style.display = isHidden ? 'flex' : 'none';
+        if (chev) chev.textContent = isHidden ? '▾' : '◂';
+    }
+}
 
 function toggleCustodyAuditPanel(tabKey) {
-    if (activeCustodyAuditTab === tabKey) {
+    activeSidebarQuickSearchTerm = '';
+    const inp = document.getElementById('custody-search-input');
+    if (inp) inp.value = '';
+
+    if (!tabKey || activeCustodyAuditTab === tabKey) {
         activeCustodyAuditTab = null;
     } else {
         activeCustodyAuditTab = tabKey;
+    }
+    if (activeTab !== 'custody') {
+        switchTab('custody');
+    } else {
+        renderCustodyView();
+    }
+}
+
+function onSidebarQuickSearchHeaderClick() {
+    // If a quick-search item is currently displayed in place of the table, clicking the header hides it and restores the main table
+    if (activeSidebarQuickSearchTerm) {
+        activeSidebarQuickSearchTerm = '';
+        const inp = document.getElementById('custody-search-input');
+        if (inp) inp.value = '';
+        renderCustodyView();
+        return;
+    }
+    const list = document.getElementById('sidebar-qsearch-items-list');
+    const chev = document.getElementById('sidebar-qsearch-chevron');
+    if (list) {
+        const isHidden = list.style.display === 'none';
+        list.style.display = isHidden ? 'flex' : 'none';
+        if (chev) chev.textContent = isHidden ? '▾' : '◂';
+    }
+}
+
+function toggleSidebarQuickSearchItem(term) {
+    activeCustodyAuditTab = null;
+    const inp = document.getElementById('custody-search-input');
+    if (activeSidebarQuickSearchTerm === term) {
+        activeSidebarQuickSearchTerm = '';
+        if (inp) inp.value = '';
+    } else {
+        activeSidebarQuickSearchTerm = term;
+        if (inp) inp.value = term;
     }
     if (activeTab !== 'custody') {
         switchTab('custody');
@@ -6153,33 +6222,41 @@ function renderCustodyView() {
 
     const { rows, rawSearch, mode } = getFilteredCustodyRows(calculatedRows);
 
+    // Highlight sidebar quick-search items
+    document.querySelectorAll('.sidebar-qsearch-item').forEach(btn => {
+        const term = btn.getAttribute('data-qterm') || '';
+        const isActive = Boolean(activeSidebarQuickSearchTerm && activeSidebarQuickSearchTerm === term);
+        btn.classList.toggle('active', isActive);
+    });
+
     // 1. Instant Item Search Summary Banner
     const searchSummaryBox = document.getElementById('custody-search-summary-box');
     if (searchSummaryBox) {
-        if (rawSearch) {
+        if (rawSearch && !activeCustodyAuditTab) {
             const totalSearchOut = rows.reduce((s, r) => s + r.outflow, 0);
             const totalSearchIn = rows.reduce((s, r) => s + r.inflow, 0);
             const lastRow = rows.length > 0 ? rows[rows.length - 1] : null;
             const monthsSet = Array.from(new Set(rows.map(r => (r.date || '').slice(0, 7)).filter(Boolean)));
             searchSummaryBox.style.display = 'block';
             searchSummaryBox.innerHTML = `
-                <div style="background: rgba(212, 175, 55, 0.12); border: 1.5px solid var(--primary); border-radius: var(--radius-md); padding: 0.85rem 1.1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                <div style="background: rgba(212, 175, 55, 0.12); border: 1.5px solid var(--primary); border-radius: var(--radius-md); padding: 0.7rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.65rem;">
                     <div>
-                        <div style="font-weight: 900; font-size: 0.96rem; color: var(--primary);">
+                        <div style="font-weight: 900; font-size: 0.92rem; color: var(--primary);">
                             🔍 ${isAr ? `نتائج البحث التراكمي عن: "${rawSearch}"` : `Cumulative Search Results for: "${rawSearch}"`}
                         </div>
-                        <div style="font-size: 0.82rem; color: var(--text-main); margin-top: 0.25rem;">
+                        <div style="font-size: 0.8rem; color: var(--text-main); margin-top: 0.2rem;">
                             ${isAr ? 'عدد مرات التكرار:' : 'Occurrences:'} <strong>${rows.length}</strong> |
                             ${isAr ? 'آخر تاريخ شراء/صرف:' : 'Last Date:'} <strong style="color: var(--success);">${lastRow ? lastRow.date : '—'}</strong> |
                             ${isAr ? 'الشهور:' : 'Months:'} <strong>${monthsSet.join(' ، ') || '—'}</strong>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 1rem; align-items: center;">
-                        ${totalSearchIn > 0 ? `<div style="text-align: center;"><span style="font-size: 0.74rem; color: var(--text-muted); display: block;">${isAr ? 'إجمالي الوارد بالبحث' : 'Total Inflow'}</span><strong style="color: var(--success); font-size: 1.02rem;">${totalSearchIn.toLocaleString()} ج.م</strong></div>` : ''}
+                    <div style="display: flex; gap: 0.85rem; align-items: center;">
+                        ${totalSearchIn > 0 ? `<div style="text-align: center;"><span style="font-size: 0.72rem; color: var(--text-muted); display: block;">${isAr ? 'إجمالي الوارد' : 'Total Inflow'}</span><strong style="color: var(--success); font-size: 0.96rem;">${totalSearchIn.toLocaleString()} ج.م</strong></div>` : ''}
                         <div style="text-align: center;">
-                            <span style="font-size: 0.74rem; color: var(--text-muted); display: block;">${isAr ? 'إجمالي المنصرف لهذا البند' : 'Total Spent on Item'}</span>
-                            <strong style="color: var(--danger); font-size: 1.08rem;">${totalSearchOut.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${isAr ? 'ج.م' : 'EGP'}</strong>
+                            <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">${isAr ? 'إجمالي المنصرف لهذا البند' : 'Total Spent'}</span>
+                            <strong style="color: var(--danger); font-size: 1rem;">${totalSearchOut.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${isAr ? 'ج.م' : 'EGP'}</strong>
                         </div>
+                        <button onclick="resetCustodyToMainTable()" class="btn btn-secondary btn-sm" style="font-weight: 800;">↩ إخفاء والعودة لجدول العهدة ✖</button>
                     </div>
                 </div>
             `;
@@ -6188,96 +6265,172 @@ function renderCustodyView() {
         }
     }
 
-    // 2. Smart Transfer Purpose & Variance Reminder Banner (تذكير بنود الحوالة: اشتريت 1 و 2 ولسه ما اشتريتش 3 و 4)
+    // 2. Full-Screen Transfer Review & Reminder View (يحل محل الجدول بالكامل عند الضغط ويختفي ليعود الجدول عند الإخفاء)
     const auditBox = document.getElementById('custody-transfer-audit-box');
-    if (auditBox) {
-        let targetTransferIdx = -1;
-        if (mode === 'transfer') {
-            const transId = Number(document.getElementById('custody-filter-transfer')?.value);
-            targetTransferIdx = calculatedRows.findIndex(r => r.id === transId);
-        } else {
-            // Find the latest transfer that has planned items or descriptive purposes
-            for (let i = calculatedRows.length - 1; i >= 0; i--) {
-                if (calculatedRows[i].inflow > 0) {
-                    const p = extractPlannedPurposesFromTransfer(calculatedRows[i]);
-                    if (p.length > 0) {
-                        targetTransferIdx = i;
-                        break;
-                    }
+    const mainTableWrap = document.getElementById('custody-main-table-wrap');
+
+    let targetTransferIdx = -1;
+    if (mode === 'transfer') {
+        const transId = Number(document.getElementById('custody-filter-transfer')?.value);
+        targetTransferIdx = calculatedRows.findIndex(r => r.id === transId);
+    } else {
+        for (let i = calculatedRows.length - 1; i >= 0; i--) {
+            if (calculatedRows[i].inflow > 0) {
+                const p = extractPlannedPurposesFromTransfer(calculatedRows[i]);
+                if (p.length > 0) {
+                    targetTransferIdx = i;
+                    break;
                 }
             }
         }
+    }
 
-        if (targetTransferIdx !== -1) {
-            const audit = analyzeTransferWindow(calculatedRows, targetTransferIdx);
-            if (audit && audit.plannedList.length > 0) {
-                const pCount = audit.purchasedPlanned.length;
-                const uCount = audit.unpurchasedPlanned.length;
-                const eCount = audit.extraSubstitutedExpenses.length;
+    const audit = targetTransferIdx !== -1 ? analyzeTransferWindow(calculatedRows, targetTransferIdx) : null;
+    if (audit && audit.plannedList.length > 0) {
+        const elP = document.getElementById('sidebar-audit-cnt-purchased');
+        const elU = document.getElementById('sidebar-audit-cnt-unpurchased');
+        const elE = document.getElementById('sidebar-audit-cnt-extra');
+        if (elP) elP.textContent = String(audit.purchasedPlanned.length);
+        if (elU) elU.textContent = String(audit.unpurchasedPlanned.length);
+        if (elE) elE.textContent = String(audit.extraSubstitutedExpenses.length);
+    }
 
-                // Update counts on sidebar and top pills
-                ['sidebar-audit-cnt-purchased', 'top-audit-cnt-purchased'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.textContent = String(pCount);
-                });
-                ['sidebar-audit-cnt-unpurchased', 'top-audit-cnt-unpurchased'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.textContent = String(uCount);
-                });
-                ['sidebar-audit-cnt-extra', 'top-audit-cnt-extra'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.textContent = String(eCount);
-                });
+    ['purchased', 'unpurchased', 'extra'].forEach(key => {
+        const sbBtn = document.getElementById(`sidebar-audit-btn-${key}`);
+        if (sbBtn) sbBtn.classList.toggle('active', activeCustodyAuditTab === key);
+    });
 
-                // Highlight active toggle button
-                ['purchased', 'unpurchased', 'extra'].forEach(key => {
-                    const sbBtn = document.getElementById(`sidebar-audit-btn-${key}`);
-                    const tpBtn = document.getElementById(`top-audit-btn-${key}`);
-                    if (sbBtn) sbBtn.classList.toggle('active', activeCustodyAuditTab === key);
-                    if (tpBtn) tpBtn.classList.toggle('active', activeCustodyAuditTab === key);
-                });
+    if (auditBox && mainTableWrap) {
+        if (activeCustodyAuditTab && audit && audit.plannedList.length > 0) {
+            // Hide main table and display the selected Review View in its place across the entire screen
+            mainTableWrap.style.display = 'none';
+            auditBox.style.display = 'block';
 
-                if (!activeCustodyAuditTab) {
-                    auditBox.style.display = 'none';
-                } else {
-                    auditBox.style.display = 'block';
-                    let selectedContentHtml = '';
-                    if (activeCustodyAuditTab === 'purchased') {
-                        const badges = audit.purchasedPlanned.map(p =>
-                            `<span class="badge badge-success" style="font-size: 0.8rem; padding: 0.32rem 0.65rem;">✅ ${trText(p.planItem)} (${p.matchedRow.outflow.toLocaleString()} ج.م — بتاريخ ${p.matchedRow.date})</span>`
-                        ).join(' ');
-                        selectedContentHtml = `<div style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;"><strong style="color: var(--success);">✔ البنود التي تم شراؤها وسدادها بالفعل:</strong> ${badges || 'لا يوجد'}</div>`;
-                    } else if (activeCustodyAuditTab === 'unpurchased') {
-                        const badges = audit.unpurchasedPlanned.map(u =>
-                            `<span class="badge badge-danger" style="font-size: 0.8rem; padding: 0.32rem 0.65rem;">⚠️ لم يُشترَ بعد: ${trText(u)}</span>`
-                        ).join(' ');
-                        selectedContentHtml = `<div style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;"><strong style="color: var(--danger);">⚠️ تذكير بالبنود المتبقية في الحوالة (لم تشترِ هذه بعد):</strong> ${badges || '<span style="color:var(--success);">تم شراء جميع البنود بالكامل!</span>'}</div>`;
-                    } else if (activeCustodyAuditTab === 'extra') {
-                        const badges = audit.extraSubstitutedExpenses.map(e =>
-                            `<span class="badge badge-warning" style="font-size: 0.8rem; padding: 0.32rem 0.65rem;">🔄 ${trText(e.desc)} (${e.outflow.toLocaleString()} ج.م — بتاريخ ${e.date})</span>`
-                        ).join(' ');
-                        selectedContentHtml = `<div style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;"><strong style="color: var(--warning);">🔄 مصروفات أخرى دخلت على نفس الحوالة:</strong> ${badges || 'لا توجد مصروفات إضافية خارج الحوالة'}</div>`;
-                    }
+            let viewTitle = '';
+            let viewBorderColor = 'var(--primary)';
+            let fullTableHtml = '';
 
-                    auditBox.innerHTML = `
-                        <div style="background: var(--bg-surface-2); border: 1.5px solid var(--primary); border-radius: var(--radius-md); padding: 0.8rem 1.1rem; position: relative;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                <div style="font-weight: 900; font-size: 0.88rem; color: var(--text-primary);">
-                                    🔔 الحوالة محل المراجعة: <span style="color: var(--primary);">#${audit.transferRow.serialNum} (${audit.transferRow.date}) — ${trText(audit.transferRow.desc)} [${audit.transferRow.inflow.toLocaleString()} ج.م]</span>
-                                </div>
-                                <button onclick="toggleCustodyAuditPanel(null)" class="btn btn-secondary btn-sm" style="padding: 0.15rem 0.5rem; font-size: 0.74rem;">إغلاق ✖</button>
-                            </div>
-                            <div style="font-size: 0.82rem;">
-                                ${selectedContentHtml}
+            if (activeCustodyAuditTab === 'purchased') {
+                viewTitle = '✅ بيان البنود التي تم شراؤها وسدادها بالفعل من الحوالة';
+                viewBorderColor = 'var(--success)';
+                const trs = audit.purchasedPlanned.map((p, idx) => `
+                    <tr>
+                        <td style="text-align: center; font-weight: 900;">${idx + 1}</td>
+                        <td style="text-align: center; font-weight: 900; color: var(--primary);">#${audit.transferRow.serialNum} (${audit.transferRow.date})</td>
+                        <td style="font-weight: 800; color: var(--success);">✅ ${trText(p.planItem)}</td>
+                        <td style="text-align: center; font-weight: 900; font-family: monospace;">#${p.matchedRow.serialNum}</td>
+                        <td style="text-align: center; font-weight: 700;">${p.matchedRow.date}</td>
+                        <td style="font-weight: 800;">${trText(p.matchedRow.desc)}</td>
+                        <td style="text-align: center; font-weight: 900; color: var(--danger);">${p.matchedRow.outflow.toLocaleString()} ج.م</td>
+                        <td style="text-align: center;"><span class="badge badge-success">✔ تم الشراء والسداد</span></td>
+                    </tr>
+                `).join('');
+                fullTableHtml = `
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 45px; text-align: center;">#</th>
+                                <th style="text-align: center;">تاريخ ورقم الحوالة</th>
+                                <th>البند المتفق عليه بالحوالة</th>
+                                <th style="text-align: center;">رقم التسلسل بالجدول</th>
+                                <th style="text-align: center;">تاريخ الشراء الفعلي</th>
+                                <th>البيان المسجل بالعهدة</th>
+                                <th style="text-align: center;">القيمة المنصرفة</th>
+                                <th style="text-align: center;">الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>${trs || '<tr><td colspan="8" style="text-align:center;">لا توجد بنود</td></tr>'}</tbody>
+                    </table>
+                `;
+            } else if (activeCustodyAuditTab === 'unpurchased') {
+                viewTitle = '⚠️ تذكير بالبنود المتبقية في الحوالة (لم تُشترَ بعد)';
+                viewBorderColor = 'var(--danger)';
+                const trs = audit.unpurchasedPlanned.map((u, idx) => `
+                    <tr>
+                        <td style="text-align: center; font-weight: 900;">${idx + 1}</td>
+                        <td style="text-align: center; font-weight: 900; color: var(--primary);">#${audit.transferRow.serialNum}</td>
+                        <td style="text-align: center; font-weight: 700;">${audit.transferRow.date}</td>
+                        <td style="font-weight: 800;">${trText(audit.transferRow.desc)} (${audit.transferRow.inflow.toLocaleString()} ج.م)</td>
+                        <td style="font-weight: 900; font-size: 0.95rem; color: var(--danger);">⚠️ ${trText(u)}</td>
+                        <td style="text-align: center;"><span class="badge badge-danger">لم يُشترَ بعد (تذكير بالتنفيذ)</span></td>
+                    </tr>
+                `).join('');
+                fullTableHtml = `
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 45px; text-align: center;">#</th>
+                                <th style="text-align: center;">رقم تسلسل الحوالة</th>
+                                <th style="text-align: center;">تاريخ التحويل</th>
+                                <th>وصف الحوالة وقيمتها</th>
+                                <th>البند المتفق عليه الذي لم يُشترَ بعد</th>
+                                <th style="text-align: center;">حالة التذكير</th>
+                            </tr>
+                        </thead>
+                        <tbody>${trs || '<tr><td colspan="6" style="text-align:center; color:var(--success); font-weight:800;">✔ تم شراء جميع بنود الحوالة بالكامل!</td></tr>'}</tbody>
+                    </table>
+                `;
+            } else if (activeCustodyAuditTab === 'extra') {
+                viewTitle = '🔄 بيان المصروفات الأخرى والمنتجات البديلة التي دخلت على الحوالة';
+                viewBorderColor = 'var(--warning)';
+                const unpurchasedText = audit.unpurchasedPlanned.length > 0
+                    ? audit.unpurchasedPlanned.map(u => trText(u)).join(' + ')
+                    : 'مصروف إضافي على الحوالة';
+                const trs = audit.extraSubstitutedExpenses.map((e, idx) => `
+                    <tr>
+                        <td style="text-align: center; font-weight: 900;">${idx + 1}</td>
+                        <td style="text-align: center; font-weight: 900; color: var(--primary);">#${audit.transferRow.serialNum} — ${audit.transferRow.date}</td>
+                        <td style="font-weight: 700;">${trText(audit.transferRow.desc)} (${audit.transferRow.inflow.toLocaleString()} ج.م)</td>
+                        <td style="font-weight: 800; color: var(--danger);">⚠️ بديل لبند: ${unpurchasedText}</td>
+                        <td style="font-weight: 900; font-size: 0.92rem; color: var(--text-primary);">🔄 ${trText(e.desc)}</td>
+                        <td style="text-align: center;"><span class="badge badge-info" style="font-size: 0.85rem; font-weight: 900;">#${e.serialNum}</span></td>
+                        <td style="text-align: center; font-weight: 700;">${e.date}</td>
+                        <td style="text-align: center; font-weight: 900; color: var(--danger);">${e.outflow.toLocaleString()} ج.م</td>
+                    </tr>
+                `).join('');
+                fullTableHtml = `
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 45px; text-align: center;">#</th>
+                                <th style="text-align: center;">تاريخ التحويل ورقم الحوالة</th>
+                                <th>بيان الحوالة</th>
+                                <th>البند المتفق عليه (الذي لم يُشترَ)</th>
+                                <th>المنتج الذي تم شراؤه بديلاً للمتفق عليه</th>
+                                <th style="text-align: center;">رقم التسلسل الجديد</th>
+                                <th style="text-align: center;">تاريخ الشراء</th>
+                                <th style="text-align: center;">المبلغ المنصرف</th>
+                            </tr>
+                        </thead>
+                        <tbody>${trs || '<tr><td colspan="8" style="text-align:center;">لا توجد مصروفات إضافية بديلة</td></tr>'}</tbody>
+                    </table>
+                `;
+            }
+
+            auditBox.innerHTML = `
+                <div style="background: var(--bg-surface-2); border: 2px solid ${viewBorderColor}; border-radius: var(--radius-md); padding: 1.1rem; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.05rem; font-weight: 900; color: var(--text-primary);">${viewTitle}</h3>
+                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                الحوالة محل المراجعة: <strong style="color: var(--primary);">رقم #${audit.transferRow.serialNum}</strong> |
+                                تاريخ التحويل: <strong>${audit.transferRow.date}</strong> |
+                                البيان: <strong>${trText(audit.transferRow.desc)}</strong> |
+                                قيمة التحويل: <strong style="color: var(--success);">${audit.transferRow.inflow.toLocaleString()} ج.م</strong>
                             </div>
                         </div>
-                    `;
-                }
-            } else {
-                auditBox.style.display = 'none';
-            }
+                        <button onclick="toggleCustodyAuditPanel(null)" class="btn btn-primary btn-sm" style="font-weight: 900; padding: 0.45rem 0.95rem;">
+                            ↩ إخفاء المعروض والعودة لجدول العهدة ✖
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        ${fullTableHtml}
+                    </div>
+                </div>
+            `;
         } else {
             auditBox.style.display = 'none';
+            mainTableWrap.style.display = 'block';
         }
     }
 
@@ -6298,48 +6451,69 @@ function renderCustodyView() {
             tr.style.background = 'rgba(239, 68, 68, 0.05)';
         }
 
-        const negativeBadgeHtml = row.isNegative
-            ? `<div style="font-size: 0.69rem; color: var(--danger); font-weight: 800; margin-top: 2px;" title="العهدة خلصت فتم الشراء مؤقتاً من معايا لحين تحويل الشركة">⚠️ بالسالب (تغطية شخصية مؤقتة)</div>`
-            : '';
+        const defaultNegNote = row.isNegative ? 'بالسالب (تغطية شخصية مؤقتة لحين تحويل الشركة)' : '';
+        const effectiveNoteVal = row.notes ? row.notes : defaultNegNote;
 
         tr.innerHTML = `
-            <td style="text-align: center; font-weight: 900; font-family: monospace; color: var(--text-muted);">${row.serialNum}</td>
-            <td style="text-align: center; font-weight: 700; white-space: nowrap; font-size: 0.84rem;">${row.date || '—'}</td>
-            <td style="min-width: 310px; width: 34%;">
-                <div style="font-weight: 800; font-size: 0.94rem; color: ${isTransferRow ? 'var(--success)' : 'var(--text-primary)'}; line-height: 1.4;">
-                    ${isTransferRow ? '📥 ' : ''}${trText(row.desc)}
-                </div>
-            </td>
-            <td style="text-align: center; font-weight: 900; color: var(--success); font-size: 0.92rem; white-space: nowrap;">
-                ${row.inflow > 0 ? row.inflow.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '—'}
-            </td>
-            <td style="text-align: center; font-weight: 900; color: var(--danger); font-size: 0.92rem; white-space: nowrap;">
-                ${row.outflow > 0 ? row.outflow.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '—'}
-            </td>
-            <td style="text-align: center; font-weight: 900; background: ${row.isNegative ? 'rgba(239,68,68,0.14)' : 'var(--primary-light)'}; color: ${row.isNegative ? 'var(--danger)' : 'var(--primary)'}; font-size: 0.93rem; white-space: nowrap; direction: ltr;">
-                <div>${row.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                ${negativeBadgeHtml}
-            </td>
-            <td style="width: 195px; max-width: 210px;">
+            <td style="width: 44px; text-align: center; font-weight: 900; font-family: monospace; color: var(--text-muted); font-size: 0.82rem;">${row.serialNum}</td>
+            <td style="width: 96px; text-align: center; font-weight: 700; white-space: nowrap; font-size: 0.8rem;">${row.date || '—'}</td>
+            <td style="width: 23%; min-width: 190px; max-width: 240px;">
                 ${isViewer
-                    ? `<div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; white-space: normal; word-break: break-word;">${trText(row.notes || '') || (row.isNegative ? 'تغطية شخصية مؤقتة' : '—')}</div>`
-                    : `<textarea rows="2" class="table-input" placeholder="${row.isNegative ? 'تغطية شخصية مؤقتة...' : (isAr ? 'ملاحظات...' : 'Notes...')}" onchange="updateCustodyRowField(${row.id}, 'notes', this.value)" style="width: 100%; max-width: 200px; font-size: 0.78rem; line-height: 1.35; padding: 0.28rem 0.45rem; resize: vertical; min-height: 42px;">${row.notes || ''}</textarea>`
+                    ? `<div class="custody-2line-static" style="font-weight: 800; font-size: 0.83rem; color: ${isTransferRow ? 'var(--success)' : 'var(--text-primary)'};" title="${trText(row.desc)}">${isTransferRow ? '📥 ' : ''}${trText(row.desc)}</div>`
+                    : `<textarea rows="2" class="custody-2line-input" onchange="updateCustodyRowField(${row.id}, 'desc', this.value)" style="font-weight: 800; color: ${isTransferRow ? 'var(--success)' : 'var(--text-primary)'};" title="يمكنك تعديل وترتيب الوصف في سطرين">${row.desc || ''}</textarea>`
                 }
             </td>
-            <td style="text-align: center; white-space: nowrap;" class="no-print">
-                <div style="display: inline-flex; gap: 0.3rem; align-items: center;">
-                    <button onclick="openCustodyInvoiceModal(${row.id})" class="btn btn-sm ${hasInvoice ? 'btn-success' : 'btn-secondary'}" style="padding: 0.25rem 0.55rem; font-size: 0.74rem;" title="إرفاق فاتورة أو سحب سكانر باسم فاتورة_عهدة_رقم_${row.serialNum}">
-                        ${hasInvoice ? `📎 فاتورة #${row.serialNum}` : `📷 مرفقات / سكان`}
-                    </button>
-                    <button onclick="shareSingleCustodyRowByIdWhatsApp(${row.id})" class="btn btn-sm btn-secondary" style="padding: 0.25rem 0.45rem; font-size: 0.74rem; color: #16a34a; border-color: rgba(34,197,94,0.4);" title="إرسال هذه الفاتورة/الحركة عبر واتساب">
-                        📲 واتساب
-                    </button>
+            <td style="width: 92px; text-align: center; font-weight: 900; color: var(--success); font-size: 0.85rem; white-space: nowrap;">
+                ${row.inflow > 0 ? row.inflow.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '—'}
+            </td>
+            <td style="width: 92px; text-align: center; font-weight: 900; color: var(--danger); font-size: 0.85rem; white-space: nowrap;">
+                ${row.outflow > 0 ? row.outflow.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '—'}
+            </td>
+            <td class="custody-balance-cell ${row.isNegative ? 'is-neg' : 'is-pos'}" style="width: 88px; text-align: center; font-weight: 900; font-size: 0.8rem; padding: 0.25rem 0.35rem; white-space: nowrap; direction: ltr;">
+                ${row.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </td>
+            <td style="width: 24%; min-width: 215px; max-width: 270px;">
+                ${isViewer
+                    ? `<div class="custody-2line-static" style="font-size: 0.8rem; color: ${row.isNegative ? 'var(--danger)' : 'var(--text-secondary)'}; font-weight: ${row.isNegative ? '800' : '600'};">${trText(effectiveNoteVal) || '—'}</div>`
+                    : `<textarea rows="2" class="custody-2line-input" placeholder="${isAr ? 'أضف ملاحظات (سطرين)...' : 'Notes...'}" onchange="updateCustodyRowField(${row.id}, 'notes', this.value)" style="font-size: 0.8rem; color: ${row.isNegative ? 'var(--danger)' : 'var(--text-primary)'}; font-weight: ${row.isNegative ? '800' : '600'}; border-color: rgba(148,163,184,0.25);">${effectiveNoteVal}</textarea>`
+                }
+            </td>
+            <td style="width: 130px; text-align: center; white-space: nowrap;" class="no-print">
+                <div class="custody-inv-cell-wrap">
+                    ${hasInvoice ? `
+                        <button type="button" onclick="openCustodyInvoiceModal(${row.id})" class="custody-inv-view-btn" title="عرض الفاتورة المسحوبة رقم #${row.serialNum} (فاتورة_عهدة_رقم_${row.serialNum})">
+                            👁️ عرض
+                        </button>
+                    ` : ''}
+                    <div class="custody-inv-dropdown" id="cust-inv-dd-${row.id}">
+                        <button type="button" onclick="toggleRowInvoiceDropdown(event, ${row.id})" class="custody-inv-trigger">
+                            <span>فاتورة</span>
+                            <span style="font-size: 0.65rem;">▾</span>
+                        </button>
+                        <div class="custody-inv-menu">
+                            <button type="button" onclick="openRowPrinterScannerAction(${row.id})" class="custody-inv-menu-item">
+                                🖨️ <span>سكان طابعة</span>
+                            </button>
+                            <button type="button" onclick="openRowMobileScannerAction(${row.id})" class="custody-inv-menu-item">
+                                📱 <span>سكان موبايل</span>
+                            </button>
+                            <button type="button" onclick="triggerDirectRowFileAttach(${row.id})" class="custody-inv-menu-item">
+                                📎 <span>إرفاق (Attach)</span>
+                            </button>
+                            <button type="button" onclick="shareSingleCustodyRowByIdWhatsApp(${row.id})" class="custody-inv-menu-item" style="color: #16a34a;">
+                                📲 <span>إرسال واتس</span>
+                            </button>
+                            <button type="button" onclick="shareSingleCustodyRowByIdEmail(${row.id})" class="custody-inv-menu-item" style="color: var(--info);">
+                                ✉️ <span>إرسال ميل</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </td>
-            <td style="text-align: center; white-space: nowrap;" class="no-print admin-only">
-                <div style="display: inline-flex; gap: 0.25rem;">
-                    <button onclick="openEditCustodyModal(${row.id})" class="btn btn-sm btn-secondary" style="padding: 0.22rem 0.45rem; font-size: 0.72rem;" title="تعديل البند">✏️</button>
-                    <button onclick="deleteCustodyRow(${row.id})" class="btn btn-sm btn-danger" style="padding: 0.22rem 0.45rem; font-size: 0.72rem;" title="حذف الحركة">🗑️</button>
+            <td style="width: 72px; text-align: center; white-space: nowrap;" class="no-print admin-only">
+                <div style="display: inline-flex; gap: 0.2rem;">
+                    <button onclick="openEditCustodyModal(${row.id})" class="btn btn-sm btn-secondary" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="تعديل البند">✏️</button>
+                    <button onclick="deleteCustodyRow(${row.id})" class="btn btn-sm btn-danger" style="padding: 0.2rem 0.4rem; font-size: 0.7rem;" title="حذف الحركة">🗑️</button>
                 </div>
             </td>
         `;
@@ -6353,19 +6527,115 @@ function renderCustodyView() {
                 <th colspan="3" style="text-align: inherit; font-weight: 900;">
                     ${isAr ? `إجمالي الحركات المعروضة (${rows.length} حركة)` : `Total Displayed Transactions (${rows.length})`}
                 </th>
-                <th style="text-align: center; font-weight: 900; color: var(--success); font-size: 0.96rem;">
+                <th style="text-align: center; font-weight: 900; color: var(--success); font-size: 0.9rem;">
                     ${filteredInflow.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${isAr ? 'ج.م' : 'EGP'}
                 </th>
-                <th style="text-align: center; font-weight: 900; color: var(--danger); font-size: 0.96rem;">
+                <th style="text-align: center; font-weight: 900; color: var(--danger); font-size: 0.9rem;">
                     ${filteredOutflow.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${isAr ? 'ج.م' : 'EGP'}
                 </th>
-                <th style="text-align: center; font-weight: 900; background: var(--primary); color: var(--text-inverse); font-size: 0.98rem; direction: ltr;">
+                <th style="text-align: center; font-weight: 900; background: var(--primary); color: var(--text-inverse); font-size: 0.84rem; direction: ltr;">
                     ${lastDisplayedBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isAr ? 'ج.م' : 'EGP'}
                 </th>
                 <th colspan="3"></th>
             </tr>
         `;
     }
+}
+
+function toggleRowInvoiceDropdown(event, rowId) {
+    event.stopPropagation();
+    const targetDd = document.getElementById(`cust-inv-dd-${rowId}`);
+    document.querySelectorAll('.custody-inv-dropdown.open').forEach(dd => {
+        if (dd !== targetDd) dd.classList.remove('open');
+    });
+    if (targetDd) targetDd.classList.toggle('open');
+}
+
+document.addEventListener('click', () => {
+    document.querySelectorAll('.custody-inv-dropdown.open').forEach(dd => dd.classList.remove('open'));
+});
+
+function openRowPrinterScannerAction(rowId) {
+    document.querySelectorAll('.custody-inv-dropdown.open').forEach(dd => dd.classList.remove('open'));
+    showToast(currentLang === 'ar' ? '🖨️ اختر ملف الفاتورة المسحوب من سكانر الطابعة ليتم إرفاقه برقم التسلسل تلقائياً' : 'Select scanned file from printer scanner', 'info');
+    triggerDirectRowFileAttach(rowId);
+}
+
+function openRowMobileScannerAction(rowId) {
+    document.querySelectorAll('.custody-inv-dropdown.open').forEach(dd => dd.classList.remove('open'));
+    openCustodyInvoiceModal(rowId);
+    setTimeout(() => {
+        startCustodyScannerCamera();
+    }, 150);
+}
+
+function shareSingleCustodyRowByIdEmail(rowId) {
+    document.querySelectorAll('.custody-inv-dropdown.open').forEach(dd => dd.classList.remove('open'));
+    const calculated = recalculateCustodyBalances();
+    const row = calculated.find(r => r.id === rowId);
+    if (!row) return;
+    const inv = custodyInvoicesMap[rowId];
+
+    // If an invoice file is attached, download a copy automatically so the user can attach large files to the email client
+    if (inv && inv.dataUrl) {
+        const ext = inv.mimeType && inv.mimeType.includes('pdf') ? 'pdf' : 'jpg';
+        const a = document.createElement('a');
+        a.href = inv.dataUrl;
+        a.download = `${inv.name}.${ext}`;
+        a.click();
+        showToast(currentLang === 'ar' ? `تم تجهيز ملف (${inv.name}.${ext}) لإرفاقه في الإيميل (للملفات التي تتعدى مساحة الواتساب)` : 'Invoice downloaded for email attachment', 'info');
+    }
+
+    const subject = `المجموعة الإستشارية | فاتورة وحركة عهدة رقم #${row.serialNum} - ${row.desc}`;
+    const bodyLines = [
+        'المجموعة الإستشارية | Consultancy Group',
+        'إدارة المرافق - مدير المرافق',
+        '----------------------------------------',
+        `رقم التسلسل بالعهدة: #${row.serialNum}`,
+        `اسم ملف الفاتورة: فاتورة_عهدة_رقم_${row.serialNum}`,
+        `التاريخ: ${row.date}`,
+        `اسم الصنف / البيان: ${row.desc}`,
+        row.inflow > 0 ? `الوارد للعهدة: ${row.inflow.toLocaleString()} ج.م` : `المنصرف: ${row.outflow.toLocaleString()} ج.م`,
+        `الرصيد المتبقي: ${row.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })} ج.م`,
+        row.notes ? `ملاحظات: ${row.notes}` : (row.isNegative ? 'ملاحظات: بالسالب (تغطية شخصية مؤقتة لحين تحويل الشركة)' : ''),
+        inv ? `المرفقات: مرفق ملف الفاتورة (${inv.name})` : ''
+    ].filter(Boolean);
+
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join('\r\n'))}`;
+}
+
+function triggerDirectRowFileAttach(rowId) {
+    document.querySelectorAll('.custody-inv-dropdown.open').forEach(dd => dd.classList.remove('open'));
+    directAttachTargetRowId = rowId;
+    const inp = document.getElementById('cust-direct-row-file-input');
+    if (inp) {
+        inp.value = '';
+        inp.click();
+    }
+}
+
+function handleDirectRowFileSelected(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file || !directAttachTargetRowId) return;
+    const rowId = Number(directAttachTargetRowId);
+    const calculated = recalculateCustodyBalances();
+    const row = calculated.find(r => r.id === rowId);
+    if (!row) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        custodyInvoicesMap[rowId] = {
+            name: `فاتورة_عهدة_رقم_${row.serialNum}`,
+            originalName: file.name,
+            mimeType: file.type || 'image/jpeg',
+            dataUrl: evt.target.result,
+            savedAt: new Date().toISOString()
+        };
+        persistState();
+        renderCustodyView();
+        showToast(currentLang === 'ar' ? `تم إرفاق الفاتورة بنجاح وأخذت رقم التسلسل #${row.serialNum} (اضغط "عرض" لمشاهدتها)` : `Invoice attached (#${row.serialNum})`, 'success');
+    };
+    reader.readAsDataURL(file);
 }
 
 function updateCustodyRowField(rowId, field, value) {
@@ -6817,16 +7087,16 @@ function printCustodyReport() {
     rows.forEach(r => {
         totalIn += r.inflow;
         totalOut += r.outflow;
-        const negNote = r.isNegative ? (r.notes ? `${r.notes} (تغطية شخصية مؤقتة)` : 'تغطية شخصية مؤقتة') : (r.notes || '—');
+        const negNote = r.isNegative ? (r.notes ? `${r.notes} (بالسالب - تغطية شخصية مؤقتة)` : 'بالسالب (تغطية شخصية مؤقتة لحين تحويل الشركة)') : (r.notes || '—');
         rowsHtml += `
             <tr>
-                <td style="width: 36px; text-align: center !important; font-weight: 800;">${r.serialNum}</td>
-                <td style="width: 11%; text-align: center !important; font-weight: 700; white-space: nowrap !important;">${r.date}</td>
-                <td class="print-item-name" style="width: 34% !important; min-width: 215px !important; max-width: 290px !important; white-space: normal !important; font-weight: 800 !important;"><strong>${trText(r.desc)}</strong></td>
-                <td style="width: 12%; text-align: center !important; font-weight: 800; color: #15803d;">${r.inflow > 0 ? r.inflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
-                <td style="width: 12%; text-align: center !important; font-weight: 800; color: #b91c1c;">${r.outflow > 0 ? r.outflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
-                <td style="width: 14%; text-align: center !important; font-weight: 900; direction: ltr; color: ${r.isNegative ? '#b91c1c' : '#0f172a'};">${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                <td class="print-notes-col" style="width: 13% !important; max-width: 125px !important; font-size: 0.76rem !important; line-height: 1.3 !important; white-space: normal !important;">${negNote}</td>
+                <td style="width: 34px; text-align: center !important; font-weight: 800;">${r.serialNum}</td>
+                <td style="width: 10%; text-align: center !important; font-weight: 700; white-space: nowrap !important;">${r.date}</td>
+                <td class="print-item-name" style="width: 24% !important; min-width: 170px !important; max-width: 225px !important; white-space: normal !important; font-weight: 800 !important;"><strong>${trText(r.desc)}</strong></td>
+                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #15803d;">${r.inflow > 0 ? r.inflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
+                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #b91c1c;">${r.outflow > 0 ? r.outflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
+                <td style="width: 11%; text-align: center !important; font-weight: 900; font-size: 0.78rem !important; direction: ltr; color: ${r.isNegative ? '#b91c1c' : '#0f172a'};">${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td class="print-notes-col" style="width: 23% !important; min-width: 155px !important; max-width: 215px !important; font-size: 0.76rem !important; line-height: 1.32 !important; white-space: normal !important;">${negNote}</td>
             </tr>
         `;
 
@@ -6859,13 +7129,13 @@ function printCustodyReport() {
                         </th>
                     </tr>
                     <tr>
-                        <th style="width: 36px; text-align: center !important;">${isAr ? 'م' : '#'}</th>
-                        <th style="width: 11%; text-align: center !important;">${isAr ? 'التاريخ' : 'Date'}</th>
-                        <th class="print-item-name" style="width: 34% !important; min-width: 215px !important;">${isAr ? 'اسم الصنف / البيان' : 'Item Name'}</th>
-                        <th style="width: 12%; text-align: center !important;">${isAr ? 'وارد' : 'Inflow'}</th>
-                        <th style="width: 12%; text-align: center !important;">${isAr ? 'منصرف' : 'Outflow'}</th>
-                        <th style="width: 14%; text-align: center !important;">${isAr ? 'المتبقي' : 'Balance'}</th>
-                        <th class="print-notes-col" style="width: 13% !important; max-width: 125px !important;">${isAr ? 'ملاحظات' : 'Notes'}</th>
+                        <th style="width: 34px; text-align: center !important;">${isAr ? 'م' : '#'}</th>
+                        <th style="width: 10%; text-align: center !important;">${isAr ? 'التاريخ' : 'Date'}</th>
+                        <th class="print-item-name" style="width: 24% !important; min-width: 170px !important;">${isAr ? 'اسم الصنف / البيان' : 'Item Name'}</th>
+                        <th style="width: 11%; text-align: center !important;">${isAr ? 'وارد' : 'Inflow'}</th>
+                        <th style="width: 11%; text-align: center !important;">${isAr ? 'منصرف' : 'Outflow'}</th>
+                        <th style="width: 11%; text-align: center !important;">${isAr ? 'المتبقي' : 'Balance'}</th>
+                        <th class="print-notes-col" style="width: 23% !important; min-width: 155px !important;">${isAr ? 'ملاحظات' : 'Notes'}</th>
                     </tr>
                 </thead>
                 <tbody>

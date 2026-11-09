@@ -194,12 +194,6 @@
                     <span>الأقسام الرئيسية (4)</span>
                 </button>
 
-                <!-- Quick Direct Jump to Custody from any view -->
-                <button onclick="enterPortalSection('custody')" id="nav-btn-custody-global" class="sidebar-nav-item" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.38); color: var(--success); margin-bottom: 0.45rem; font-weight: 800;">
-                    <i data-lucide="wallet"></i>
-                    <span>💰 العهدة والفواتير</span>
-                </button>
-
                 <!-- ==================== MODULE 1 NAV: BUFFET EXPENSES ONLY ==================== -->
                 <span class="nav-section-label nav-group-buffet">مصروفات البوفيه والعمليات</span>
                 
@@ -261,26 +255,46 @@
                 <!-- ==================== MODULE 4 NAV: COMPANY CUSTODY & INVOICES ONLY ==================== -->
                 <span class="nav-section-label nav-group-custody" style="display: none;">العهدة والمشتريات</span>
 
-                <button onclick="switchTab('custody')" id="nav-btn-custody" class="sidebar-nav-item nav-group-custody" style="display: none;">
+                <button onclick="resetCustodyToMainTable()" id="nav-btn-custody" class="sidebar-nav-item nav-group-custody" style="display: none;">
                     <i data-lucide="wallet"></i>
                     <span>العهدة والفواتير</span>
                 </button>
 
                 <!-- Collapsible Transfer Audit & Reminders in Right Sidebar under Custody -->
-                <div class="nav-group-custody" style="display: none; padding: 0.35rem 0.2rem 0.5rem 0.2rem; display: flex; flex-direction: column; gap: 0.38rem;">
-                    <span style="font-size: 0.72rem; font-weight: 800; color: var(--text-muted); padding: 0 0.45rem;">🔔 مراجعة وتذكير بنود الحوالة:</span>
-                    <button onclick="toggleCustodyAuditPanel('purchased')" id="sidebar-audit-btn-purchased" class="sidebar-nav-item" style="padding: 0.48rem 0.65rem; font-size: 0.78rem; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.06); justify-content: space-between;">
-                        <span style="display:flex; align-items:center; gap:0.4rem;">✅ <span>بنود تم شراؤها</span></span>
-                        <span class="badge badge-success" id="sidebar-audit-cnt-purchased" style="font-size:0.7rem;">0</span>
+                <div class="nav-group-custody" style="display: none; padding: 0.25rem 0.15rem; flex-direction: column; gap: 0.32rem;">
+                    <button onclick="onSidebarAuditHeaderClick()" id="sidebar-audit-header-btn" class="sidebar-nav-item" style="padding: 0.48rem 0.65rem; font-size: 0.77rem; font-weight: 900; border: 1px solid var(--border-color); background: var(--bg-surface-2); justify-content: space-between;">
+                        <span style="display:flex; align-items:center; gap:0.35rem;">🔔 <span>مراجعة وتذكير بنود الحوالة</span></span>
+                        <span id="sidebar-audit-chevron" style="font-size: 0.7rem; color: var(--primary);">▾</span>
                     </button>
-                    <button onclick="toggleCustodyAuditPanel('unpurchased')" id="sidebar-audit-btn-unpurchased" class="sidebar-nav-item" style="padding: 0.48rem 0.65rem; font-size: 0.78rem; border: 1px solid rgba(239,68,68,0.35); background: rgba(239,68,68,0.07); justify-content: space-between;">
-                        <span style="display:flex; align-items:center; gap:0.4rem;">⚠️ <span>تذكير (لم تشترِ بعد)</span></span>
-                        <span class="badge badge-danger" id="sidebar-audit-cnt-unpurchased" style="font-size:0.7rem;">0</span>
+                    <div id="sidebar-audit-items-list" style="display: flex; flex-direction: column; gap: 0.3rem; padding-right: 0.35rem;">
+                        <button onclick="toggleCustodyAuditPanel('purchased')" id="sidebar-audit-btn-purchased" class="sidebar-nav-item" style="padding: 0.42rem 0.6rem; font-size: 0.75rem; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.06); justify-content: space-between;">
+                            <span style="display:flex; align-items:center; gap:0.35rem;">✅ <span>بنود تم شراؤها</span></span>
+                            <span class="badge badge-success" id="sidebar-audit-cnt-purchased" style="font-size:0.68rem;">0</span>
+                        </button>
+                        <button onclick="toggleCustodyAuditPanel('unpurchased')" id="sidebar-audit-btn-unpurchased" class="sidebar-nav-item" style="padding: 0.42rem 0.6rem; font-size: 0.75rem; border: 1px solid rgba(239,68,68,0.35); background: rgba(239,68,68,0.07); justify-content: space-between;">
+                            <span style="display:flex; align-items:center; gap:0.35rem;">⚠️ <span>تذكير (لم تشترِ بعد)</span></span>
+                            <span class="badge badge-danger" id="sidebar-audit-cnt-unpurchased" style="font-size:0.68rem;">0</span>
+                        </button>
+                        <button onclick="toggleCustodyAuditPanel('extra')" id="sidebar-audit-btn-extra" class="sidebar-nav-item" style="padding: 0.42rem 0.6rem; font-size: 0.75rem; border: 1px solid rgba(245,158,11,0.35); background: rgba(245,158,11,0.07); justify-content: space-between;">
+                            <span style="display:flex; align-items:center; gap:0.35rem;">🔄 <span>مصروفات أخرى دخلت معها</span></span>
+                            <span class="badge badge-warning" id="sidebar-audit-cnt-extra" style="font-size:0.68rem;">0</span>
+                        </button>
+                    </div>
+
+                    <!-- Collapsible Quick Search by Frequent Items in Right Sidebar -->
+                    <button onclick="onSidebarQuickSearchHeaderClick()" id="sidebar-qsearch-header-btn" class="sidebar-nav-item" style="margin-top: 0.25rem; padding: 0.48rem 0.65rem; font-size: 0.77rem; font-weight: 900; border: 1px solid var(--border-color); background: var(--bg-surface-2); justify-content: space-between;">
+                        <span style="display:flex; align-items:center; gap:0.35rem;">⚡ <span>بحث سريع بالأصناف المتكررة</span></span>
+                        <span id="sidebar-qsearch-chevron" style="font-size: 0.7rem; color: var(--primary);">◂</span>
                     </button>
-                    <button onclick="toggleCustodyAuditPanel('extra')" id="sidebar-audit-btn-extra" class="sidebar-nav-item" style="padding: 0.48rem 0.65rem; font-size: 0.78rem; border: 1px solid rgba(245,158,11,0.35); background: rgba(245,158,11,0.07); justify-content: space-between;">
-                        <span style="display:flex; align-items:center; gap:0.4rem;">🔄 <span>مصروفات أخرى دخلت معها</span></span>
-                        <span class="badge badge-warning" id="sidebar-audit-cnt-extra" style="font-size:0.7rem;">0</span>
-                    </button>
+                    <div id="sidebar-qsearch-items-list" style="display: none; flex-direction: column; gap: 0.26rem; padding-right: 0.35rem;">
+                        <button onclick="toggleSidebarQuickSearchItem('أغراض البوفيه')" data-qterm="أغراض البوفيه" class="sidebar-nav-item sidebar-qsearch-item" style="padding: 0.38rem 0.6rem; font-size: 0.74rem; border: 1px solid var(--border-subtle);">☕ أغراض البوفيه</button>
+                        <button onclick="toggleSidebarQuickSearchItem('قهوة')" data-qterm="قهوة" class="sidebar-nav-item sidebar-qsearch-item" style="padding: 0.38rem 0.6rem; font-size: 0.74rem; border: 1px solid var(--border-subtle);">🫘 قهوة وبن</button>
+                        <button onclick="toggleSidebarQuickSearchItem('شحن العدادات')" data-qterm="شحن العدادات" class="sidebar-nav-item sidebar-qsearch-item" style="padding: 0.38rem 0.6rem; font-size: 0.74rem; border: 1px solid var(--border-subtle);">⚡ شحن العدادات</button>
+                        <button onclick="toggleSidebarQuickSearchItem('مياه')" data-qterm="مياه" class="sidebar-nav-item sidebar-qsearch-item" style="padding: 0.38rem 0.6rem; font-size: 0.74rem; border: 1px solid var(--border-subtle);">💧 مياه وفلاتر</button>
+                        <button onclick="toggleSidebarQuickSearchItem('سباك')" data-qterm="سباك" class="sidebar-nav-item sidebar-qsearch-item" style="padding: 0.38rem 0.6rem; font-size: 0.74rem; border: 1px solid var(--border-subtle);">🔧 سباكة وصيانة</button>
+                        <button onclick="toggleSidebarQuickSearchItem('كراسي')" data-qterm="كراسي" class="sidebar-nav-item sidebar-qsearch-item" style="padding: 0.38rem 0.6rem; font-size: 0.74rem; border: 1px solid var(--border-subtle);">🪑 كراسي ومكاتب</button>
+                        <button onclick="toggleSidebarQuickSearchItem('نت')" data-qterm="نت" class="sidebar-nav-item sidebar-qsearch-item" style="padding: 0.38rem 0.6rem; font-size: 0.74rem; border: 1px solid var(--border-subtle);">🌐 إنترنت واتصالات</button>
+                    </div>
                 </div>
             </nav>
 
@@ -1282,106 +1296,76 @@
                                     </div>
                                 </div>
 
-                                <!-- Advanced Filter & Instant Item Search Bar -->
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.75rem; background: var(--bg-surface-2); padding: 0.9rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                                    <div>
-                                        <label class="form-label" style="font-size: 0.76rem; margin-bottom: 0.25rem;">🔍 بحث فوري عن صنف أو بيان (يعرض كل تواريخه وإجماليه):</label>
-                                        <div style="display: flex; gap: 0.35rem;">
-                                            <input type="text" id="custody-search-input" class="form-control" placeholder="ابحث عن: قهوة، أغراض البوفيه، فلاتر، سباك، كراسي..." oninput="renderCustodyView()">
-                                            <button onclick="clearCustodySearch()" class="btn btn-secondary btn-sm" title="مسح البحث">✖</button>
+                                <!-- Compact Single-Row Filter & Instant Item Search Bar -->
+                                <div class="custody-compact-filter-bar">
+                                    <div class="custody-compact-filter-item" style="flex: 1; min-width: 240px;">
+                                        <label>🔍 بحث فوري عن صنف:</label>
+                                        <div style="display: flex; gap: 0.25rem; flex: 1;">
+                                            <input type="text" id="custody-search-input" class="form-control" placeholder="ابحث عن: قهوة، أغراض البوفيه، فلاتر، سباك..." oninput="renderCustodyView()" style="flex: 1;">
+                                            <button onclick="clearCustodySearch()" class="btn btn-secondary btn-sm" style="height: 32px; padding: 0 0.5rem;" title="مسح البحث">✖</button>
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label class="form-label" style="font-size: 0.76rem; margin-bottom: 0.25rem;">📅 نطاق العرض والتصفية للمحاسب:</label>
-                                        <select id="custody-filter-mode" class="form-control" onchange="onCustodyFilterModeChange()">
+                                    <div class="custody-compact-filter-item">
+                                        <label>📅 نطاق التصفية:</label>
+                                        <select id="custody-filter-mode" class="form-control" onchange="onCustodyFilterModeChange()" style="min-width: 185px;">
                                             <option value="all">العهدة كاملة (كل السجل)</option>
                                             <option value="month">شهر محدد</option>
-                                            <option value="range">فترة من تاريخ ... إلى تاريخ ...</option>
-                                            <option value="transfer">من تحويل / إيداع وارد محدد (لتسوية العهدة)</option>
-                                            <option value="inflow_only">حركات الوارد (الإيداعات والتحويلات) فقط</option>
-                                            <option value="with_invoice">الحركات المرفق بها فواتير فقط</option>
+                                            <option value="range">فترة من ... إلى ...</option>
+                                            <option value="transfer">من تحويل / إيداع محدد</option>
+                                            <option value="inflow_only">حركات الوارد فقط</option>
+                                            <option value="with_invoice">المرفق بها فواتير فقط</option>
                                         </select>
                                     </div>
 
-                                    <div id="custody-filter-month-box" style="display: none;">
-                                        <label class="form-label" style="font-size: 0.76rem; margin-bottom: 0.25rem;">اختر الشهر:</label>
+                                    <div id="custody-filter-month-box" class="custody-compact-filter-item" style="display: none;">
+                                        <label>الشهر:</label>
                                         <select id="custody-filter-month" class="form-control" onchange="renderCustodyView()"></select>
                                     </div>
 
-                                    <div id="custody-filter-range-box" style="display: none; grid-column: span 2;">
-                                        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                                            <div style="flex: 1;">
-                                                <label class="form-label" style="font-size: 0.76rem; margin-bottom: 0.25rem;">من تاريخ:</label>
-                                                <input type="date" id="custody-filter-from" class="form-control" onchange="renderCustodyView()">
-                                            </div>
-                                            <div style="flex: 1;">
-                                                <label class="form-label" style="font-size: 0.76rem; margin-bottom: 0.25rem;">إلى تاريخ:</label>
-                                                <input type="date" id="custody-filter-to" class="form-control" onchange="renderCustodyView()">
-                                            </div>
-                                        </div>
+                                    <div id="custody-filter-range-box" class="custody-compact-filter-item" style="display: none;">
+                                        <label>من:</label>
+                                        <input type="date" id="custody-filter-from" class="form-control" onchange="renderCustodyView()">
+                                        <label>إلى:</label>
+                                        <input type="date" id="custody-filter-to" class="form-control" onchange="renderCustodyView()">
                                     </div>
 
-                                    <div id="custody-filter-transfer-box" style="display: none;">
-                                        <label class="form-label" style="font-size: 0.76rem; margin-bottom: 0.25rem;">اختر التحويل / الإيداع الوارد:</label>
-                                        <select id="custody-filter-transfer" class="form-control" onchange="renderCustodyView()"></select>
+                                    <div id="custody-filter-transfer-box" class="custody-compact-filter-item" style="display: none;">
+                                        <label>الحوالة:</label>
+                                        <select id="custody-filter-transfer" class="form-control" onchange="renderCustodyView()" style="max-width: 220px;"></select>
                                     </div>
 
-                                    <div style="display: flex; align-items: center; gap: 0.5rem; padding-top: 1.1rem;">
-                                        <label style="display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer; font-size: 0.8rem; font-weight: 700; color: var(--text-main);">
-                                            <input type="checkbox" id="custody-print-with-invoices" style="width: 17px; height: 17px; accent-color: var(--primary);">
-                                            <span>عرض صور الفواتير المرفقة عند الطباعة</span>
+                                    <div class="custody-compact-filter-item">
+                                        <label style="display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; font-size: 0.75rem; font-weight: 800; color: var(--text-main);">
+                                            <input type="checkbox" id="custody-print-with-invoices" style="width: 15px; height: 15px; accent-color: var(--primary);">
+                                            <span>عرض صور الفواتير عند الطباعة</span>
                                         </label>
                                     </div>
                                 </div>
-
-                                <!-- Quick Search Tags for Most Frequent Items -->
-                                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;">
-                                    <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted);">⚡ بحث سريع بالأصناف المتكررة:</span>
-                                    <button onclick="quickSearchCustody('')" class="chip-btn" style="padding: 0.2rem 0.6rem; font-size: 0.74rem;">عرض الكل</button>
-                                    <button onclick="quickSearchCustody('أغراض البوفيه')" class="chip-btn" style="padding: 0.2rem 0.6rem; font-size: 0.74rem;">☕ أغراض البوفيه</button>
-                                    <button onclick="quickSearchCustody('قهوة')" class="chip-btn" style="padding: 0.2rem 0.6rem; font-size: 0.74rem;">🫘 قهوة وبن</button>
-                                    <button onclick="quickSearchCustody('شحن العدادات')" class="chip-btn" style="padding: 0.2rem 0.6rem; font-size: 0.74rem;">⚡ شحن العدادات</button>
-                                    <button onclick="quickSearchCustody('مياه')" class="chip-btn" style="padding: 0.2rem 0.6rem; font-size: 0.74rem;">💧 مياه وفلاتر</button>
-                                    <button onclick="quickSearchCustody('سباك')" class="chip-btn" style="padding: 0.2rem 0.6rem; font-size: 0.74rem;">🔧 سباكة وصيانة</button>
-                                    <button onclick="quickSearchCustody('كراسي')" class="chip-btn" style="padding: 0.2rem 0.6rem; font-size: 0.74rem;">🪑 كراسي ومكاتب</button>
-                                    <button onclick="quickSearchCustody('نت')" class="chip-btn" style="padding: 0.2rem 0.6rem; font-size: 0.74rem;">🌐 إنترنت واتصالات</button>
-                                </div>
                             </div>
 
-                            <!-- Quick Toggle Pills for Transfer Review & Reminders (Right-aligned, Collapsed by default) -->
-                            <div style="padding: 0.65rem 1.25rem 0 1.25rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;" class="no-print">
-                                <span style="font-size: 0.78rem; font-weight: 900; color: var(--text-primary);">🔔 مراجعة وتذكير الحوالة (اضغط للعرض أو الإخفاء):</span>
-                                <button onclick="toggleCustodyAuditPanel('purchased')" id="top-audit-btn-purchased" class="chip-btn" style="border-color: rgba(16,185,129,0.45); color: var(--success); font-weight: 800; font-size: 0.76rem;">
-                                    ✅ بنود تم شراؤها (<span id="top-audit-cnt-purchased">0</span>)
-                                </button>
-                                <button onclick="toggleCustodyAuditPanel('unpurchased')" id="top-audit-btn-unpurchased" class="chip-btn" style="border-color: rgba(239,68,68,0.45); color: var(--danger); font-weight: 800; font-size: 0.76rem;">
-                                    ⚠️ تذكير: لم تشترِ هذه بعد (<span id="top-audit-cnt-unpurchased">0</span>)
-                                </button>
-                                <button onclick="toggleCustodyAuditPanel('extra')" id="top-audit-btn-extra" class="chip-btn" style="border-color: rgba(245,158,11,0.45); color: var(--warning); font-weight: 800; font-size: 0.76rem;">
-                                    🔄 مصروفات أخرى دخلت معها (<span id="top-audit-cnt-extra">0</span>)
-                                </button>
-                            </div>
+                            <!-- Hidden Direct File Input for Row Invoice Attachment -->
+                            <input type="file" id="cust-direct-row-file-input" accept="image/*,.pdf" style="display: none;" onchange="handleDirectRowFileSelected(event)">
 
-                            <!-- Instant Item Search Analytical Banner -->
-                            <div id="custody-search-summary-box" style="display: none; padding: 0.85rem 1.25rem 0 1.25rem;"></div>
+                            <!-- Instant Item Search Analytical Banner (when typing in top search box) -->
+                            <div id="custody-search-summary-box" style="display: none; padding: 0.75rem 1.25rem 0 1.25rem;"></div>
 
-                            <!-- Smart Transfer Purpose & Variance Reminder Banner (مخفي افتراضياً ويفتح عند الضغط فقط) -->
-                            <div id="custody-transfer-audit-box" style="display: none; padding: 0.75rem 1.25rem 0 1.25rem;"></div>
+                            <!-- FULL-SCREEN REPLACEMENT VIEW (يظهر مكان الجدول عند الضغط على مراجعة الحوالة أو البحث السريع، ويختفي ليعود الجدول عند الضغط مرة أخرى) -->
+                            <div id="custody-transfer-audit-box" style="display: none; padding: 1rem 1.25rem;"></div>
 
-                            <div class="table-responsive">
+                            <div class="table-responsive" id="custody-main-table-wrap">
                                 <table class="data-table">
                                     <thead>
                                         <tr>
-                                            <th style="width: 50px; text-align: center;">م</th>
-                                            <th style="width: 110px; text-align: center;">التاريخ</th>
-                                            <th style="min-width: 310px; width: 34%;">اسم الصنف / البيان</th>
-                                            <th style="width: 110px; text-align: center; color: var(--success);">وارد</th>
-                                            <th style="width: 110px; text-align: center; color: var(--danger);">منصرف</th>
-                                            <th style="width: 120px; text-align: center; background: var(--primary-light); color: var(--primary);">المتبقي</th>
-                                            <th style="width: 190px; max-width: 210px;">ملاحظات</th>
-                                            <th style="width: 185px; text-align: center;" class="no-print">الفواتير والمرفقات</th>
-                                            <th style="width: 85px; text-align: center;" class="no-print">إجراءات</th>
+                                            <th style="width: 44px; text-align: center;">م</th>
+                                            <th style="width: 96px; text-align: center;">التاريخ</th>
+                                            <th style="width: 23%; min-width: 190px; max-width: 240px;">اسم الصنف / البيان</th>
+                                            <th style="width: 92px; text-align: center; color: var(--success);">وارد</th>
+                                            <th style="width: 92px; text-align: center; color: var(--danger);">منصرف</th>
+                                            <th style="width: 88px; text-align: center; font-size: 0.78rem;">المتبقي</th>
+                                            <th style="width: 24%; min-width: 215px; max-width: 270px;">ملاحظات</th>
+                                            <th style="width: 130px; text-align: center;" class="no-print">فاتورة</th>
+                                            <th style="width: 72px; text-align: center;" class="no-print">إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="custody-table-body"></tbody>
@@ -1421,7 +1405,7 @@
                                             <th>المورد / الجهة</th>
                                             <th style="text-align: center;">الكمية</th>
                                             <th style="text-align: center;">سعر الوحدة</th>
-                                            <th style="text-align: center; background: var(--primary-light); color: var(--primary);">إجمالي الصفقة</th>
+                                            <th style="text-align: center;">إجمالي الصفقة</th>
                                             <th style="text-align: center;">نظام الدفع</th>
                                             <th style="text-align: center; color: var(--success);">المدفوع للمورد</th>
                                             <th style="text-align: center; color: var(--danger);">المتبقي بعد التوريد</th>
