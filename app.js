@@ -6607,51 +6607,113 @@ async function scanInvoiceFromPrinter(rowId) {
         return;
     }
 
-    // 1) Is the helper running and does it see a scanner?
-    let scannerName = '';
+    // 1) Is the helper running and which scanners does this PC see?
+    let scanners = [];
     try {
         const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 4000);
+        const t = setTimeout(() => ctrl.abort(), 6000);
         const st = await fetch(`${PRINTER_SCAN_HELPER_URL}/status`, { signal: ctrl.signal, cache: 'no-store' }).then(r => r.json());
         clearTimeout(t);
-        if (!st.ok) {
-            showToast(isAr ? 'مش لاقي سكانر متوصل بالكمبيوتر. اختار ملف الفاتورة بدلاً منه.' : 'No scanner found. Please attach a file instead.', 'warning');
-            triggerDirectRowFileAttach(rowId);
-            return;
-        }
-        scannerName = st.scanner || '';
+        scanners = st.ok ? (st.scanners || [{ id: '', name: st.scanner || 'Scanner' }]) : [];
     } catch (e) {
         showToast(isAr ? 'سكان الطابعة بيشتغل لما تفتح البرنامج من أيقونة "Consultancy Group - إدارة المرافق" على سطح المكتب. اختار ملف الفاتورة بدلاً منه.' : 'Open the app from the desktop icon to use printer scan. Attach a file instead.', 'warning');
         triggerDirectRowFileAttach(rowId);
         return;
     }
+    if (!scanners.length) {
+        showToast(isAr ? 'مش لاقي أي طابعة فيها سكانر متعرّفة على الكمبيوتر ده. اختار ملف الفاتورة بدلاً منه.' : 'No scanner found. Please attach a file instead.', 'warning');
+        triggerDirectRowFileAttach(rowId);
+        return;
+    }
 
-    // 2) Scan one page.
+    // 2) Let the user pick the printer (remembered) and put the paper in.
+    const chosen = await choosePrinterScanner(scanners);
+    if (!chosen) return;
+
+    // 3) Scan: every page in the feeder, or one page from the glass.
     printerScanInProgress = true;
-    showToast(isAr ? `🖨️ جاري سحب الفاتورة من الطابعة (${scannerName})... حط الفاتورة على زجاج السكانر واستنى شوية.` : `Scanning from ${scannerName}...`, 'info');
+    showToast(isAr ? `🖨️ جاري سحب الفاتورة من (${chosen.name})... استنى شوية لحد ما الورق يخلص.` : `Scanning from ${chosen.name}...`, 'info');
     try {
         const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 180000);
-        const resp = await fetch(`${PRINTER_SCAN_HELPER_URL}/scan`, { signal: ctrl.signal, cache: 'no-store' });
+        const t = setTimeout(() => ctrl.abort(), 600000);
+        const resp = await fetch(`${PRINTER_SCAN_HELPER_URL}/scan?id=${encodeURIComponent(chosen.id || '')}`, { signal: ctrl.signal, cache: 'no-store' });
         clearTimeout(t);
-        if (!resp.ok) throw new Error('scan_failed');
+        if (!resp.ok) {
+            let err = '';
+            try { err = (await resp.json()).error || ''; } catch (_) {}
+            throw new Error(err || 'scan_failed');
+        }
+        const pages = Number(resp.headers.get('X-Scan-Pages')) || 1;
         const blob = await resp.blob();
+        const mime = blob.type && blob.type.includes('pdf') ? 'application/pdf' : 'image/jpeg';
         const dataUrl = await new Promise((resolve, reject) => {
             const fr = new FileReader();
             fr.onload = () => resolve(fr.result);
             fr.onerror = reject;
             fr.readAsDataURL(blob);
         });
-        const row = saveCustodyInvoiceDataUrl(rowId, dataUrl, 'image/jpeg', `printer_scan_${Date.now()}.jpg`);
+        let row;
+        try {
+            row = saveCustodyInvoiceDataUrl(rowId, dataUrl, mime, `printer_scan_${Date.now()}.${mime === 'application/pdf' ? 'pdf' : 'jpg'}`);
+        } catch (storageErr) {
+            delete custodyInvoicesMap[rowId];
+            showToast(isAr ? 'الفاتورة اتسحبت بس حجمها كبير ومساحة الحفظ في البرنامج اتملت. جرب تسحب صفحات أقل.' : 'Scanned, but the app storage is full. Try fewer pages.', 'warning');
+            return;
+        }
         if (!row) return;
         renderCustodyView();
         openCustodyInvoiceModal(rowId);
-        showToast(isAr ? `✅ تم سحب الفاتورة من الطابعة وحفظها باسم: فاتورة_عهدة_رقم_${row.serialNum}` : 'Invoice scanned and saved!', 'success');
+        showToast(isAr ? `✅ تم سحب ${pages > 1 ? pages + ' صفحات' : 'الفاتورة'} وحفظها باسم: فاتورة_عهدة_رقم_${row.serialNum}` : `Invoice scanned (${pages} page(s)) and saved!`, 'success');
     } catch (e) {
-        showToast(isAr ? 'السكان مانجحش. اتأكد إن الطابعة شغالة والفاتورة على الزجاج وجرب تاني، أو اختار ملف الفاتورة.' : 'Scan failed. Check the printer and try again.', 'warning');
+        const paperEmpty = String(e && e.message || '').includes('paper_empty');
+        showToast(isAr
+            ? (paperEmpty ? 'مفيش ورق في الطابعة. حط الفاتورة في الفيدر أو على الزجاج وجرب تاني.' : 'السكان مانجحش. اتأكد إن الطابعة شغالة والورق جواها وجرب تاني، أو اختار ملف الفاتورة.')
+            : 'Scan failed. Check the printer and try again.', 'warning');
     } finally {
         printerScanInProgress = false;
     }
+}
+
+// Small dialog: pick which printer to scan from (choice is remembered) and confirm the paper is ready.
+function choosePrinterScanner(scanners) {
+    const isAr = currentLang === 'ar';
+    let savedId = '';
+    try { savedId = localStorage.getItem('buffet_v9_scanner_id') || ''; } catch (_) {}
+    if (!scanners.some(s => s.id === savedId)) savedId = scanners[0].id;
+
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px;';
+        const options = scanners.map(s => `
+            <label style="display:flex; align-items:center; gap:0.6rem; padding:0.6rem 0.75rem; border:1.5px solid var(--border-color); border-radius:8px; cursor:pointer; font-weight:800;">
+                <input type="radio" name="scan-printer-choice" value="${String(s.id).replace(/"/g, '&quot;')}" ${s.id === savedId ? 'checked' : ''}>
+                <span>🖨️ ${s.name}</span>
+            </label>`).join('');
+        overlay.innerHTML = `
+            <div style="background:var(--bg-card); color:var(--text-primary); border:1.5px solid var(--primary); border-radius:12px; padding:1.2rem; width:100%; max-width:430px; box-shadow:0 20px 50px rgba(0,0,0,0.5);" dir="${isAr ? 'rtl' : 'ltr'}">
+                <div style="font-weight:900; font-size:1.05rem; margin-bottom:0.8rem;">${isAr ? 'سحب الفاتورة من الطابعة' : 'Scan invoice from printer'}</div>
+                <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:0.8rem;">${options}</div>
+                <div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem; line-height:1.6;">
+                    ${isAr ? '📄 لو الفاتورة أكتر من ورقة: حطهم كلهم في الفيدر (اللي فوق) وهيتسحبوا كلهم في ملف واحد.<br>📄 لو ورقة واحدة: حطها في الفيدر أو على الزجاج.' : 'Several pages: put them all in the feeder. One page: feeder or glass.'}
+                </div>
+                <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                    <button type="button" class="btn btn-secondary btn-sm" data-act="cancel">${isAr ? 'إلغاء' : 'Cancel'}</button>
+                    <button type="button" class="btn btn-success btn-sm" data-act="go">${isAr ? 'ابدأ السكان' : 'Start scan'}</button>
+                </div>
+            </div>`;
+        const done = (val) => { overlay.remove(); resolve(val); };
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) return done(null);
+            const act = e.target.closest('[data-act]')?.dataset.act;
+            if (act === 'cancel') done(null);
+            if (act === 'go') {
+                const id = overlay.querySelector('input[name="scan-printer-choice"]:checked')?.value ?? scanners[0].id;
+                try { localStorage.setItem('buffet_v9_scanner_id', id); } catch (_) {}
+                done(scanners.find(s => s.id === id) || scanners[0]);
+            }
+        });
+        document.body.appendChild(overlay);
+    });
 }
 
 function openRowPrinterScannerAction(rowId) {
