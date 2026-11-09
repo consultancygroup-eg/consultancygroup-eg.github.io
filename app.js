@@ -5284,9 +5284,12 @@ function connectToFirebase(config, wsId) {
         if (cloudUnsubscribe) cloudUnsubscribe();
 
         cloudUnsubscribe = cloudDb.collection('buffet_workspaces').doc(wsId).onSnapshot((doc) => {
+            // Skip the echo of our own unsaved local edits: re-rendering here rebuilt the tables while the
+            // user was typing and dropped the focus after the first digit (e.g. typing "13" left only "1").
+            if (doc.exists && doc.metadata && doc.metadata.hasPendingWrites) return;
             if (doc.exists) {
                 const cloudData = doc.data();
-                
+
                 // Prevent circular sync loop
                 isSyncingFromCloud = true;
 
@@ -5342,7 +5345,7 @@ function connectToFirebase(config, wsId) {
                 localStorage.setItem('buffet_v9_monthly_core', JSON.stringify(monthlyCoreExpenses));
                 localStorage.setItem('buffet_v9_cycle_day', cycleStartDay);
 
-                renderAll();
+                renderAllWhenNotTyping();
                 isSyncingFromCloud = false;
 
                 if (needsV2CloudPush) {
@@ -5363,6 +5366,24 @@ function connectToFirebase(config, wsId) {
         console.error('Firebase initialization error:', err);
         updateCloudStatusBadge('offline', 'Offline');
     }
+}
+
+// If a change arrives from another device while the user is typing in a field, wait until they leave
+// the field before redrawing, so the cursor isn't kicked out mid-number.
+let deferredCloudRender = false;
+function renderAllWhenNotTyping() {
+    const el = document.activeElement;
+    const typing = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+    if (!typing) {
+        renderAll();
+        return;
+    }
+    if (deferredCloudRender) return;
+    deferredCloudRender = true;
+    el.addEventListener('blur', () => {
+        deferredCloudRender = false;
+        setTimeout(renderAll, 0);
+    }, { once: true });
 }
 
 function syncToCloud(isInitial = false) {
@@ -6555,18 +6576,109 @@ document.addEventListener('click', () => {
     document.querySelectorAll('.custody-inv-dropdown.open').forEach(dd => dd.classList.remove('open'));
 });
 
+// The desktop launcher (BuffetManager.exe) runs a small local helper that talks to the office printer/scanner.
+const PRINTER_SCAN_HELPER_URL = 'http://127.0.0.1:47321';
+const IS_PHONE_DEVICE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+let printerScanInProgress = false;
+
+function saveCustodyInvoiceDataUrl(rowId, dataUrl, mimeType, originalName) {
+    const row = recalculateCustodyBalances().find(r => r.id === rowId);
+    if (!row) return null;
+    custodyInvoicesMap[rowId] = {
+        name: `فاتورة_عهدة_رقم_${row.serialNum}`,
+        originalName,
+        mimeType,
+        dataUrl,
+        savedAt: new Date().toISOString()
+    };
+    persistState();
+    return row;
+}
+
+async function scanInvoiceFromPrinter(rowId) {
+    const isAr = currentLang === 'ar';
+    if (IS_PHONE_DEVICE) {
+        showToast(isAr ? 'سكان الطابعة متاح من الكمبيوتر بس. هنفتحلك اختيار ملف بدلاً منه.' : 'Printer scan is only available on the office PC.', 'info');
+        triggerDirectRowFileAttach(rowId);
+        return;
+    }
+    if (printerScanInProgress) {
+        showToast(isAr ? 'فيه سكان شغال دلوقتي، استنى لحد ما يخلص.' : 'A scan is already in progress.', 'info');
+        return;
+    }
+
+    // 1) Is the helper running and does it see a scanner?
+    let scannerName = '';
+    try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 4000);
+        const st = await fetch(`${PRINTER_SCAN_HELPER_URL}/status`, { signal: ctrl.signal, cache: 'no-store' }).then(r => r.json());
+        clearTimeout(t);
+        if (!st.ok) {
+            showToast(isAr ? 'مش لاقي سكانر متوصل بالكمبيوتر. اختار ملف الفاتورة بدلاً منه.' : 'No scanner found. Please attach a file instead.', 'warning');
+            triggerDirectRowFileAttach(rowId);
+            return;
+        }
+        scannerName = st.scanner || '';
+    } catch (e) {
+        showToast(isAr ? 'سكان الطابعة بيشتغل لما تفتح البرنامج من أيقونة "Consultancy Group - إدارة المرافق" على سطح المكتب. اختار ملف الفاتورة بدلاً منه.' : 'Open the app from the desktop icon to use printer scan. Attach a file instead.', 'warning');
+        triggerDirectRowFileAttach(rowId);
+        return;
+    }
+
+    // 2) Scan one page.
+    printerScanInProgress = true;
+    showToast(isAr ? `🖨️ جاري سحب الفاتورة من الطابعة (${scannerName})... حط الفاتورة على زجاج السكانر واستنى شوية.` : `Scanning from ${scannerName}...`, 'info');
+    try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 180000);
+        const resp = await fetch(`${PRINTER_SCAN_HELPER_URL}/scan`, { signal: ctrl.signal, cache: 'no-store' });
+        clearTimeout(t);
+        if (!resp.ok) throw new Error('scan_failed');
+        const blob = await resp.blob();
+        const dataUrl = await new Promise((resolve, reject) => {
+            const fr = new FileReader();
+            fr.onload = () => resolve(fr.result);
+            fr.onerror = reject;
+            fr.readAsDataURL(blob);
+        });
+        const row = saveCustodyInvoiceDataUrl(rowId, dataUrl, 'image/jpeg', `printer_scan_${Date.now()}.jpg`);
+        if (!row) return;
+        renderCustodyView();
+        openCustodyInvoiceModal(rowId);
+        showToast(isAr ? `✅ تم سحب الفاتورة من الطابعة وحفظها باسم: فاتورة_عهدة_رقم_${row.serialNum}` : 'Invoice scanned and saved!', 'success');
+    } catch (e) {
+        showToast(isAr ? 'السكان مانجحش. اتأكد إن الطابعة شغالة والفاتورة على الزجاج وجرب تاني، أو اختار ملف الفاتورة.' : 'Scan failed. Check the printer and try again.', 'warning');
+    } finally {
+        printerScanInProgress = false;
+    }
+}
+
 function openRowPrinterScannerAction(rowId) {
     document.querySelectorAll('.custody-inv-dropdown.open').forEach(dd => dd.classList.remove('open'));
-    showToast(currentLang === 'ar' ? '🖨️ اختر ملف الفاتورة المسحوب من سكانر الطابعة ليتم إرفاقه برقم التسلسل تلقائياً' : 'Select scanned file from printer scanner', 'info');
-    triggerDirectRowFileAttach(rowId);
+    scanInvoiceFromPrinter(rowId);
 }
 
 function openRowMobileScannerAction(rowId) {
     document.querySelectorAll('.custody-inv-dropdown.open').forEach(dd => dd.classList.remove('open'));
+    if (IS_PHONE_DEVICE) {
+        // On a phone, open the phone's camera app directly to photograph the invoice.
+        openPhoneCameraForInvoice(rowId);
+        return;
+    }
     openCustodyInvoiceModal(rowId);
     setTimeout(() => {
         startCustodyScannerCamera();
     }, 150);
+}
+
+function openPhoneCameraForInvoice(rowId) {
+    directAttachTargetRowId = rowId;
+    const inp = document.getElementById('cust-camera-capture-input');
+    if (inp) {
+        inp.value = '';
+        inp.click();
+    }
 }
 
 function shareSingleCustodyRowByIdEmail(rowId) {
@@ -6888,7 +7000,7 @@ async function startCustodyScannerCamera() {
         video.srcObject = custodyCameraStream;
         box.style.display = 'block';
     } catch (err) {
-        showToast(currentLang === 'ar' ? 'تعذر فتح الكاميرا المباشرة، يمكنك اختيار ملف الفاتورة المسحوب من السكانر مباشرة.' : 'Could not access camera.', 'warning');
+        showToast(currentLang === 'ar' ? 'مفيش كاميرا شغالة على الجهاز ده. صوّر الفاتورة من الموبايل، أو اختار ملف الفاتورة.' : 'No camera available on this device. Attach a file instead.', 'warning');
         document.getElementById('cust-inv-upload-input')?.click();
     }
 }
@@ -6931,8 +7043,9 @@ function captureCustodyScannerFrame() {
 }
 
 function triggerHardwareScannerAcquire() {
-    showToast(currentLang === 'ar' ? 'اختر ملف الفاتورة المسحوب من سكانر الطابعة وسيتم تسميته تلقائياً برقم التسلسل' : 'Select scanned file from printer scanner', 'info');
-    document.getElementById('cust-inv-upload-input')?.click();
+    const rowId = Number(document.getElementById('cust-inv-row-id')?.value);
+    if (!rowId) return;
+    scanInvoiceFromPrinter(rowId);
 }
 
 function downloadCustodyInvoiceFile() {

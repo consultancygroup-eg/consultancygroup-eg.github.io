@@ -52,7 +52,7 @@ $g.FillRectangle($goldLightBrush, 104, 46, 48, 26)
 
 $g.Dispose()
 
-$iconPath = "C:\Users\adm.001\.gemini\antigravity\scratch\BuffetHygieneDeskApp\app_icon.ico"
+$iconPath = Join-Path $PSScriptRoot "app_icon.ico"
 $hIcon = $bmp.GetHicon()
 $icon = [System.Drawing.Icon]::FromHandle($hIcon)
 $fs = New-Object System.IO.FileStream($iconPath, [System.IO.FileMode]::Create)

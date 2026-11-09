@@ -1,4 +1,5 @@
-$baseDir = "C:\Users\adm.001\.gemini\antigravity\scratch\BuffetHygieneDeskApp"
+$baseDir = $PSScriptRoot
+if (-not $baseDir) { $baseDir = (Get-Location).Path }
 $htmlPath = Join-Path $baseDir "index.html"
 $cssPath = Join-Path $baseDir "style.css"
 $jsPath = Join-Path $baseDir "app.js"
@@ -34,7 +35,7 @@ $newZip = Join-Path $desktop "ConsultancyGroup_App.zip"
 if (Test-Path $newZip) {
     Remove-Item $newZip -Force
 }
-$filesToZip = Get-ChildItem -Path $baseDir -Exclude "app_data", "*.zip"
+$filesToZip = Get-ChildItem -Path $baseDir -Exclude "app_data", "*.zip", ".git", ".claude"
 Compress-Archive -Path $filesToZip.FullName -DestinationPath $newZip -Force
 Write-Host "New zip created: $newZip"
 
