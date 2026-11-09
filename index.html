@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark theme-gold">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المجموعة الاستشارية - إدارة المرافق | Consultancy Group</title>
+    <meta name="apple-mobile-web-app-title" content="المجموعة الاستشارية">
+    <meta name="application-name" content="المجموعة الاستشارية - إدارة المرافق">
+    <meta property="og:title" content="المجموعة الاستشارية - إدارة المرافق | Consultancy Group">
+    <meta property="og:site_name" content="المجموعة الاستشارية - Consultancy Group">
+    <meta name="theme-color" content="#0f172a">
+
+    <!-- Google Fonts for High-End Arabic Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Application Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Local Offline Chart.js & Lucide Icons -->
+    <script src="assets/chart.js"></script>
+    <script src="assets/lucide.js"></script>
+
+    <!-- Optional Cloud Synchronization (Firebase Realtime / Firestore) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body class="dark theme-gold">
+
+    <!-- ==================== SECURITY LOCK OVERLAY ==================== -->
+    <div id="app-lock-overlay" class="no-print" style="position:fixed; inset:0; z-index:99999; background:radial-gradient(circle at top, #1e293b 0%, #090d16 100%); display:flex; align-items:center; justify-content:center; padding:1.25rem; backdrop-filter:blur(16px);">
+        <div style="background:rgba(30, 41, 59, 0.92); border:1px solid rgba(212, 175, 55, 0.35); border-radius:18px; max-width:440px; width:100%; padding:2.2rem 1.8rem; box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); text-align:center; color:#f8fafc;">
+            <div style="display:flex; align-items:center; justify-content:center; margin:0 auto 0.75rem;">
+                <img class="cg-logo-dark" src="data:image/png;base64,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" alt="المجموعة الإستشارية | Consultancy Group" style="height:68px; width:auto; max-width:100%; object-fit:contain; display:block;">
+            </div>
+            <div style="font-size:1rem; font-weight:800; color:#d4af37; margin-bottom:0.35rem; background:rgba(212,175,55,0.14); border:1px solid rgba(212,175,55,0.35); display:inline-block; padding:0.25rem 1.1rem; border-radius:999px;">إدارة المرافق - مدير المرافق</div>
+            <p style="font-size:0.82rem; color:#94a3b8; margin-bottom:1.4rem;">منظومة إدارة المرافق والأصول — منطقة محمية 🔒</p>
+            <div style="display:flex; flex-direction:column; gap:0.85rem;">
+                <div style="position:relative; width:100%;">
+                    <input type="password" id="lock-password-input" placeholder="أدخل كلمة المرور..." autocomplete="current-password" onkeydown="if(event.key==='Enter'){handleUnlockSubmit();}" style="padding:0.8rem 2.8rem 0.8rem 1rem; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:rgba(15,23,42,0.85); color:#fff; font-size:1rem; text-align:center; direction:ltr; outline:none; width:100%; box-sizing:border-box;">
+                    <button type="button" onclick="toggleLockPasswordVisibility()" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1.15rem; padding:4px;" title="إظهار / إخفاء كلمة المرور">👁️</button>
+                </div>
+                <div id="lock-error-msg" style="display:none; color:#f87171; font-size:0.82rem; font-weight:700; line-height:1.4;">❌ كلمة المرور غير صحيحة، حاول مرة أخرى</div>
+                <button type="button" onclick="handleUnlockSubmit()" class="btn btn-primary" style="width:100%; justify-content:center; padding:0.8rem; font-size:1rem; border-radius:10px;">
+                    <span>فتح النظام والمزامنة</span>
+                </button>
+            </div>
+            <div style="margin-top:1.25rem; font-size:0.75rem; color:#64748b;">محمي بتشفير SHA-256 ومزامنة Google Firebase</div>
+        </div>
+        <script>
+            window.toggleLockPasswordVisibility = function() {
+                var inp = document.getElementById('lock-password-input');
+                if (inp) inp.type = (inp.type === 'password') ? 'text' : 'password';
+            };
+            window.handleUnlockSubmit = function(e) {
+                if (e && e.preventDefault) { try { e.preventDefault(); } catch(_) {} }
+                var input = document.getElementById('lock-password-input');
+                var errEl = document.getElementById('lock-error-msg');
+                var overlay = document.getElementById('app-lock-overlay');
+                if (!input) return false;
+                var valClean = (input.value || '').trim().toLowerCase().replace(/\s+/g, '');
+                var isAdmin = (valClean === 'malik@112022' || valClean === 'malek@112022' || valClean === 'ملك@112022' || valClean === 'مالك@112022');
+                var isUser = (valClean === '123456');
+                if (isAdmin || isUser) {
+                    var hash = '5a6b7488be127234cd77648773717c20eebe78da44bbc9b3b65297bc54561c77';
+                    try {
+                        sessionStorage.setItem('buffet_v9_auth_token', hash);
+                        localStorage.setItem('buffet_v9_auth_token', hash);
+                        localStorage.setItem('buffet_v9_role', isUser ? 'viewer' : 'admin');
+                    } catch(_) {}
+                    if (overlay) {
+                        overlay.style.display = 'none';
+                        overlay.style.setProperty('display', 'none', 'important');
+                    }
+                    if (errEl) errEl.style.display = 'none';
+                    input.value = '';
+                    if (typeof window.applyUserRole === 'function') {
+                        window.applyUserRole(isUser ? 'viewer' : 'admin');
+                    }
+                    return false;
+                } else {
+                    if (errEl) {
+                        errEl.style.display = 'block';
+                        errEl.innerHTML = '❌ كلمة المرور غير صحيحة، يرجى كتابة: <code>Malik@112022</code> أو <code>123456</code> لوضع المستخدم';
+                    }
+                    input.focus();
+                    return false;
+                }
+            };
+        </script>
+    </div>
+
+    <!-- ==================== MAIN 3-OPTIONS STARTUP PORTAL ==================== -->
+    <div id="app-home-portal" class="no-print" style="position:fixed; inset:0; z-index:9000; background:radial-gradient(circle at top, #1e293b 0%, #090d16 100%); display:flex; align-items:center; justify-content:center; padding:1.5rem; overflow-y:auto;">
+        <div style="max-width:1040px; width:100%; margin:auto; text-align:center; color:#f8fafc; padding:1rem 0;">
+            <!-- Official Brand Header -->
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:2rem;">
+                <div style="display:flex; align-items:center; justify-content:center; margin-bottom:0.65rem; padding:0.35rem 1rem;">
+                    <img class="cg-logo-dark" src="data:image/png;base64,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" alt="المجموعة الإستشارية | Consultancy Group" style="height:82px; width:auto; max-width:100%; object-fit:contain; display:block;">
+                </div>
+                <div style="font-size:1.1rem; font-weight:800; color:#f8fafc; margin-top:0.15rem; background:rgba(212,175,55,0.16); border:1px solid rgba(212,175,55,0.35); padding:0.3rem 1.35rem; border-radius:999px;">إدارة المرافق - مدير المرافق</div>
+                <p style="font-size:0.9rem; color:#94a3b8; margin-top:0.65rem;">اختر القسم المراد إدارته أو استعراض تقاريره الآن:</p>
+            </div>
+
+            <!-- 3 Main Section Cards -->
+            <div class="portal-cards-grid">
+                <!-- Option 1: مصروفات البوفيه -->
+                <div class="portal-option-card" onclick="enterPortalSection('buffet')">
+                    <div class="portal-card-icon" style="background:rgba(212,175,55,0.15); color:#d4af37; border:1px solid rgba(212,175,55,0.35);">☕</div>
+                    <span class="badge" style="background:rgba(212,175,55,0.16); color:#d4af37; margin-bottom:0.75rem; font-size:0.74rem;">حركة تشغيلية شبه يومية • مخزن وصرف</span>
+                    <h3 class="portal-card-title">مصروفات البوفيه</h3>
+                    <div class="portal-card-btn" style="margin-top:1.25rem;">
+                        <span>دخول لقسم مصروفات البوفيه</span>
+                        <span>←</span>
+                    </div>
+                </div>
+
+                <!-- Option 2: جرد أصول الشركة -->
+                <div class="portal-option-card" onclick="enterPortalSection('furniture')">
+                    <div class="portal-card-icon" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.35);">🪑</div>
+                    <span class="badge" style="background:rgba(16,185,129,0.16); color:#34d399; margin-bottom:0.75rem; font-size:0.74rem;">أصول ثابتة بالطوابق • استخدام مباشر بدون مخزن</span>
+                    <h3 class="portal-card-title">جرد أصول الشركة</h3>
+                    <div class="portal-card-btn" style="background:rgba(16,185,129,0.18); color:#34d399; border-color:rgba(16,185,129,0.4); margin-top:1.25rem;">
+                        <span>دخول لجرد أصول الشركة (4-9)</span>
+                        <span>←</span>
+                    </div>
+                </div>
+
+                <!-- Option 3: مقر الإدارة العليا -->
+                <div class="portal-option-card" onclick="enterPortalSection('hq')">
+                    <div class="portal-card-icon" style="background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.35);">🏛️</div>
+                    <span class="badge" style="background:rgba(59,130,246,0.16); color:#60a5fa; margin-bottom:0.75rem; font-size:0.74rem;">تجهيزات خاصة • استخدام مباشر</span>
+                    <h3 class="portal-card-title">مقر الإدارة العليا</h3>
+                    <div class="portal-card-btn" style="background:rgba(59,130,246,0.18); color:#60a5fa; border-color:rgba(59,130,246,0.4); margin-top:1.25rem;">
+                        <span>دخول لمقر الإدارة العليا</span>
+                        <span>←</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Language & Share Bar -->
+            <div style="margin-top:1.75rem; display:flex; align-items:center; justify-content:center; gap:0.75rem; flex-wrap:wrap;">
+                <button onclick="toggleLanguage()" class="btn btn-secondary" style="background:rgba(30,41,59,0.9); color:#f8fafc;">
+                    <span>🌐 English / عربي</span>
+                </button>
+                <button onclick="openShareModal()" class="btn btn-secondary" style="background:rgba(30,41,59,0.9); color:#d4af37;">
+                    <span>🔗 مشاركة الرابط والباركود</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container">
+
+        <!-- ==================== SIDEBAR ==================== -->
+        <aside class="app-sidebar no-print">
+            <div class="sidebar-header">
+                <div class="brand-wrapper" onclick="openHomePortal()" style="cursor: pointer; flex-direction: column; align-items: center; justify-content: center; width: 100%; gap: 0.25rem;" title="العودة للأقسام الرئيسية (3)">
+                    <img class="cg-logo-dark sidebar-logo-full-dark" src="data:image/png;base64,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" alt="المجموعة الإستشارية | Consultancy Group" style="height: 46px; width: auto; max-width: 195px; object-fit: contain;">
+                    <img class="cg-logo-light sidebar-logo-full-light" src="data:image/png;base64,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" alt="المجموعة الإستشارية | Consultancy Group" style="height: 46px; width: auto; max-width: 195px; object-fit: contain;">
+                    <div class="brand-details" style="align-items: center; text-align: center;">
+                        <span class="brand-badge" data-i18n="desktopStatus">إدارة المرافق - مدير المرافق</span>
+                    </div>
+                </div>
+                <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" title="طي / توسيع القائمة">
+                    <i data-lucide="panel-left-close"></i>
+                </button>
+            </div>
+
+            <!-- Mobile 3-Columns Main Sections Switcher (Visible on Mobile to jump directly between the 3 sections) -->
+            <div class="mobile-main-sections-bar no-print">
+                <button onclick="enterPortalSection('buffet')" id="mob-sec-buffet" class="mob-sec-btn active">☕ مصروفات البوفيه</button>
+                <button onclick="enterPortalSection('furniture')" id="mob-sec-furniture" class="mob-sec-btn">🪑 جرد أصول الشركة</button>
+                <button onclick="enterPortalSection('hq')" id="mob-sec-hq" class="mob-sec-btn">🏛️ مقر الإدارة العليا</button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <!-- Single Unified Main Sections Button (Shown on PC under Consultancy Group) -->
+                <button onclick="openHomePortal()" id="nav-btn-portal" class="sidebar-nav-item portal-return-btn" style="background: rgba(212, 175, 55, 0.16); border: 1.5px solid var(--primary); color: var(--primary); margin-bottom: 0.35rem; font-weight: 900;">
+                    <i data-lucide="layout-grid"></i>
+                    <span>الأقسام الرئيسية (3)</span>
+                </button>
+
+                <!-- ==================== MODULE 1 NAV: BUFFET EXPENSES ONLY ==================== -->
+                <span class="nav-section-label nav-group-buffet">مصروفات البوفيه والعمليات</span>
+                
+                <button onclick="switchTab('dash')" id="nav-btn-dash" class="sidebar-nav-item nav-group-buffet active">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span data-i18n="navDashboard">لوحة التحكم والتحليلات</span>
+                    <span class="sidebar-nav-badge" id="badge-dash-items">26</span>
+                </button>
+
+                <button onclick="switchTab('inventory')" id="nav-btn-inventory" class="sidebar-nav-item nav-group-buffet">
+                    <i data-lucide="boxes"></i>
+                    <span data-i18n="navInventory">المخزن والأرصدة</span>
+                </button>
+
+                <button onclick="switchTab('terminal')" id="nav-btn-terminal" class="sidebar-nav-item nav-group-buffet">
+                    <i data-lucide="clipboard-check"></i>
+                    <span data-i18n="navTerminal">تسجيل صرف الطوابق</span>
+                    <span class="sidebar-nav-badge" style="background: var(--primary); color: white;">⚡ سريع</span>
+                </button>
+
+                <span class="nav-section-label nav-group-buffet" style="margin-top: 0.65rem;">التقارير والمشتريات</span>
+
+                <button onclick="switchTab('floors')" id="nav-btn-floors" class="sidebar-nav-item nav-group-buffet">
+                    <i data-lucide="bar-chart-3"></i>
+                    <span data-i18n="navFloors">تحليل الطوابق (4-9)</span>
+                </button>
+
+                <button onclick="switchTab('history')" id="nav-btn-history" class="sidebar-nav-item nav-group-buffet">
+                    <i data-lucide="history"></i>
+                    <span data-i18n="navHistory">سجل الحركات والتدقيق</span>
+                </button>
+
+                <button onclick="switchTab('po')" id="nav-btn-po" class="sidebar-nav-item nav-group-buffet">
+                    <i data-lucide="shopping-cart"></i>
+                    <span data-i18n="navPO">أمر شراء للمورد</span>
+                </button>
+
+                <!-- ==================== MODULE 2 NAV: COMPANY ASSETS INVENTORY ONLY ==================== -->
+                <span class="nav-section-label nav-group-furniture" style="display: none;">جرد أصول الشركة</span>
+
+                <button onclick="switchTab('furniture')" id="nav-btn-furniture" class="sidebar-nav-item nav-group-furniture" style="display: none;">
+                    <i data-lucide="armchair"></i>
+                    <span>جرد أصول الشركة (4-9)</span>
+                </button>
+
+                <button onclick="switchTab('furniture-matrix')" id="nav-btn-furniture-matrix" class="sidebar-nav-item nav-group-furniture" style="display: none;">
+                    <i data-lucide="table-properties"></i>
+                    <span>تحليل الطوابق للأصول</span>
+                </button>
+
+                <!-- ==================== MODULE 3 NAV: EXECUTIVE MANAGEMENT HQ ONLY ==================== -->
+                <span class="nav-section-label nav-group-hq" style="display: none;">مقر الإدارة العليا</span>
+
+                <button onclick="switchTab('hq')" id="nav-btn-hq" class="sidebar-nav-item nav-group-hq" style="display: none;">
+                    <i data-lucide="landmark"></i>
+                    <span>مقر الإدارة العليا</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="cycle-mini-card nav-group-buffet" id="sidebar-cycle-card">
+                    <div class="cycle-mini-card-title">
+                        <i data-lucide="calendar" style="width:13px;height:13px;color:var(--primary);"></i>
+                        <span>الدورة الشهرية المعتمدة:</span>
+                    </div>
+                    <div class="cycle-mini-card-val" id="sidebar-cycle-val">...</div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; justify-content: space-between;">
+                    <button onclick="toggleThemeMode()" class="btn btn-sm btn-secondary" style="flex: 1;" title="التبديل بين الوضع الليلي والنهاري">
+                        <i data-lucide="moon" style="width:14px;height:14px;"></i>
+                        <span id="theme-mode-label">المظهر</span>
+                    </button>
+                    <button onclick="toggleLanguage()" class="btn btn-sm btn-secondary" style="flex: 1;" id="lang-switch-btn" title="تبديل اللغة">
+                        English
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ==================== MAIN CONTENT AREA ==================== -->
+        <div class="app-main">
+
+            <!-- TOP EXECUTIVE HEADER -->
+            <header class="app-header no-print">
+                <div class="header-left">
+                    <div class="view-heading">
+                        <h1 class="view-title" id="view-header-title" data-i18n="navDashboard">لوحة التحكم والتحليلات</h1>
+                        <p class="view-subtitle" id="view-header-sub">نظرة شمولية على مؤشرات الأداء، الأرصدة، واستهلاك الطوابق</p>
+                    </div>
+
+                    <!-- Global Quick Search -->
+                    <div class="search-wrapper">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="global-search-input" class="search-input" placeholder="بحث سريع في الأصناف، الطوابق، المستلمين..." oninput="handleGlobalSearch(this.value)">
+                        <span class="search-shortcut">Ctrl+K</span>
+                    </div>
+                </div>
+
+                <div class="header-actions" style="display:flex; align-items:center; flex-wrap:nowrap; gap:0.42rem;">
+                    <!-- Role Switcher Pill with Instant User Dropdown -->
+                    <div class="dropdown-container" style="position:relative;">
+                        <button id="role-header-badge" onclick="toggleRoleMenu(event)" class="role-badge-btn role-badge-admin" style="padding:0.35rem 0.65rem; font-size:0.78rem; white-space:nowrap;" title="اضغط للتحويل بين وضع المسؤول ووضع المستخدم">
+                            👑 وضع المسؤول ▾
+                        </button>
+                        <div id="role-quick-menu" class="dropdown-pane" style="min-width:210px; inset-inline-start:0; inset-inline-end:auto; top:calc(100% + 6px); padding:0.4rem;">
+                            <button type="button" onclick="selectRoleOption('admin')" class="dropdown-item" style="display:flex; align-items:center; gap:0.5rem; font-weight:800; color:var(--primary); padding:0.55rem 0.75rem; border-radius:8px;">
+                                <span>👑</span>
+                                <span>وضع المسؤول</span>
+                            </button>
+                            <button type="button" onclick="selectRoleOption('viewer')" class="dropdown-item" style="display:flex; align-items:center; gap:0.5rem; font-weight:800; color:#60a5fa; padding:0.55rem 0.75rem; border-radius:8px;">
+                                <span>👁️</span>
+                                <span>مستخدم (للاطلاع فقط 🔒)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Live Refresh Button -->
+                    <button id="live-refresh-btn" onclick="liveRefreshApp()" class="btn btn-secondary btn-sm" title="تحديث فوري لجميع البيانات والتقارير" style="border-color: rgba(59, 130, 246, 0.45); color: var(--text-main); font-weight: 700; padding:0.35rem 0.6rem; font-size:0.78rem; white-space:nowrap;">
+                        <i data-lucide="refresh-cw" style="width:13px;height:13px;color:#3b82f6;"></i>
+                        <span>تحديث</span>
+                    </button>
+
+                    <!-- Cloud Sync Status Pill -->
+                    <div id="cloud-sync-pill" class="cloud-sync-badge" onclick="openCloudModal()" style="padding:0.35rem 0.65rem; font-size:0.78rem; white-space:nowrap;" title="حالة الاتصال السحابي">
+                        <span class="cloud-dot online" id="cloud-status-dot"></span>
+                        <span id="cloud-status-text">Online</span>
+                    </div>
+
+                    <!-- Share Button -->
+                    <button onclick="openShareModal()" class="btn btn-secondary btn-sm" style="padding:0.35rem 0.6rem; font-size:0.78rem; white-space:nowrap;" title="مشاركة رابط البرنامج">
+                        <i data-lucide="share-2" style="width:14px;height:14px;color:var(--primary);"></i>
+                        <span>مشاركة</span>
+                    </button>
+
+                    <!-- Download Desktop App to New PC Button -->
+                    <button onclick="downloadStandaloneDesktopPackage()" class="btn btn-secondary btn-sm" style="border-color: rgba(16, 185, 129, 0.45); padding:0.35rem 0.6rem; font-size:0.78rem; white-space:nowrap;" title="تنزيل البرنامج للكمبيوتر">
+                        <i data-lucide="monitor-down" style="width:14px;height:14px;color:var(--success);"></i>
+                        <span>تنزيل للكمبيوتر</span>
+                    </button>
+
+                    <!-- Lock App Button -->
+                    <button onclick="lockAppNow()" class="btn btn-secondary btn-sm" style="padding:0.35rem 0.55rem; font-size:0.78rem; white-space:nowrap;" title="قفل البرنامج بكلمة المرور">
+                        <i data-lucide="lock" style="width:14px;height:14px;color:var(--warning);"></i>
+                        <span>قفل</span>
+                    </button>
+
+                    <!-- Hidden Clock element kept for compatibility -->
+                    <div id="live-clock-text" style="display:none;" class="no-print"></div>
+
+                    <!-- Stock Alerts Center Bell (Buffet Only) -->
+                    <button onclick="openAlertCenter()" class="action-icon-btn header-group-buffet" style="width:34px; height:34px;" title="تنبيهات الأصناف الحرجة">
+                        <i data-lucide="bell" style="width:16px;height:16px;"></i>
+                        <span class="notification-dot" id="bell-alert-dot"></span>
+                    </button>
+
+                    <!-- Color Palette Picker -->
+                    <select id="palette-select" onchange="setPalette(this.value)" class="form-select" style="padding: 0.32rem 0.5rem; font-size: 0.78rem; width: auto; max-width: 110px;" title="اختر نمط الألوان المفضل">
+                        <option value="gold">✨ الذهبي</option>
+                        <option value="emerald">🌿 الزمردي</option>
+                        <option value="blue">🌊 الأزرق</option>
+                        <option value="purple">🔮 البنفسجي</option>
+                    </select>
+
+                    <!-- Data Hub Dropdown -->
+                    <div class="dropdown-container">
+                        <button onclick="toggleDropdown('data-hub-menu', event)" class="action-icon-btn" style="width:34px; height:34px;" title="إدارة البيانات والنسخ الاحتياطي">
+                            <i data-lucide="database" style="width:16px;height:16px;"></i>
+                        </button>
+                        <div id="data-hub-menu" class="dropdown-pane">
+                            <button onclick="exportDataBackup()" class="dropdown-item">
+                                <i data-lucide="download"></i>
+                                <span data-i18n="btnExportBackup">تصدير نسخة احتياطية (JSON)</span>
+                            </button>
+                            <button onclick="document.getElementById('import-file-elem').click()" class="dropdown-item">
+                                <i data-lucide="upload"></i>
+                                <span data-i18n="btnImportBackup">استعادة من ملف</span>
+                            </button>
+                            <div class="dropdown-divider"></div>
+                            <button onclick="exportInventoryToCSV()" class="dropdown-item">
+                                <i data-lucide="file-spreadsheet"></i>
+                                <span>تصدير كشف المخزن (Excel/CSV)</span>
+                            </button>
+                            <button onclick="exportHistoryToCSV()" class="dropdown-item">
+                                <i data-lucide="file-text"></i>
+                                <span>تصدير سجل الحركات (Excel/CSV)</span>
+                            </button>
+                            <button onclick="exportFloorsMatrixToCSV()" class="dropdown-item">
+                                <i data-lucide="table"></i>
+                                <span>تصدير مصفوفة الاستهلاك (Excel/CSV)</span>
+                            </button>
+                            <div class="dropdown-divider"></div>
+                            <button onclick="openCycleModal()" class="dropdown-item">
+                                <i data-lucide="calendar-cog"></i>
+                                <span data-i18n="btnSetCycle">ضبط بداية الدورة</span>
+                            </button>
+                            <button onclick="resetAllData()" class="dropdown-item" style="color: var(--danger);">
+                                <i data-lucide="rotate-ccw"></i>
+                                <span data-i18n="btnResetSystem">تصفير وإعادة ضبط النظام</span>
+                            </button>
+                        </div>
+                    </div>
+                    <input type="file" id="import-file-elem" style="display:none;" onchange="importDataBackup(event)" accept=".json">
+                </div>
+            </header>
+
+            <!-- SCROLLABLE BODY VIEWPORT -->
+            <div class="content-body">
+
+                <!-- CYCLE SELECTION BANNER -->
+                <div class="cycle-banner no-print">
+                    <div class="cycle-banner-info">
+                        <div class="cycle-badge-indicator">
+                            <i data-lucide="calendar-range" style="width: 16px; height: 16px;"></i>
+                            <span id="active-cycle-badge-text">...</span>
+                        </div>
+                        <div class="cycle-select-wrapper">
+                            <label for="cycle-dropdown" style="font-weight: 700; font-size: 0.88rem;">عرض بيانات دورة:</label>
+                            <select id="cycle-dropdown" class="form-select" onchange="handleCycleChange(this.value)" style="min-width: 310px; font-weight: 700; border-color: var(--primary);">
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.6rem;">
+                        <button onclick="openCycleModal()" class="btn btn-secondary btn-sm">
+                            <i data-lucide="sliders" style="width:14px;height:14px;"></i>
+                            <span>تعديل يوم الدورة</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ==================== 1. DASHBOARD VIEW ==================== -->
+                <section id="pane-dash" class="tab-pane active">
+                    <!-- KPI Cards Grid -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card" style="--kpi-accent: var(--primary); --kpi-bg: var(--primary-light);">
+                            <div class="kpi-details">
+                                <span class="kpi-label" data-i18n="kpiItems">أنواع الأصناف</span>
+                                <span class="kpi-value" id="kpi-val-items">26</span>
+                                <span class="kpi-subtext">مصنفة حسب 4 فئات تشغيلية</span>
+                            </div>
+                            <div class="kpi-icon-box">📦</div>
+                        </div>
+
+                        <div class="kpi-card" style="--kpi-accent: var(--success); --kpi-bg: var(--success-light);">
+                            <div class="kpi-details">
+                                <span class="kpi-label" data-i18n="kpiStock">الرصيد المتاح بالمخزن</span>
+                                <span class="kpi-value" id="kpi-val-stock" style="color: var(--success);">1,170</span>
+                                <span class="kpi-subtext">إجمالي القطع الجاهزة للصرف</span>
+                            </div>
+                            <div class="kpi-icon-box" style="color: var(--success); background: var(--success-light);">✅</div>
+                        </div>
+
+                        <div class="kpi-card" style="--kpi-accent: var(--warning); --kpi-bg: var(--warning-light);">
+                            <div class="kpi-details">
+                                <span class="kpi-label" data-i18n="kpiIssued">المنصرف خلال الدورة</span>
+                                <span class="kpi-value" id="kpi-val-issued" style="color: var(--warning);">1,469</span>
+                                <span class="kpi-subtext">إجمالي المنصرف للأدوار 4 - 9</span>
+                            </div>
+                            <div class="kpi-icon-box" style="color: var(--warning); background: var(--warning-light);">🚚</div>
+                        </div>
+
+                        <div class="kpi-card" style="--kpi-accent: var(--danger); --kpi-bg: var(--danger-light);">
+                            <div class="kpi-details">
+                                <span class="kpi-label" data-i18n="kpiShortage">الأصناف الحرجة / العجز</span>
+                                <span class="kpi-value" id="kpi-val-shortage" style="color: var(--danger);">6</span>
+                                <span class="kpi-subtext">أصناف قاربت أو تجاوزت حد الأمان</span>
+                            </div>
+                            <div class="kpi-icon-box" style="color: var(--danger); background: var(--danger-light);">⚠️</div>
+                        </div>
+
+                        <div class="kpi-card" style="--kpi-accent: var(--info); --kpi-bg: var(--info-light);">
+                            <div class="kpi-details">
+                                <span class="kpi-label" data-i18n="kpiHealth">صحة وتوفر المخزون</span>
+                                <span class="kpi-value" id="kpi-val-health" style="color: var(--info);">77%</span>
+                                <span class="kpi-subtext">معدل كفاية المواد للدورة</span>
+                            </div>
+                            <div class="kpi-icon-box" style="color: var(--info); background: var(--info-light);">📊</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div class="charts-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title-group">
+                                    <i data-lucide="bar-chart-2" style="color: var(--primary);"></i>
+                                    <h3>استهلاك الطوابق بالدورة (الأدوار 4 إلى 9)</h3>
+                                </div>
+                                <span class="card-title-badge">بيانات تفاعلية</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container-lg">
+                                    <canvas id="floors-bar-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title-group">
+                                    <i data-lucide="pie-chart" style="color: var(--accent);"></i>
+                                    <h3>أكثر 5 أصناف طلباً واستهلاكاً</h3>
+                                </div>
+                                <span class="card-title-badge">الدورة الحالية</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container-sm">
+                                    <canvas id="top-items-pie-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Table Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <i data-lucide="list-ordered" style="color: var(--primary);"></i>
+                                <h3>ملخص حركة المخزن وتوازن الدورة</h3>
+                            </div>
+
+                            <!-- Category Filter Chips -->
+                            <div class="category-filter-bar" style="margin-bottom: 0;">
+                                <button onclick="filterCategory('الكل')" class="chip-btn category-chip active" data-cat="الكل">الكل</button>
+                                <button onclick="filterCategory('مشروبات وضيافة')" class="chip-btn category-chip" data-cat="مشروبات وضيافة">☕ مشروبات وضيافة</button>
+                                <button onclick="filterCategory('منظفات ومطهرات')" class="chip-btn category-chip" data-cat="منظفات ومطهرات">🧼 منظفات ومطهرات</button>
+                                <button onclick="filterCategory('مناشف ومناديل')" class="chip-btn category-chip" data-cat="مناشف ومناديل">🧻 مناشف ومناديل</button>
+                                <button onclick="filterCategory('أدوات ونظافة')" class="chip-btn category-chip" data-cat="أدوات ونظافة">🧹 أدوات ونظافة</button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="thItemName">اسم الصنف</th>
+                                        <th data-i18n="thCategory">الفئة</th>
+                                        <th style="text-align: center;" data-i18n="thUnit">الوحدة</th>
+                                        <th style="text-align: center;" data-i18n="thInitial">الرصيد الابتدائي</th>
+                                        <th style="text-align: center;" data-i18n="thIssued">المنصرف بالدورة</th>
+                                        <th style="text-align: center;" data-i18n="thRemaining">الرصيد المتاح</th>
+                                        <th style="text-align: center;" data-i18n="thStatus">الحالة</th>
+                                        <th style="text-align: center;" class="no-print" data-i18n="thActions">إجراء سريع</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== 2. INVENTORY VIEW ==================== -->
+                <section id="pane-inventory" class="tab-pane">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <i data-lucide="boxes" style="color: var(--primary);"></i>
+                                <h2>المخزن الرئيسي وتعديل الأصناف</h2>
+                            </div>
+
+                            <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+                                <button onclick="openAddItemModal()" class="btn btn-primary btn-sm">
+                                    <i data-lucide="plus"></i>
+                                    <span data-i18n="btnAddItem">إضافة صنف جديد</span>
+                                </button>
+                                <button onclick="openSupplyModal()" class="btn btn-success btn-sm">
+                                    <i data-lucide="truck"></i>
+                                    <span data-i18n="btnNewSupply">تسجيل توريد</span>
+                                </button>
+                                <button onclick="exportInventoryToCSV()" class="btn btn-secondary btn-sm">
+                                    <i data-lucide="file-spreadsheet"></i>
+                                    <span>تصدير Excel</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;">#</th>
+                                        <th data-i18n="thItemName">اسم الصنف</th>
+                                        <th data-i18n="thCategory">الفئة</th>
+                                        <th style="text-align: center;" data-i18n="thUnit">الوحدة</th>
+                                        <th style="text-align: center;" data-i18n="thInitial">الرصيد الابتدائي</th>
+                                        <th style="text-align: center;" data-i18n="thIssued">المنصرف</th>
+                                        <th style="text-align: center;" data-i18n="thRemaining">المتبقي</th>
+                                        <th style="text-align: center;" data-i18n="thMinLimit">حد الأمان</th>
+                                        <th style="text-align: center;" class="no-print">حذف</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inv-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== 3. SMART FLOOR ISSUE TERMINAL ==================== -->
+                <section id="pane-terminal" class="tab-pane">
+                    <div class="issue-terminal-wrapper">
+                        
+                        <!-- Floor Select Cards -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title-group">
+                                    <i data-lucide="building" style="color: var(--primary);"></i>
+                                    <h3>١. اختر الطابق المستهدف بالصرف</h3>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="floor-cards-grid">
+                                    <div class="floor-select-card active" data-floor="الدور الرابع" onclick="selectTerminalFloor('الدور الرابع')">
+                                        <span class="floor-num">4</span>
+                                        <span class="floor-label">الدور الرابع</span>
+                                    </div>
+                                    <div class="floor-select-card" data-floor="الدور الخامس" onclick="selectTerminalFloor('الدور الخامس')">
+                                        <span class="floor-num">5</span>
+                                        <span class="floor-label">الدور الخامس</span>
+                                    </div>
+                                    <div class="floor-select-card" data-floor="الدور السادس" onclick="selectTerminalFloor('الدور السادس')">
+                                        <span class="floor-num">6</span>
+                                        <span class="floor-label">الدور السادس</span>
+                                    </div>
+                                    <div class="floor-select-card" data-floor="الدور السابع" onclick="selectTerminalFloor('الدور السابع')">
+                                        <span class="floor-num">7</span>
+                                        <span class="floor-label">الدور السابع</span>
+                                    </div>
+                                    <div class="floor-select-card" data-floor="الدور الثامن" onclick="selectTerminalFloor('الدور الثامن')">
+                                        <span class="floor-num">8</span>
+                                        <span class="floor-label">الدور الثامن</span>
+                                    </div>
+                                    <div class="floor-select-card" data-floor="الدور التاسع" onclick="selectTerminalFloor('الدور التاسع')">
+                                        <span class="floor-num">9</span>
+                                        <span class="floor-label">الدور التاسع</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Issue Metadata Bar -->
+                        <div class="issue-meta-bar">
+                            <div class="form-group">
+                                <label class="form-label" for="issue-date">تاريخ الصرف:</label>
+                                <input type="date" id="issue-date" class="form-control" style="font-weight: 700;">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="issue-recipient">اسم المستلم (اختر أو اكتب جديد):</label>
+                                <input type="text" id="issue-recipient" list="recipients-datalist" class="form-control" placeholder="اكتب أو اختر اسم المستلم..." style="font-weight: 700;">
+                                <datalist id="recipients-datalist"></datalist>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="issue-notes">بيان / ملاحظات (اختياري):</label>
+                                <input type="text" id="issue-notes" class="form-control" placeholder="مثال: صرف أسبوعي، ضيافة قاعة اجتماعات...">
+                            </div>
+                        </div>
+
+                        <!-- Items Selection Grid -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title-group">
+                                    <i data-lucide="check-square" style="color: var(--primary);"></i>
+                                    <h3>٢. حدد كميات المواد المراد صرفها</h3>
+                                </div>
+
+                                <div class="category-filter-bar" style="margin-bottom: 0;">
+                                    <button onclick="filterCategory('الكل')" class="chip-btn category-chip active" data-cat="الكل">الكل</button>
+                                    <button onclick="filterCategory('مشروبات وضيافة')" class="chip-btn category-chip" data-cat="مشروبات وضيافة">☕ مشروبات</button>
+                                    <button onclick="filterCategory('منظفات ومطهرات')" class="chip-btn category-chip" data-cat="منظفات ومطهرات">🧼 منظفات</button>
+                                    <button onclick="filterCategory('مناشف ومناديل')" class="chip-btn category-chip" data-cat="مناشف ومناديل">🧻 مناديل</button>
+                                    <button onclick="filterCategory('أدوات ونظافة')" class="chip-btn category-chip" data-cat="أدوات ونظافة">🧹 أدوات</button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive" style="max-height: 440px; overflow-y: auto;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40px;">#</th>
+                                            <th data-i18n="thItemName">اسم الصنف</th>
+                                            <th data-i18n="thCategory">الفئة</th>
+                                            <th style="text-align: center;" data-i18n="thUnit">الوحدة</th>
+                                            <th style="text-align: center;" data-i18n="thRemaining">الرصيد المتاح</th>
+                                            <th style="text-align: center; width: 170px;">الكمية المنصرفة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="terminal-items-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Floating Action Bar -->
+                        <div class="terminal-floating-footer">
+                            <div class="terminal-summary-stats">
+                                <div class="summary-stat-item">
+                                    <span class="summary-stat-label">الأصناف المحددة:</span>
+                                    <span class="summary-stat-val" id="terminal-selected-items-count">0</span>
+                                </div>
+                                <div class="summary-stat-item">
+                                    <span class="summary-stat-label">إجمالي القطع المنصرفة:</span>
+                                    <span class="summary-stat-val" id="terminal-total-pieces-count">0</span>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 0.75rem;">
+                                <button type="button" onclick="submitSmartIssue(false)" class="btn btn-primary">
+                                    <i data-lucide="save"></i>
+                                    <span data-i18n="btnConfirmIssue">تأكيد وحفظ الصرف</span>
+                                </button>
+                                <button type="button" onclick="submitSmartIssue(true)" class="btn btn-success">
+                                    <i data-lucide="printer"></i>
+                                    <span data-i18n="btnConfirmPrintIssue">حفظ وطباعة إذن الصرف</span>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- ==================== 4. FLOORS MATRIX VIEW ==================== -->
+                <section id="pane-floors" class="tab-pane">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <i data-lucide="table-2" style="color: var(--primary);"></i>
+                                <h2>مصفوفة استهلاك الطوابق بالدورة (الأدوار 4 - 9)</h2>
+                            </div>
+
+                            <div style="display: flex; gap: 0.6rem;">
+                                <button onclick="printFloorsReport()" class="btn btn-secondary btn-sm no-print">
+                                    <i data-lucide="printer"></i>
+                                    <span data-i18n="btnPrint">طباعة التقرير</span>
+                                </button>
+                                <button onclick="exportFloorsMatrixToCSV()" class="btn btn-secondary btn-sm no-print">
+                                    <i data-lucide="file-spreadsheet"></i>
+                                    <span>تصدير Excel</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="thItemName">اسم الصنف</th>
+                                        <th data-i18n="thCategory">الفئة</th>
+                                        <th style="text-align: center;" data-i18n="thUnit">الوحدة</th>
+                                        <th style="text-align: center;">الدور 4</th>
+                                        <th style="text-align: center;">الدور 5</th>
+                                        <th style="text-align: center;">الدور 6</th>
+                                        <th style="text-align: center;">الدور 7</th>
+                                        <th style="text-align: center;">الدور 8</th>
+                                        <th style="text-align: center;">الدور 9</th>
+                                        <th style="text-align: center; background: var(--primary-light); color: var(--primary);">إجمالي الاستهلاك</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="floors-matrix-body"></tbody>
+                                <tfoot id="floors-matrix-foot"></tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== 5. HISTORY AUDIT LOG ==================== -->
+                <section id="pane-history" class="tab-pane">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <i data-lucide="history" style="color: var(--primary);"></i>
+                                <h2>سجل حركات الصرف والتدقيق</h2>
+                            </div>
+
+                            <div style="display: flex; gap: 0.6rem; align-items: center;">
+                                <button onclick="exportHistoryToCSV()" class="btn btn-secondary btn-sm">
+                                    <i data-lucide="file-spreadsheet"></i>
+                                    <span>تصدير Excel</span>
+                                </button>
+                                <button onclick="clearAllTransactions()" class="btn btn-danger btn-sm">
+                                    <i data-lucide="trash-2"></i>
+                                    <span>حذف جميع الحركات</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Floor Filter Buttons -->
+                        <div class="category-filter-bar" style="padding: 1rem 1.4rem 0;">
+                            <button onclick="filterHistoryFloor('الكل')" class="chip-btn history-floor-btn active" data-floor="الكل">جميع الأدوار</button>
+                            <button onclick="filterHistoryFloor('الدور الرابع')" class="chip-btn history-floor-btn" data-floor="الدور الرابع">الدور الرابع</button>
+                            <button onclick="filterHistoryFloor('الدور الخامس')" class="chip-btn history-floor-btn" data-floor="الدور الخامس">الدور الخامس</button>
+                            <button onclick="filterHistoryFloor('الدور السادس')" class="chip-btn history-floor-btn" data-floor="الدور السادس">الدور السادس</button>
+                            <button onclick="filterHistoryFloor('الدور السابع')" class="chip-btn history-floor-btn" data-floor="الدور السابع">الدور السابع</button>
+                            <button onclick="filterHistoryFloor('الدور الثامن')" class="chip-btn history-floor-btn" data-floor="الدور الثامن">الدور الثامن</button>
+                            <button onclick="filterHistoryFloor('الدور التاسع')" class="chip-btn history-floor-btn" data-floor="الدور التاسع">الدور التاسع</button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;">#</th>
+                                        <th data-i18n="thDate">التاريخ</th>
+                                        <th data-i18n="thFloor">الطابق</th>
+                                        <th data-i18n="thItemName">اسم الصنف</th>
+                                        <th style="text-align: center;">الكمية المنصرفة</th>
+                                        <th data-i18n="thRecipient">اسم المستلم</th>
+                                        <th style="text-align: center;" class="no-print" data-i18n="thActions">إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== 6. PURCHASE ORDER VIEW ==================== -->
+                <section id="pane-po" class="tab-pane">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <i data-lucide="shopping-cart" style="color: var(--success);"></i>
+                                <h2>أمر شراء للمورد</h2>
+                            </div>
+
+                            <button onclick="printPurchaseOrder()" class="btn btn-success btn-sm">
+                                <i data-lucide="printer"></i>
+                                <span data-i18n="btnPrint">طباعة أمر شراء للمورد</span>
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;">#</th>
+                                        <th data-i18n="thItemName">اسم الصنف</th>
+                                        <th data-i18n="thCategory">الفئة</th>
+                                        <th style="text-align: center;" data-i18n="thUnit">الوحدة</th>
+                                        <th style="text-align: center;" data-i18n="thRemaining">الرصيد الفعلي الحالي</th>
+                                        <th style="text-align: center;" data-i18n="thIssued">المنصرف خلال الدورة</th>
+                                        <th style="text-align: center; background: var(--success-light); color: var(--success);" data-i18n="thOrderQty">الكمية المقترحة للشراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="po-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== 7. COMPANY FURNITURE INVENTORY (FLOORS 4-9) ==================== -->
+                <section id="pane-furniture" class="tab-pane">
+                    <div class="issue-terminal-wrapper">
+                        <!-- Furniture KPI Summary -->
+                        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                            <div class="kpi-card" style="--kpi-accent: var(--primary); --kpi-bg: var(--primary-light);">
+                                <div class="kpi-details">
+                                    <span class="kpi-label">أنواع أصول الشركة</span>
+                                    <span class="kpi-value" id="furn-kpi-types">27</span>
+                                    <span class="kpi-subtext">مصنفة في 6 مجموعات رئيسية</span>
+                                </div>
+                                <div class="kpi-icon-box">🪑</div>
+                            </div>
+                            <div class="kpi-card" style="--kpi-accent: var(--success); --kpi-bg: var(--success-light);">
+                                <div class="kpi-details">
+                                    <span class="kpi-label">إجمالي قطع الدور المحدد</span>
+                                    <span class="kpi-value" id="furn-kpi-floor-total" style="color: var(--success);">0</span>
+                                    <span class="kpi-subtext" id="furn-kpi-floor-name">الدور الرابع</span>
+                                </div>
+                                <div class="kpi-icon-box" style="color: var(--success); background: var(--success-light);">🏢</div>
+                            </div>
+                            <div class="kpi-card" style="--kpi-accent: var(--warning); --kpi-bg: var(--warning-light);">
+                                <div class="kpi-details">
+                                    <span class="kpi-label">إجمالي أصول جميع الأدوار (4-9)</span>
+                                    <span class="kpi-value" id="furn-kpi-all-total" style="color: var(--warning);">0</span>
+                                    <span class="kpi-subtext">مجموع الأعداد المتواجدة بالفعل</span>
+                                </div>
+                                <div class="kpi-icon-box" style="color: var(--warning); background: var(--warning-light);">📊</div>
+                            </div>
+                            <div class="kpi-card" style="--kpi-accent: var(--info); --kpi-bg: var(--info-light);">
+                                <div class="kpi-details">
+                                    <span class="kpi-label">إجمالي التكييفات (يونيون إير + كارير)</span>
+                                    <span class="kpi-value" id="furn-kpi-ac-total" style="color: var(--info);">0</span>
+                                    <span class="kpi-subtext">بجميع أدوار الشركة (4-9)</span>
+                                </div>
+                                <div class="kpi-icon-box" style="color: var(--info); background: var(--info-light);">❄️</div>
+                            </div>
+                        </div>
+
+                        <!-- Floor Selector (Floors 4 to 9) -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title-group">
+                                    <i data-lucide="building-2" style="color: var(--primary);"></i>
+                                    <h3>اختر الطابق لتسجيل ومراجعة الأعداد المتواجدة بالفعل (من الدور الرابع إلى الدور التاسع)</h3>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button onclick="switchTab('furniture-matrix')" class="btn btn-primary btn-sm">
+                                        <i data-lucide="bar-chart-3"></i>
+                                        <span>📊 عرض تحليل الطوابق الشامل للإدارة العليا</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="floor-cards-grid">
+                                    <div class="floor-select-card furn-floor-card active" data-floor="الدور الرابع" onclick="selectFurnitureFloor('الدور الرابع')">
+                                        <span class="floor-num">4</span>
+                                        <span class="floor-label">الدور الرابع</span>
+                                        <span class="badge badge-secondary furn-floor-count-badge" data-floor-count="الدور الرابع" style="margin-top:0.25rem; font-size:0.72rem;">0 أصل</span>
+                                    </div>
+                                    <div class="floor-select-card furn-floor-card" data-floor="الدور الخامس" onclick="selectFurnitureFloor('الدور الخامس')">
+                                        <span class="floor-num">5</span>
+                                        <span class="floor-label">الدور الخامس</span>
+                                        <span class="badge badge-secondary furn-floor-count-badge" data-floor-count="الدور الخامس" style="margin-top:0.25rem; font-size:0.72rem;">0 أصل</span>
+                                    </div>
+                                    <div class="floor-select-card furn-floor-card" data-floor="الدور السادس" onclick="selectFurnitureFloor('الدور السادس')">
+                                        <span class="floor-num">6</span>
+                                        <span class="floor-label">الدور السادس</span>
+                                        <span class="badge badge-secondary furn-floor-count-badge" data-floor-count="الدور السادس" style="margin-top:0.25rem; font-size:0.72rem;">0 أصل</span>
+                                    </div>
+                                    <div class="floor-select-card furn-floor-card" data-floor="الدور السابع" onclick="selectFurnitureFloor('الدور السابع')">
+                                        <span class="floor-num">7</span>
+                                        <span class="floor-label">الدور السابع</span>
+                                        <span class="badge badge-secondary furn-floor-count-badge" data-floor-count="الدور السابع" style="margin-top:0.25rem; font-size:0.72rem;">0 أصل</span>
+                                    </div>
+                                    <div class="floor-select-card furn-floor-card" data-floor="الدور الثامن" onclick="selectFurnitureFloor('الدور الثامن')">
+                                        <span class="floor-num">8</span>
+                                        <span class="floor-label">الدور الثامن</span>
+                                        <span class="badge badge-secondary furn-floor-count-badge" data-floor-count="الدور الثامن" style="margin-top:0.25rem; font-size:0.72rem;">0 أصل</span>
+                                    </div>
+                                    <div class="floor-select-card furn-floor-card" data-floor="الدور التاسع" onclick="selectFurnitureFloor('الدور التاسع')">
+                                        <span class="floor-num">9</span>
+                                        <span class="floor-label">الدور التاسع</span>
+                                        <span class="badge badge-secondary furn-floor-count-badge" data-floor-count="الدور التاسع" style="margin-top:0.25rem; font-size:0.72rem;">0 أصل</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Furniture Items Table for Selected Floor -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title-group">
+                                    <i data-lucide="armchair" style="color: var(--primary);"></i>
+                                    <div>
+                                        <h2 id="furn-current-floor-heading">جرد أصول الشركة — الدور الرابع</h2>
+                                        <span style="font-size: 0.78rem; color: var(--text-muted);">أصول ثابتة متواجدة قيد الاستخدام الفعلي مع الموظفين بالطابق (بدون مخزن)</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button onclick="openAddFurnitureModal()" class="btn btn-primary btn-sm">
+                                        <i data-lucide="plus"></i>
+                                        <span>إضافة صنف جديد</span>
+                                    </button>
+                                    <button onclick="autoSortFurnitureByGroups()" class="btn btn-secondary btn-sm" title="إعادة ترتيب أصناف الجدول تلقائياً حسب تسلسل المجموعات">
+                                        <i data-lucide="arrow-down-up"></i>
+                                        <span>ترتيب بالمجموعات</span>
+                                    </button>
+                                    <button onclick="printSingleFloorFurnitureReport()" class="btn btn-success btn-sm">
+                                        <i data-lucide="printer"></i>
+                                        <span>طباعة جرد الطابق المحدد</span>
+                                    </button>
+                                    <button onclick="printFurnitureMatrixReport()" class="btn btn-secondary btn-sm">
+                                        <i data-lucide="file-check-2"></i>
+                                        <span>طباعة جرد جميع الأدوار (4-9)</span>
+                                    </button>
+                                    <button onclick="exportFurnitureToCSV()" class="btn btn-secondary btn-sm">
+                                        <i data-lucide="file-spreadsheet"></i>
+                                        <span>تصدير Excel</span>
+                                    </button>
+                                    <button onclick="restoreDefaultFurnitureItems()" class="btn btn-secondary btn-sm" title="استعادة قائمة الأصناف الافتراضية المرتبة (27 صنف)">
+                                        <i data-lucide="rotate-ccw"></i>
+                                        <span>استعادة الأصناف الافتراضية</span>
+                                    </button>
+                                    <button onclick="deleteAllFurnitureItems()" class="btn btn-danger btn-sm" title="حذف جميع الأصناف من جرد أصول الشركة">
+                                        <i data-lucide="trash-2"></i>
+                                        <span>حذف الجميع</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Furniture Category Filter Chips -->
+                            <div class="category-filter-bar" style="padding: 0.75rem 1.25rem 0 1.25rem; margin-bottom: 0.5rem;">
+                                <button onclick="filterFurnitureCategory('الكل')" class="chip-btn furn-cat-chip active" data-fcat="الكل">الكل</button>
+                                <button onclick="filterFurnitureCategory('1.1 المكاتب')" class="chip-btn furn-cat-chip" data-fcat="1.1 المكاتب">1.1 المكاتب</button>
+                                <button onclick="filterFurnitureCategory('1.2 الكراسي')" class="chip-btn furn-cat-chip" data-fcat="1.2 الكراسي">1.2 الكراسي</button>
+                                <button onclick="filterFurnitureCategory('1.3 ترابيزات اجتماعات')" class="chip-btn furn-cat-chip" data-fcat="1.3 ترابيزات اجتماعات">1.3 ترابيزات اجتماعات</button>
+                                <button onclick="filterFurnitureCategory('1.4 الدواليب / اللوكر')" class="chip-btn furn-cat-chip" data-fcat="1.4 الدواليب / اللوكر">1.4 الدواليب / اللوكر</button>
+                                <button onclick="filterFurnitureCategory('2.1 التكييفات')" class="chip-btn furn-cat-chip" data-fcat="2.1 التكييفات">2.1 التكييفات</button>
+                                <button onclick="filterFurnitureCategory('2.2 الشاشات والإضاءة')" class="chip-btn furn-cat-chip" data-fcat="2.2 الشاشات والإضاءة">2.2 الشاشات والإضاءة</button>
+                                <button onclick="filterFurnitureCategory('2.3 أجهزة البوفيه والمرافق')" class="chip-btn furn-cat-chip" data-fcat="2.3 أجهزة البوفيه والمرافق">2.3 أجهزة البوفيه</button>
+                                <button onclick="filterFurnitureCategory('3.1 الأبواب والشبابيك والستائر')" class="chip-btn furn-cat-chip" data-fcat="3.1 الأبواب والشبابيك والستائر">3.1 الأبواب والستائر</button>
+                                <button onclick="filterFurnitureCategory('4.1 طفايات الحريق والنظافة')" class="chip-btn furn-cat-chip" data-fcat="4.1 طفايات الحريق والنظافة">4.1 السلامة والنظافة</button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: center; width: 75px;">كود الحصر</th>
+                                            <th style="width: 1%; white-space: nowrap;">اسم الصنف / البيان</th>
+                                            <th style="width: 145px;">المقاس / الأبعاد</th>
+                                            <th style="width: 135px;">المجموعة</th>
+                                            <th style="text-align: center; width: 165px;">العدد المتواجد بالفعل</th>
+                                            <th style="min-width: 260px; width: 100%;">ملاحظات / حالة الصنف بالطابق</th>
+                                            <th style="text-align: center; white-space: nowrap;">إجمالي الشركة (4-9)</th>
+                                            <th style="text-align: center;" class="no-print admin-only">إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="furniture-floor-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== 8. FURNITURE FLOORS ANALYSIS MATRIX (FOR SENIOR MANAGEMENT) ==================== -->
+                <section id="pane-furniture-matrix" class="tab-pane">
+                    <div class="card" style="margin-bottom: 1.25rem;">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <i data-lucide="bar-chart-4" style="color: var(--primary);"></i>
+                                <h2>تقرير جرد وتحليل أثاث الطوابق (الأدوار 4 إلى 9) — جاهز للعرض والإرسال للإدارة العليا</h2>
+                            </div>
+                            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                                <button onclick="printFurnitureMatrixReport()" class="btn btn-primary btn-sm">
+                                    <i data-lucide="printer"></i>
+                                    <span>طباعة تقرير جرد وتحليل أثاث الطوابق (PDF)</span>
+                                </button>
+                                <button onclick="shareFloorsAnalysisWhatsApp()" class="btn btn-success btn-sm">
+                                    <i data-lucide="send"></i>
+                                    <span>إرسال التحليل للإدارة العليا (واتساب)</span>
+                                </button>
+                                <button onclick="exportFurnitureToCSV()" class="btn btn-secondary btn-sm">
+                                    <i data-lucide="file-spreadsheet"></i>
+                                    <span>تصدير Excel</span>
+                                </button>
+                                <button onclick="switchTab('furniture')" class="btn btn-secondary btn-sm">
+                                    <i data-lucide="edit-3"></i>
+                                    <span>تعديل جرد طابق محدد</span>
+                                </button>
+                                <button onclick="deleteAllFurnitureItems()" class="btn btn-danger btn-sm">
+                                    <i data-lucide="trash-2"></i>
+                                    <span>حذف الجميع</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: center; width: 65px;">كود</th>
+                                        <th style="width: 1%; white-space: nowrap;">اسم الصنف / الأثاث</th>
+                                        <th style="width: 115px;">المقاس</th>
+                                        <th style="width: 130px;">المجموعة</th>
+                                        <th style="text-align: center; white-space: nowrap;">الدور 4</th>
+                                        <th style="text-align: center; white-space: nowrap;">الدور 5</th>
+                                        <th style="text-align: center; white-space: nowrap;">الدور 6</th>
+                                        <th style="text-align: center; white-space: nowrap;">الدور 7</th>
+                                        <th style="text-align: center; white-space: nowrap;">الدور 8</th>
+                                        <th style="text-align: center; white-space: nowrap;">الدور 9</th>
+                                        <th style="text-align: center; white-space: nowrap; background: var(--primary-light); color: var(--primary);">الإجمالي</th>
+                                        <th style="min-width: 140px;">ملاحظات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="furniture-matrix-tbody"></tbody>
+                                <tfoot id="furniture-matrix-tfoot"></tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== 9. EXECUTIVE MANAGEMENT HQ INVENTORY ==================== -->
+                <section id="pane-hq" class="tab-pane">
+                    <div class="issue-terminal-wrapper">
+                        <!-- HQ KPI Cards -->
+                        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                            <div class="kpi-card" style="--kpi-accent: var(--primary); --kpi-bg: var(--primary-light);">
+                                <div class="kpi-details">
+                                    <span class="kpi-label">بنود تجهيزات الإدارة العليا</span>
+                                    <span class="kpi-value" id="hq-kpi-types">17</span>
+                                    <span class="kpi-subtext">أثاث وأجهزة وتجهيزات فندقية</span>
+                                </div>
+                                <div class="kpi-icon-box">🏛️</div>
+                            </div>
+                            <div class="kpi-card" style="--kpi-accent: var(--success); --kpi-bg: var(--success-light);">
+                                <div class="kpi-details">
+                                    <span class="kpi-label">إجمالي القطع والأجهزة المتواجدة</span>
+                                    <span class="kpi-value" id="hq-kpi-total" style="color: var(--success);">0</span>
+                                    <span class="kpi-subtext">بمقر الإدارة العليا</span>
+                                </div>
+                                <div class="kpi-icon-box" style="color: var(--success); background: var(--success-light);">✨</div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title-group">
+                                    <i data-lucide="landmark" style="color: var(--primary);"></i>
+                                    <div>
+                                        <h2>جرد أثاث وتجهيزات مقر الإدارة العليا</h2>
+                                        <span style="font-size: 0.78rem; color: var(--text-muted);">سجل مستقل للأصول والأجهزة والتجهيزات الفندقية بمقر الإدارة العليا (قيد الاستخدام المباشر)</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                                    <button onclick="openAddHqModal()" class="btn btn-primary btn-sm">
+                                        <i data-lucide="plus"></i>
+                                        <span>إضافة صنف جديد</span>
+                                    </button>
+                                    <button onclick="printHqReport()" class="btn btn-success btn-sm">
+                                        <i data-lucide="printer"></i>
+                                        <span>طباعة تقرير مقر الإدارة العليا</span>
+                                    </button>
+                                    <button onclick="exportHqToCSV()" class="btn btn-secondary btn-sm">
+                                        <i data-lucide="file-spreadsheet"></i>
+                                        <span>تصدير Excel</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- HQ Category Filter Chips -->
+                            <div class="category-filter-bar" style="padding: 0.75rem 1.25rem 0 1.25rem; margin-bottom: 0.5rem;">
+                                <button onclick="filterHqCategory('الكل')" class="chip-btn hq-cat-chip active" data-hqcat="الكل">الكل</button>
+                                <button onclick="filterHqCategory('غرف ومعيشة')" class="chip-btn hq-cat-chip" data-hqcat="غرف ومعيشة">🛋️ غرف ومعيشة</button>
+                                <button onclick="filterHqCategory('مكاتب واجتماعات')" class="chip-btn hq-cat-chip" data-hqcat="مكاتب واجتماعات">🪑 مكاتب واجتماعات</button>
+                                <button onclick="filterHqCategory('أجهزة كهربائية')" class="chip-btn hq-cat-chip" data-hqcat="أجهزة كهربائية">❄️ أجهزة كهربائية</button>
+                                <button onclick="filterHqCategory('أنظمة ترفيه وصوتيات')" class="chip-btn hq-cat-chip" data-hqcat="أنظمة ترفيه وصوتيات">📺 أنظمة ترفيه وصوتيات</button>
+                                <button onclick="filterHqCategory('مطبخ وتجهيزات')" class="chip-btn hq-cat-chip" data-hqcat="مطبخ وتجهيزات">🍽️ مطبخ وتجهيزات</button>
+                                <button onclick="filterHqCategory('مفروشات وديكور')" class="chip-btn hq-cat-chip" data-hqcat="مفروشات وديكور">🖼️ مفروشات وديكور</button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: center; width: 80px;">كود الحصر</th>
+                                            <th>اسم الصنف / البيان</th>
+                                            <th style="width: 135px;">المقاس / الأبعاد</th>
+                                            <th style="width: 120px;">المجموعة</th>
+                                            <th style="text-align: center; width: 165px;">العدد المتواجد بالفعل</th>
+                                            <th style="width: 125px;">الحالة الفنية</th>
+                                            <th style="min-width: 260px; width: 100%;">ملاحظات / تفاصيل إضافية</th>
+                                            <th style="text-align: center;" class="no-print admin-only">إجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="hq-inventory-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Modal: Add Furniture Item -->
+    <div id="modal-add-furniture" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>إضافة صنف جديد لجرد أصول الشركة (ترقيم وتوزيع تلقائي)</h3>
+                <button class="modal-close-btn" onclick="closeModal('modal-add-furniture')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <div class="form-group">
+                    <label class="form-label">1. اكتب اسم الصنف / البيان:</label>
+                    <input type="text" id="new-furn-name" class="form-control" placeholder="مثال: مكتب مدير، كرسي موظف، ترابيزة اجتماعات، دولاب، تكييف..." oninput="onNewFurnNameInput(this.value)">
+                    <span style="font-size:0.74rem; color:var(--primary);">بمجرد كتابة اسم الصنف يتعرف النظام تلقائياً على مجموعته ويكتب رقم التسلسل (مثل 1.1.1 أو 1.4.4 أو 2.1.1).</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                    <div class="form-group">
+                        <label class="form-label">2. حدد المكان (الطابق):</label>
+                        <select id="new-furn-floor" class="form-control">
+                            <option value="الدور الرابع">الدور الرابع (4)</option>
+                            <option value="الدور الخامس">الدور الخامس (5)</option>
+                            <option value="الدور السادس">الدور السادس (6)</option>
+                            <option value="الدور السابع">الدور السابع (7)</option>
+                            <option value="الدور الثامن">الدور الثامن (8)</option>
+                            <option value="الدور التاسع">الدور التاسع (9)</option>
+                            <option value="ALL">جميع الأدوار (4 إلى 9)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">التوزيعة / المجموعة (تلقائي):</label>
+                        <select id="new-furn-cat" class="form-control" onchange="suggestNextFurnitureCode(); updateInsertAfterDropdown(this.value);">
+                            <optgroup label="1 - الأثاث المكتبي">
+                                <option value="1.1 المكاتب">1.1 المكاتب</option>
+                                <option value="1.2 الكراسي">1.2 الكراسي</option>
+                                <option value="1.3 ترابيزات اجتماعات">1.3 ترابيزات اجتماعات</option>
+                                <option value="1.4 الدواليب / اللوكر">1.4 الدواليب / اللوكر</option>
+                            </optgroup>
+                            <optgroup label="2 - الأجهزة الكهربائية">
+                                <option value="2.1 التكييفات">2.1 التكييفات</option>
+                                <option value="2.2 الشاشات والإضاءة">2.2 الشاشات والإضاءة</option>
+                                <option value="2.3 أجهزة البوفيه والمرافق">2.3 أجهزة البوفيه والمرافق</option>
+                            </optgroup>
+                            <optgroup label="3 - الأبواب والشبابيك والستائر">
+                                <option value="3.1 الأبواب والشبابيك والستائر">3.1 الأبواب والشبابيك والستائر</option>
+                            </optgroup>
+                            <optgroup label="4 - أدوات السلامة والنظافة">
+                                <option value="4.1 طفايات الحريق والنظافة">4.1 طفايات الحريق والنظافة</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الترقيم التسلسلي التلقائي (كود الحصر):</label>
+                    <input type="text" id="new-furn-code" class="form-control" readonly style="background: rgba(212,175,55,0.12); color: var(--primary); font-weight: 900; font-family: monospace; font-size: 1.05rem; text-align: center;" placeholder="يُكتب تلقائياً (مثال: 1.1.1)">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+                    <div class="form-group">
+                        <label class="form-label">3. المقاس (يُكتب بمعرفتك):</label>
+                        <input type="text" id="new-furn-size" class="form-control" placeholder="اكتب المقاس (مثلاً: 180×80، 160×60، 1.70×2.00)...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">4. العدد (يُكتب بمعرفتك):</label>
+                        <input type="number" min="0" id="new-furn-qty" class="form-control" value="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">موضع الإدراج داخل المجموعة:</label>
+                    <select id="new-furn-insert-after" class="form-control">
+                        <option value="auto">✨ تلقائي في نهاية المجموعة مع ترقيم متسلسل أوتوماتيك</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-add-furniture')" class="btn btn-secondary">إلغاء</button>
+                <button onclick="saveNewFurnitureItem()" class="btn btn-primary">حفظ وإضافة بالترقيم التلقائي</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add HQ Item -->
+    <div id="modal-add-hq" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>إضافة صنف جديد لمقر الإدارة العليا</h3>
+                <button class="modal-close-btn" onclick="closeModal('modal-add-hq')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <div class="form-group">
+                    <label class="form-label">كود الحصر (WBS):</label>
+                    <input type="text" id="new-hq-code" class="form-control" placeholder="تلقائي أو اكتب مثلاً: 1.1.3، 2.1.2...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">اسم الصنف / التجهيز:</label>
+                    <input type="text" id="new-hq-name" class="form-control" placeholder="مثال: أنتريه سرير زاوية، ثلاجة شارب، غسالة LG...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">المقاس / الأبعاد (كم في كم أو المواصفات):</label>
+                    <input type="text" id="new-hq-size" class="form-control" placeholder="مثال: 195×160 سم، 18 قدم، 65 بوصة 4K...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">التصنيف:</label>
+                    <select id="new-hq-cat" class="form-control">
+                        <option value="غرف ومعيشة">غرف ومعيشة</option>
+                        <option value="مكاتب واجتماعات">مكاتب واجتماعات</option>
+                        <option value="أجهزة كهربائية">أجهزة كهربائية</option>
+                        <option value="مطبخ وتجهيزات">مطبخ وتجهيزات</option>
+                        <option value="أنظمة ترفيه وصوتيات">أنظمة ترفيه وصوتيات</option>
+                        <option value="مفروشات وديكور">مفروشات وديكور</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">العدد المتواجد بالفعل:</label>
+                    <input type="number" min="0" id="new-hq-qty" class="form-control" value="1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-add-hq')" class="btn btn-secondary">إلغاء</button>
+                <button onclick="saveNewHqItem()" class="btn btn-primary">حفظ وإضافة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Switch Role (Admin / Viewer) -->
+    <div id="modal-role-switch" class="modal-overlay">
+        <div class="modal-box" style="max-width: 490px;">
+            <div class="modal-header">
+                <h3>تبديل الصلاحية (وضع المسؤول / وضع العرض)</h3>
+                <button class="modal-close-btn" onclick="closeModal('modal-role-switch')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.5;">
+                    اختر الوضع المطلوب. وضع العرض مخصص للمدير أو صاحب الشركة لاستعراض الجداول والتقارير والطباعة فقط دون إمكانية تعديل أو حذف البيانات.
+                </p>
+
+                <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.25rem;">
+                    <label style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.85rem 1rem; border-radius: 10px; border: 1px solid var(--border-color); cursor: pointer; background: var(--bg-card);">
+                        <input type="radio" name="role-option" id="role-radio-admin" value="admin" onchange="handleRoleRadioChange('admin')" style="margin-top: 0.25rem;">
+                        <div>
+                            <strong style="color: var(--primary); display: block; font-size: 0.95rem;">👑 وضع المسؤول (تحكم كامل)</strong>
+                            <span style="font-size: 0.78rem; color: var(--text-muted);">إضافة وتعديل الأسماء والأعداد والمقاسات، إعادة الترتيب، الحذف، والتحكم الشامل.</span>
+                        </div>
+                    </label>
+
+                    <label style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.85rem 1rem; border-radius: 10px; border: 1px solid var(--border-color); cursor: pointer; background: var(--bg-card);">
+                        <input type="radio" name="role-option" id="role-radio-viewer" value="viewer" onchange="handleRoleRadioChange('viewer')" style="margin-top: 0.25rem;">
+                        <div>
+                            <strong style="color: #60a5fa; display: block; font-size: 0.95rem;">👁️ وضع العرض والاستعراض فقط (محمي 🔒)</strong>
+                            <span style="font-size: 0.78rem; color: var(--text-muted);">للمدير وصاحب الشركة: استعراض الجداول والمصفوفات وطباعة التقارير مع قفل التعديل.</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div id="role-pin-group" class="form-group" style="display: none; background: rgba(212,175,55,0.08); padding: 0.85rem; border-radius: 8px; border: 1px dashed var(--primary);">
+                    <label class="form-label" style="font-weight: 800; color: var(--primary);">رمز المرور (123456):</label>
+                    <input type="password" id="role-pin-input" class="form-control" placeholder="أدخل رمز المرور: 123456" style="letter-spacing: 4px; font-size: 1.1rem; text-align: center;">
+                    <span style="font-size: 0.74rem; color: var(--text-muted); display: block; margin-top: 0.35rem; text-align: center;">رمز المرور المعتمد: 123456 أو Malik@112022</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-role-switch')" class="btn btn-secondary">إلغاء</button>
+                <button onclick="saveRoleSwitch()" class="btn btn-primary">تطبيق الصلاحية</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add New Item -->
+    <div id="modal-add-item" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>إضافة صنف جديد للمخزن</h3>
+                <button class="modal-close-btn" onclick="closeModal('modal-add-item')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <div class="form-group">
+                    <label class="form-label">اسم الصنف:</label>
+                    <input type="text" id="new-item-name" class="form-control" placeholder="مثال: مناديل فاخرة، شاي، صابون...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الفئة التشغيلية:</label>
+                    <select id="new-item-cat" class="form-control">
+                        <option value="مشروبات وضيافة">مشروبات وضيافة</option>
+                        <option value="منظفات ومطهرات">منظفات ومطهرات</option>
+                        <option value="مناشف ومناديل">مناشف ومناديل</option>
+                        <option value="أدوات ونظافة">أدوات ونظافة</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">الوحدة:</label>
+                    <input type="text" id="new-item-unit" class="form-control" placeholder="عدد، لتر، كيلو، علبة...">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">الرصيد الابتدائي:</label>
+                        <input type="number" min="0" id="new-item-total" class="form-control" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">حد الأمان للتنبيه:</label>
+                        <input type="number" min="0" id="new-item-min" class="form-control" value="10">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-add-item')" class="btn btn-secondary">إلغاء</button>
+                <button onclick="saveNewItem()" class="btn btn-primary">حفظ الصنف</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Stock Supply (توريد بضاعة) -->
+    <div id="modal-supply" class="modal-overlay">
+        <div class="modal-box" style="max-width: 620px;">
+            <div class="modal-header">
+                <h3>تسجيل توريد وتغذية المخزن الرئيسي</h3>
+                <button class="modal-close-btn" onclick="closeModal('modal-supply')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <div class="form-group">
+                    <label class="form-label">تاريخ وصول التوريد:</label>
+                    <input type="date" id="supply-date" class="form-control">
+                </div>
+                <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>اسم الصنف</th>
+                                <th style="text-align: center;">الرصيد الحالي</th>
+                                <th style="text-align: center; width: 130px;">الكمية الموردة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="supply-modal-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-supply')" class="btn btn-secondary">إلغاء</button>
+                <button onclick="submitStockSupply()" class="btn btn-success">تأكيد وإضافة للمخزن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Cycle Settings -->
+    <div id="modal-cycle" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>تعديل يوم بداية الدورة الشهرية</h3>
+                <button class="modal-close-btn" onclick="closeModal('modal-cycle')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <p style="font-size: 0.9rem; color: var(--text-muted);">
+                    حدد اليوم المعتاد في الشهر الذي تبدأ منه الدورة (مثال: يوم 19 يعني أن الدورة تبدأ من 19 الشهر وتنتهي يوم 18 من الشهر التالي):
+                </p>
+                <div class="form-group">
+                    <label class="form-label">يوم بداية الدورة (1 - 28):</label>
+                    <input type="number" id="cycle-start-day-input" min="1" max="28" value="19" class="form-control" style="font-size: 1.1rem; font-weight: 800; text-align: center;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-cycle')" class="btn btn-secondary">إلغاء</button>
+                <button onclick="saveCycleStartDay()" class="btn btn-primary">حفظ وتطبيق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Stock Alert Center -->
+    <div id="modal-alerts" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <i data-lucide="alert-triangle" style="color: var(--danger);"></i>
+                    <h3 data-i18n="alertCenterTitle">مركز تنبيهات المخزون الحرج</h3>
+                </div>
+                <span class="badge badge-danger" id="alert-center-badge">...</span>
+                <button class="modal-close-btn" onclick="closeModal('modal-alerts')">✖</button>
+            </div>
+            <div class="modal-content-area" id="alert-center-list"></div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-alerts')" class="btn btn-secondary">إغلاق</button>
+                <button onclick="switchTab('po'); closeModal('modal-alerts');" class="btn btn-primary">انتقل لأمر الشراء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Share App (مشاركة التطبيق والرابط السحابي) -->
+    <div id="modal-share" class="modal-overlay">
+        <div class="modal-box" style="max-width: 620px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <i data-lucide="share-2" style="color: var(--primary);"></i>
+                    <h3>مشاركة البرنامج والفتح من أي مكان</h3>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('modal-share')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <p style="font-size: 0.88rem; color: var(--text-muted);">
+                    يمكنك فتح هذا البرنامج من لابتوب المنزل أو الهاتف المحمول أو مشاركة الرابط مع الزملاء للاطلاع على التحديثات لحظة بلحظة:
+                </p>
+
+                <!-- Share Link Box -->
+                <div class="form-group">
+                    <label class="form-label">رابط البرنامج الحالي المباشر:</label>
+                    <div class="share-url-box">
+                        <input type="text" id="share-link-input" class="share-url-input" readonly value="http://10.10.8.226:8080">
+                        <button onclick="copyShareLink()" class="btn btn-primary btn-sm">
+                            <i data-lucide="copy" style="width:14px;height:14px;"></i>
+                            <span id="btn-copy-link-text">نسخ الرابط</span>
+                        </button>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.6rem; flex-wrap: wrap;">
+                        <button onclick="shareViaWhatsApp()" class="btn btn-sm" style="background: #16a34a; color: white; flex: 1; justify-content: center;">
+                            <i data-lucide="message-circle" style="width:15px;height:15px;"></i>
+                            <span>إرسال الرابط عبر واتساب</span>
+                        </button>
+                        <button onclick="shareViaNative()" class="btn btn-sm btn-secondary" style="flex: 1; justify-content: center;">
+                            <i data-lucide="share-2" style="width:15px;height:15px;"></i>
+                            <span>مشاركة سريعة</span>
+                        </button>
+                    </div>
+                    <div id="share-url-warning" style="display:none; margin-top:0.6rem; padding:0.65rem 0.8rem; border-radius:8px; background:rgba(245, 158, 11, 0.14); border:1px solid rgba(245, 158, 11, 0.35); font-size:0.78rem; color:var(--text-main); line-height:1.55;"></div>
+                </div>
+
+                <!-- QR Code Box for Phone Scanning -->
+                <div style="text-align: center; margin-top: 0.5rem;">
+                    <label class="form-label" style="display:block; margin-bottom: 0.4rem;">📱 امسح الباركود لفتحه فوراً من كاميرا هاتفك:</label>
+                    <div class="qr-code-container">
+                        <img id="share-qr-image" src="" alt="QR Code" style="width: 140px; height: 140px; display: block;">
+                        <span style="font-size: 0.72rem; color: #64748b; margin-top: 0.35rem;">مسح سريع من الموبايل</span>
+                    </div>
+                </div>
+
+                <!-- Install on New PC Card inside Share Modal -->
+                <div class="cloud-step-card" style="border-inline-start: 4px solid var(--success); margin-top: 0.75rem;">
+                    <div class="cloud-step-title">
+                        <i data-lucide="monitor-down" style="color: var(--success);"></i>
+                        <span>نقل وتثبيت البرنامج كنافذة سطح مكتب على أي جهاز كمبيوتر جديد:</span>
+                    </div>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.55rem;">
+                        إذا قمت بتغيير الويندوز أو انتقلت لجهاز جديد، افتح هذا الرابط واضغط الزر بالأسفل لتحميل البرنامج كاملاً بآخر تعديلاتك وأرصدتك مع أداة تثبيته كبرنامج مستقل على سطح المكتب (بدون متصفح):
+                    </p>
+                    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                        <button onclick="downloadStandaloneDesktopPackage()" class="btn btn-sm btn-success" style="flex: 1; justify-content: center;">
+                            <i data-lucide="download"></i>
+                            <span>تحميل البرنامج + أداة تثبيت سطح المكتب بأحدث البيانات</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cloud Status Banner inside Modal -->
+                <div class="cloud-step-card" style="border-inline-start: 4px solid var(--primary);">
+                    <div class="cloud-step-title">
+                        <i data-lucide="cloud"></i>
+                        <span>حالة المزامنة السحابية الحية:</span>
+                    </div>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;" id="share-modal-cloud-desc">
+                        عند تفعيل المزامنة السحابية، أي عملية صرف أو توريد تسجلها من العمل ستظهر فوراً على اللابتوب في المنزل بدون أي تدخل يدوي!
+                    </p>
+                    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                        <button onclick="openCloudModal(); closeModal('modal-share');" class="btn btn-sm btn-primary">
+                            <i data-lucide="settings"></i>
+                            <span>إعدادات قاعدة البيانات السحابية</span>
+                        </button>
+                        <button onclick="forceCloudSync()" class="btn btn-sm btn-secondary">
+                            <i data-lucide="refresh-cw"></i>
+                            <span>مزامنة فورية الآن</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-share')" class="btn btn-secondary">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Cloud Database Sync Config (إعدادات الربط السحابي) -->
+    <div id="modal-cloud-config" class="modal-overlay">
+        <div class="modal-box" style="max-width: 660px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <i data-lucide="cloud-cog" style="color: var(--primary);"></i>
+                    <h3>إعدادات المزامنة السحابية الفورية (Google Firebase)</h3>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('modal-cloud-config')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <div class="cloud-step-card">
+                    <div class="cloud-step-title">
+                        <i data-lucide="sparkles"></i>
+                        <span>ما هي المزامنة السحابية؟</span>
+                    </div>
+                    <p style="font-size: 0.82rem; color: var(--text-muted);">
+                        تتيح لك ربط البرنامج بقاعدة بيانات Google Cloud مجانية مدى الحياة، بحيث ترتبط كافة الأجهزة (العمل، لابتوب المنزل، والهواتف) بنفس البيانات وتحدث الأرصدة تلقائياً في نفس اللحظة (Real-Time).
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">معرف مساحة العمل المشتركة (Workspace ID):</label>
+                    <input type="text" id="cloud-workspace-id" class="form-control" placeholder="مثال: company_buffet_2026" style="font-weight: 700; direction: ltr;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">أدخل نفس المعرف في أي جهاز آخر ليرتبط بنفس السجل المشترك.</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">إعدادات مشروع Google Firebase (JSON Config):</label>
+                    <textarea id="cloud-firebase-config" class="form-control" rows="5" placeholder='{"apiKey": "AIzaSy...", "authDomain": "...", "projectId": "...", "storageBucket": "..."}' style="font-family: monospace; font-size: 0.8rem; direction: ltr;"></textarea>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">يمكنك إنشاء مشروع مجاني على <a href="https://console.firebase.google.com/" target="_blank" style="color:var(--primary);">Firebase Console</a> ولصق الإعدادات هنا.</span>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+                    <button onclick="testAndSaveCloudConfig()" class="btn btn-primary" style="flex: 1;">
+                        <i data-lucide="check-circle"></i>
+                        <span>حفظ واختبار الاتصال السحابي</span>
+                    </button>
+                    <button onclick="disconnectCloud()" class="btn btn-secondary">
+                        <span>إلغاء الربط والرجوع للمحلي</span>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-cloud-config')" class="btn btn-secondary">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container"></div>
+
+    <!-- Official Printable Viewport -->
+    <div id="official-print-viewport" class="print-only"></div>
+
+    <!-- App Engine Script -->
+    <script src="app.js"></script>
+
+</body>
+</html>
