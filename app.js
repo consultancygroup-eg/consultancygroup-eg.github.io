@@ -853,7 +853,7 @@ const SEED_CUSTODY = [
     { id: 341, date: '2026-10-20', desc: 'شحن عدادات الكهرباء للدور السادس الى التاسع', inflow: 0, outflow: 36290.33, notes: '' },
     { id: 342, date: '2026-10-29', desc: 'حساب الهوس كيبنح', inflow: 0, outflow: 2000, notes: '' },
     { id: 343, date: '2026-10-29', desc: 'توصيل سجاد النساجون الشرقيون لشقة النيل', inflow: 0, outflow: 1800, notes: '' },
-    { id: 344, date: '2026-11-01', desc: 'حوالة على الجاري', inflow: 44477, outflow: 0, notes: 'مخصصة لشراء: قهوة + توصيل السجاد لشقة النيل + حوض وجه + حساب الهوس كيبنج + شهرية المهملات + فواتير الخطوط الأرضي + سباك لصيانة حمام الثامن والسادس', plannedItems: ['قهوة', 'توصيل السجاد لشقة النيل', 'شراء حوض وجه', 'حساب الهوس كيبنج', 'شهرية المهملات', 'فواتير الخطوط الأرضي', 'سباك لصيانة حمام الثامن والسادس'] },
+    { id: 344, date: '2026-11-01', desc: 'حوالة على الجاري', inflow: 44477, outflow: 0, notes: 'حوالة مجمعة لشراء البنود المطلوبة', plannedItems: ['قهوة', 'توصيل السجاد لشقة النيل', 'شراء حوض وجه', 'حساب الهوس كيبنج', 'شهرية المهملات', 'فواتير الخطوط الأرضي', 'سباك لصيانة حمام الثامن والسادس'] },
     { id: 345, date: '2026-11-01', desc: 'قهوة', inflow: 0, outflow: 16400, notes: '' },
     { id: 346, date: '2026-11-01', desc: 'شراء حوض وجه', inflow: 0, outflow: 1385, notes: '' },
     { id: 347, date: '2026-11-01', desc: 'شهرية المهملات', inflow: 0, outflow: 2200, notes: '' },
@@ -5903,12 +5903,12 @@ function extractPlannedPurposesFromTransfer(transferRow) {
 }
 
 function doesExpenseMatchPlannedItem(expenseDesc, plannedItem) {
-    const exp = String(expenseDesc || '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').toLowerCase();
-    const plan = String(plannedItem || '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').toLowerCase();
+    const exp = String(expenseDesc || '').replace(/[أإآ]/g, 'ا').replace(/[ةح]/g, m => m === 'ة' ? 'ه' : 'ح').replace(/كيبنح/g, 'كيبنج').toLowerCase();
+    const plan = String(plannedItem || '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/كيبنح/g, 'كيبنج').toLowerCase();
     if (!exp || !plan) return false;
     if (exp.includes(plan) || plan.includes(exp)) return true;
 
-    const stopWords = ['شراء', 'دفع', 'سداد', 'حساب', 'شحن', 'تحويل', 'حواله', 'للدور', 'الادوار', 'من', 'الي', 'الى', 'علي', 'على', 'في', 'فى', 'عدد', 'ثمن', 'قيمه'];
+    const stopWords = ['شراء', 'دفع', 'سداد', 'حساب', 'شحن', 'تحويل', 'حواله', 'للدور', 'الادوار', 'من', 'الي', 'الى', 'علي', 'على', 'في', 'فى', 'عدد', 'ثمن', 'قيمه', 'لصيانه'];
     const planTokens = plan.split(/\s+/).filter(w => w.length >= 3 && !stopWords.includes(w));
     if (planTokens.length === 0) return false;
 
@@ -5916,16 +5916,42 @@ function doesExpenseMatchPlannedItem(expenseDesc, plannedItem) {
     return matchedTokens.length >= Math.min(2, planTokens.length) || (planTokens.length === 1 && matchedTokens.length === 1);
 }
 
+let activeCustodyAuditTab = null; // null (collapsed) | 'purchased' | 'unpurchased' | 'extra'
+
+function toggleCustodyAuditPanel(tabKey) {
+    if (activeCustodyAuditTab === tabKey) {
+        activeCustodyAuditTab = null;
+    } else {
+        activeCustodyAuditTab = tabKey;
+    }
+    if (activeTab !== 'custody') {
+        switchTab('custody');
+    } else {
+        renderCustodyView();
+    }
+}
+
 function analyzeTransferWindow(calculatedRows, transferIndex) {
     const transferRow = calculatedRows[transferIndex];
     if (!transferRow || transferRow.inflow <= 0) return null;
 
     const plannedList = extractPlannedPurposesFromTransfer(transferRow);
-    const subsequentExpenses = [];
+    const windowExpenses = [];
+
+    // Include expenses rendered just before the transfer if the balance was negative (personal advance covered by this transfer!)
+    let lookbackIdx = transferIndex - 1;
+    while (lookbackIdx >= 0 && calculatedRows[lookbackIdx].inflow === 0) {
+        if (calculatedRows[lookbackIdx].outflow > 0 && calculatedRows[lookbackIdx].isNegative) {
+            windowExpenses.unshift(calculatedRows[lookbackIdx]);
+        }
+        lookbackIdx--;
+    }
+
+    // Include expenses after the transfer up to the next transfer
     for (let i = transferIndex + 1; i < calculatedRows.length; i++) {
         if (calculatedRows[i].inflow > 0) break;
         if (calculatedRows[i].outflow > 0) {
-            subsequentExpenses.push(calculatedRows[i]);
+            windowExpenses.push(calculatedRows[i]);
         }
     }
 
@@ -5934,7 +5960,7 @@ function analyzeTransferWindow(calculatedRows, transferIndex) {
     const matchedExpenseIds = new Set();
 
     plannedList.forEach(planItem => {
-        const matchingExp = subsequentExpenses.find(exp => doesExpenseMatchPlannedItem(exp.desc, planItem));
+        const matchingExp = windowExpenses.find(exp => doesExpenseMatchPlannedItem(exp.desc, planItem));
         if (matchingExp) {
             purchasedPlanned.push({ planItem, matchedRow: matchingExp });
             matchedExpenseIds.add(matchingExp.id);
@@ -5943,13 +5969,13 @@ function analyzeTransferWindow(calculatedRows, transferIndex) {
         }
     });
 
-    const extraSubstitutedExpenses = subsequentExpenses.filter(exp => !matchedExpenseIds.has(exp.id));
-    const totalSpentInWindow = subsequentExpenses.reduce((s, r) => s + r.outflow, 0);
+    const extraSubstitutedExpenses = windowExpenses.filter(exp => !matchedExpenseIds.has(exp.id));
+    const totalSpentInWindow = windowExpenses.reduce((s, r) => s + r.outflow, 0);
 
     return {
         transferRow,
         plannedList,
-        subsequentExpenses,
+        subsequentExpenses: windowExpenses,
         purchasedPlanned,
         unpurchasedPlanned,
         extraSubstitutedExpenses,
@@ -6185,35 +6211,68 @@ function renderCustodyView() {
         if (targetTransferIdx !== -1) {
             const audit = analyzeTransferWindow(calculatedRows, targetTransferIdx);
             if (audit && audit.plannedList.length > 0) {
-                auditBox.style.display = 'block';
-                const purchasedBadges = audit.purchasedPlanned.map(p =>
-                    `<span class="badge badge-success" style="font-size: 0.78rem; padding: 0.28rem 0.6rem;">✅ ${trText(p.planItem)} (${p.matchedRow.outflow.toLocaleString()} ج.م)</span>`
-                ).join(' ');
-                const unpurchasedBadges = audit.unpurchasedPlanned.map(u =>
-                    `<span class="badge badge-danger" style="font-size: 0.78rem; padding: 0.28rem 0.6rem;">⚠️ لم يُشترَ بعد: ${trText(u)}</span>`
-                ).join(' ');
-                const extraBadges = audit.extraSubstitutedExpenses.map(e =>
-                    `<span class="badge badge-warning" style="font-size: 0.76rem; padding: 0.24rem 0.55rem;">🔄 دخل مكانها: ${trText(e.desc)} (${e.outflow.toLocaleString()} ج.م)</span>`
-                ).join(' ');
+                const pCount = audit.purchasedPlanned.length;
+                const uCount = audit.unpurchasedPlanned.length;
+                const eCount = audit.extraSubstitutedExpenses.length;
 
-                auditBox.innerHTML = `
-                    <div style="background: var(--bg-surface-2); border: 1.5px solid ${audit.unpurchasedPlanned.length > 0 ? 'var(--warning)' : 'var(--success)'}; border-radius: var(--radius-md); padding: 0.85rem 1.1rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.55rem;">
-                            <div style="font-weight: 900; font-size: 0.9rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.45rem;">
-                                <span>🔔 ${isAr ? 'مراجعة وتذكير بنود الحوالة' : 'Transfer Purpose & Variance Reminder'}:</span>
-                                <span style="color: var(--primary);">#${audit.transferRow.serialNum} (${audit.transferRow.date}) — ${trText(audit.transferRow.desc)} [${audit.transferRow.inflow.toLocaleString()} ج.م]</span>
+                // Update counts on sidebar and top pills
+                ['sidebar-audit-cnt-purchased', 'top-audit-cnt-purchased'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = String(pCount);
+                });
+                ['sidebar-audit-cnt-unpurchased', 'top-audit-cnt-unpurchased'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = String(uCount);
+                });
+                ['sidebar-audit-cnt-extra', 'top-audit-cnt-extra'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = String(eCount);
+                });
+
+                // Highlight active toggle button
+                ['purchased', 'unpurchased', 'extra'].forEach(key => {
+                    const sbBtn = document.getElementById(`sidebar-audit-btn-${key}`);
+                    const tpBtn = document.getElementById(`top-audit-btn-${key}`);
+                    if (sbBtn) sbBtn.classList.toggle('active', activeCustodyAuditTab === key);
+                    if (tpBtn) tpBtn.classList.toggle('active', activeCustodyAuditTab === key);
+                });
+
+                if (!activeCustodyAuditTab) {
+                    auditBox.style.display = 'none';
+                } else {
+                    auditBox.style.display = 'block';
+                    let selectedContentHtml = '';
+                    if (activeCustodyAuditTab === 'purchased') {
+                        const badges = audit.purchasedPlanned.map(p =>
+                            `<span class="badge badge-success" style="font-size: 0.8rem; padding: 0.32rem 0.65rem;">✅ ${trText(p.planItem)} (${p.matchedRow.outflow.toLocaleString()} ج.م — بتاريخ ${p.matchedRow.date})</span>`
+                        ).join(' ');
+                        selectedContentHtml = `<div style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;"><strong style="color: var(--success);">✔ البنود التي تم شراؤها وسدادها بالفعل:</strong> ${badges || 'لا يوجد'}</div>`;
+                    } else if (activeCustodyAuditTab === 'unpurchased') {
+                        const badges = audit.unpurchasedPlanned.map(u =>
+                            `<span class="badge badge-danger" style="font-size: 0.8rem; padding: 0.32rem 0.65rem;">⚠️ لم يُشترَ بعد: ${trText(u)}</span>`
+                        ).join(' ');
+                        selectedContentHtml = `<div style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;"><strong style="color: var(--danger);">⚠️ تذكير بالبنود المتبقية في الحوالة (لم تشترِ هذه بعد):</strong> ${badges || '<span style="color:var(--success);">تم شراء جميع البنود بالكامل!</span>'}</div>`;
+                    } else if (activeCustodyAuditTab === 'extra') {
+                        const badges = audit.extraSubstitutedExpenses.map(e =>
+                            `<span class="badge badge-warning" style="font-size: 0.8rem; padding: 0.32rem 0.65rem;">🔄 ${trText(e.desc)} (${e.outflow.toLocaleString()} ج.م — بتاريخ ${e.date})</span>`
+                        ).join(' ');
+                        selectedContentHtml = `<div style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;"><strong style="color: var(--warning);">🔄 مصروفات أخرى دخلت على نفس الحوالة:</strong> ${badges || 'لا توجد مصروفات إضافية خارج الحوالة'}</div>`;
+                    }
+
+                    auditBox.innerHTML = `
+                        <div style="background: var(--bg-surface-2); border: 1.5px solid var(--primary); border-radius: var(--radius-md); padding: 0.8rem 1.1rem; position: relative;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <div style="font-weight: 900; font-size: 0.88rem; color: var(--text-primary);">
+                                    🔔 الحوالة محل المراجعة: <span style="color: var(--primary);">#${audit.transferRow.serialNum} (${audit.transferRow.date}) — ${trText(audit.transferRow.desc)} [${audit.transferRow.inflow.toLocaleString()} ج.م]</span>
+                                </div>
+                                <button onclick="toggleCustodyAuditPanel(null)" class="btn btn-secondary btn-sm" style="padding: 0.15rem 0.5rem; font-size: 0.74rem;">إغلاق ✖</button>
                             </div>
-                            <div style="font-size: 0.78rem; font-weight: 800; color: var(--text-muted);">
-                                ${isAr ? 'إجمالي المنصرف من الحوالة:' : 'Spent from transfer:'} <strong style="color: var(--danger);">${audit.totalSpentInWindow.toLocaleString()} ج.م</strong>
+                            <div style="font-size: 0.82rem;">
+                                ${selectedContentHtml}
                             </div>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.8rem;">
-                            ${purchasedBadges ? `<div style="display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center;"><strong style="color: var(--success); min-width: 145px;">${isAr ? '✔ بنود تم شراؤها:' : '✔ Purchased:'}</strong> ${purchasedBadges}</div>` : ''}
-                            ${unpurchasedBadges ? `<div style="display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center;"><strong style="color: var(--danger); min-width: 145px;">${isAr ? '⚠️ تذكير (لم تشترِ هذه بعد):' : '⚠️ Reminder (Not bought yet):'}</strong> ${unpurchasedBadges}</div>` : `<div style="color: var(--success); font-weight: 700;">✅ ${isAr ? 'تم شراء وتنفيذ جميع البنود المذكورة في وصف هذه الحوالة بالكامل.' : 'All planned items in this transfer have been completed.'}</div>`}
-                            ${extraBadges ? `<div style="display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center;"><strong style="color: var(--warning); min-width: 145px;">${isAr ? '🔄 مصروفات أخرى دخلت معها:' : '🔄 Extra / Substituted Expenses:'}</strong> ${extraBadges}</div>` : ''}
-                        </div>
-                    </div>
-                `;
+                    `;
+                }
             } else {
                 auditBox.style.display = 'none';
             }
@@ -6243,23 +6302,13 @@ function renderCustodyView() {
             ? `<div style="font-size: 0.69rem; color: var(--danger); font-weight: 800; margin-top: 2px;" title="العهدة خلصت فتم الشراء مؤقتاً من معايا لحين تحويل الشركة">⚠️ بالسالب (تغطية شخصية مؤقتة)</div>`
             : '';
 
-        let transferInlineNote = '';
-        if (isTransferRow && row.serialNum > 1) {
-            const idxInAll = row.serialNum - 1;
-            const winAudit = analyzeTransferWindow(calculatedRows, idxInAll);
-            if (winAudit && winAudit.unpurchasedPlanned.length > 0) {
-                transferInlineNote = `<div style="font-size: 0.72rem; color: var(--warning); font-weight: 800; margin-top: 3px;">🔔 متبقي لم يُشترَ من الحوالة: ${winAudit.unpurchasedPlanned.join(' + ')}</div>`;
-            }
-        }
-
         tr.innerHTML = `
             <td style="text-align: center; font-weight: 900; font-family: monospace; color: var(--text-muted);">${row.serialNum}</td>
             <td style="text-align: center; font-weight: 700; white-space: nowrap; font-size: 0.84rem;">${row.date || '—'}</td>
-            <td style="max-width: 260px;">
-                <div style="font-weight: 800; font-size: 0.88rem; color: ${isTransferRow ? 'var(--success)' : 'var(--text-primary)'}; line-height: 1.35;">
+            <td style="min-width: 310px; width: 34%;">
+                <div style="font-weight: 800; font-size: 0.94rem; color: ${isTransferRow ? 'var(--success)' : 'var(--text-primary)'}; line-height: 1.4;">
                     ${isTransferRow ? '📥 ' : ''}${trText(row.desc)}
                 </div>
-                ${transferInlineNote}
             </td>
             <td style="text-align: center; font-weight: 900; color: var(--success); font-size: 0.92rem; white-space: nowrap;">
                 ${row.inflow > 0 ? row.inflow.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '—'}
@@ -6271,10 +6320,10 @@ function renderCustodyView() {
                 <div>${row.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 ${negativeBadgeHtml}
             </td>
-            <td>
+            <td style="width: 195px; max-width: 210px;">
                 ${isViewer
-                    ? `<span style="font-size: 0.82rem; color: var(--text-secondary);">${trText(row.notes || '') || (row.isNegative ? 'مدفوع مؤقتاً من حسابي الشخصي لحين التحويل' : '—')}</span>`
-                    : `<input type="text" class="table-input" value="${row.notes || ''}" placeholder="${row.isNegative ? 'تغطية شخصية مؤقتة لحين تحويل العهدة...' : (isAr ? 'ملاحظات...' : 'Notes...')}" onchange="updateCustodyRowField(${row.id}, 'notes', this.value)" style="width: 100%; min-width: 170px; font-size: 0.82rem;">`
+                    ? `<div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; white-space: normal; word-break: break-word;">${trText(row.notes || '') || (row.isNegative ? 'تغطية شخصية مؤقتة' : '—')}</div>`
+                    : `<textarea rows="2" class="table-input" placeholder="${row.isNegative ? 'تغطية شخصية مؤقتة...' : (isAr ? 'ملاحظات...' : 'Notes...')}" onchange="updateCustodyRowField(${row.id}, 'notes', this.value)" style="width: 100%; max-width: 200px; font-size: 0.78rem; line-height: 1.35; padding: 0.28rem 0.45rem; resize: vertical; min-height: 42px;">${row.notes || ''}</textarea>`
                 }
             </td>
             <td style="text-align: center; white-space: nowrap;" class="no-print">
@@ -6768,16 +6817,16 @@ function printCustodyReport() {
     rows.forEach(r => {
         totalIn += r.inflow;
         totalOut += r.outflow;
-        const negNote = r.isNegative ? (r.notes ? `${r.notes} (تغطية شخصية مؤقتة)` : 'تغطية شخصية مؤقتة لحين تحويل الشركة') : (r.notes || '—');
+        const negNote = r.isNegative ? (r.notes ? `${r.notes} (تغطية شخصية مؤقتة)` : 'تغطية شخصية مؤقتة') : (r.notes || '—');
         rowsHtml += `
             <tr>
-                <td style="width: 38px; text-align: center !important; font-weight: 800;">${r.serialNum}</td>
+                <td style="width: 36px; text-align: center !important; font-weight: 800;">${r.serialNum}</td>
                 <td style="width: 11%; text-align: center !important; font-weight: 700; white-space: nowrap !important;">${r.date}</td>
-                <td class="print-item-name" style="width: 25% !important; min-width: 165px !important; white-space: nowrap !important; font-weight: 800 !important;"><strong>${trText(r.desc)}</strong></td>
+                <td class="print-item-name" style="width: 34% !important; min-width: 215px !important; max-width: 290px !important; white-space: normal !important; font-weight: 800 !important;"><strong>${trText(r.desc)}</strong></td>
                 <td style="width: 12%; text-align: center !important; font-weight: 800; color: #15803d;">${r.inflow > 0 ? r.inflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
                 <td style="width: 12%; text-align: center !important; font-weight: 800; color: #b91c1c;">${r.outflow > 0 ? r.outflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
                 <td style="width: 14%; text-align: center !important; font-weight: 900; direction: ltr; color: ${r.isNegative ? '#b91c1c' : '#0f172a'};">${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                <td class="print-notes-col" style="width: 18% !important; max-width: 155px !important; font-size: 0.8rem !important;">${negNote}</td>
+                <td class="print-notes-col" style="width: 13% !important; max-width: 125px !important; font-size: 0.76rem !important; line-height: 1.3 !important; white-space: normal !important;">${negNote}</td>
             </tr>
         `;
 
@@ -6810,13 +6859,13 @@ function printCustodyReport() {
                         </th>
                     </tr>
                     <tr>
-                        <th style="width: 38px; text-align: center !important;">${isAr ? 'م' : '#'}</th>
+                        <th style="width: 36px; text-align: center !important;">${isAr ? 'م' : '#'}</th>
                         <th style="width: 11%; text-align: center !important;">${isAr ? 'التاريخ' : 'Date'}</th>
-                        <th class="print-item-name" style="width: 25% !important; min-width: 165px !important;">${isAr ? 'اسم الصنف' : 'Item Name'}</th>
+                        <th class="print-item-name" style="width: 34% !important; min-width: 215px !important;">${isAr ? 'اسم الصنف / البيان' : 'Item Name'}</th>
                         <th style="width: 12%; text-align: center !important;">${isAr ? 'وارد' : 'Inflow'}</th>
                         <th style="width: 12%; text-align: center !important;">${isAr ? 'منصرف' : 'Outflow'}</th>
                         <th style="width: 14%; text-align: center !important;">${isAr ? 'المتبقي' : 'Balance'}</th>
-                        <th class="print-notes-col" style="width: 18% !important; max-width: 155px !important;">${isAr ? 'ملاحظات' : 'Notes'}</th>
+                        <th class="print-notes-col" style="width: 13% !important; max-width: 125px !important;">${isAr ? 'ملاحظات' : 'Notes'}</th>
                     </tr>
                 </thead>
                 <tbody>

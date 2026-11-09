@@ -140,10 +140,10 @@
 
                 <!-- Option 4: العهدة -->
                 <div class="portal-option-card" onclick="enterPortalSection('custody')">
-                    <div class="portal-card-icon" style="background:rgba(168,85,247,0.16); color:#c084fc; border:1px solid rgba(168,85,247,0.4);">💰</div>
-                    <span class="badge" style="background:rgba(168,85,247,0.16); color:#c084fc; margin-bottom:0.75rem; font-size:0.72rem;">سجل العهدة النقدية • تحويلات الموردين والفواتير</span>
+                    <div class="portal-card-icon" style="background:rgba(212,175,55,0.16); color:#f59e0b; border:1px solid rgba(212,175,55,0.4);">💰</div>
+                    <span class="badge" style="background:rgba(212,175,55,0.16); color:#f59e0b; margin-bottom:0.75rem; font-size:0.72rem;">سجل العهدة النقدية • تحويلات الموردين والفواتير</span>
                     <h3 class="portal-card-title">العهدة</h3>
-                    <div class="portal-card-btn" style="background:rgba(168,85,247,0.18); color:#c084fc; border-color:rgba(168,85,247,0.45); margin-top:1.1rem;">
+                    <div class="portal-card-btn" style="background:rgba(212,175,55,0.18); color:#f59e0b; border-color:rgba(212,175,55,0.45); margin-top:1.1rem;">
                         <span>دخول لقسم العهدة والمشتريات</span>
                         <span>←</span>
                     </div>
@@ -195,7 +195,7 @@
                 </button>
 
                 <!-- Quick Direct Jump to Custody from any view -->
-                <button onclick="enterPortalSection('custody')" id="nav-btn-custody-global" class="sidebar-nav-item" style="background: rgba(168, 85, 247, 0.14); border: 1px solid rgba(168, 85, 247, 0.4); color: #c084fc; margin-bottom: 0.45rem; font-weight: 800;">
+                <button onclick="enterPortalSection('custody')" id="nav-btn-custody-global" class="sidebar-nav-item" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.38); color: var(--success); margin-bottom: 0.45rem; font-weight: 800;">
                     <i data-lucide="wallet"></i>
                     <span>💰 العهدة والفواتير</span>
                 </button>
@@ -265,6 +265,23 @@
                     <i data-lucide="wallet"></i>
                     <span>العهدة والفواتير</span>
                 </button>
+
+                <!-- Collapsible Transfer Audit & Reminders in Right Sidebar under Custody -->
+                <div class="nav-group-custody" style="display: none; padding: 0.35rem 0.2rem 0.5rem 0.2rem; display: flex; flex-direction: column; gap: 0.38rem;">
+                    <span style="font-size: 0.72rem; font-weight: 800; color: var(--text-muted); padding: 0 0.45rem;">🔔 مراجعة وتذكير بنود الحوالة:</span>
+                    <button onclick="toggleCustodyAuditPanel('purchased')" id="sidebar-audit-btn-purchased" class="sidebar-nav-item" style="padding: 0.48rem 0.65rem; font-size: 0.78rem; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.06); justify-content: space-between;">
+                        <span style="display:flex; align-items:center; gap:0.4rem;">✅ <span>بنود تم شراؤها</span></span>
+                        <span class="badge badge-success" id="sidebar-audit-cnt-purchased" style="font-size:0.7rem;">0</span>
+                    </button>
+                    <button onclick="toggleCustodyAuditPanel('unpurchased')" id="sidebar-audit-btn-unpurchased" class="sidebar-nav-item" style="padding: 0.48rem 0.65rem; font-size: 0.78rem; border: 1px solid rgba(239,68,68,0.35); background: rgba(239,68,68,0.07); justify-content: space-between;">
+                        <span style="display:flex; align-items:center; gap:0.4rem;">⚠️ <span>تذكير (لم تشترِ بعد)</span></span>
+                        <span class="badge badge-danger" id="sidebar-audit-cnt-unpurchased" style="font-size:0.7rem;">0</span>
+                    </button>
+                    <button onclick="toggleCustodyAuditPanel('extra')" id="sidebar-audit-btn-extra" class="sidebar-nav-item" style="padding: 0.48rem 0.65rem; font-size: 0.78rem; border: 1px solid rgba(245,158,11,0.35); background: rgba(245,158,11,0.07); justify-content: space-between;">
+                        <span style="display:flex; align-items:center; gap:0.4rem;">🔄 <span>مصروفات أخرى دخلت معها</span></span>
+                        <span class="badge badge-warning" id="sidebar-audit-cnt-extra" style="font-size:0.7rem;">0</span>
+                    </button>
+                </div>
             </nav>
 
             <div class="sidebar-footer">
@@ -1332,25 +1349,39 @@
                                 </div>
                             </div>
 
+                            <!-- Quick Toggle Pills for Transfer Review & Reminders (Right-aligned, Collapsed by default) -->
+                            <div style="padding: 0.65rem 1.25rem 0 1.25rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;" class="no-print">
+                                <span style="font-size: 0.78rem; font-weight: 900; color: var(--text-primary);">🔔 مراجعة وتذكير الحوالة (اضغط للعرض أو الإخفاء):</span>
+                                <button onclick="toggleCustodyAuditPanel('purchased')" id="top-audit-btn-purchased" class="chip-btn" style="border-color: rgba(16,185,129,0.45); color: var(--success); font-weight: 800; font-size: 0.76rem;">
+                                    ✅ بنود تم شراؤها (<span id="top-audit-cnt-purchased">0</span>)
+                                </button>
+                                <button onclick="toggleCustodyAuditPanel('unpurchased')" id="top-audit-btn-unpurchased" class="chip-btn" style="border-color: rgba(239,68,68,0.45); color: var(--danger); font-weight: 800; font-size: 0.76rem;">
+                                    ⚠️ تذكير: لم تشترِ هذه بعد (<span id="top-audit-cnt-unpurchased">0</span>)
+                                </button>
+                                <button onclick="toggleCustodyAuditPanel('extra')" id="top-audit-btn-extra" class="chip-btn" style="border-color: rgba(245,158,11,0.45); color: var(--warning); font-weight: 800; font-size: 0.76rem;">
+                                    🔄 مصروفات أخرى دخلت معها (<span id="top-audit-cnt-extra">0</span>)
+                                </button>
+                            </div>
+
                             <!-- Instant Item Search Analytical Banner -->
                             <div id="custody-search-summary-box" style="display: none; padding: 0.85rem 1.25rem 0 1.25rem;"></div>
 
-                            <!-- Smart Transfer Purpose & Variance Reminder Banner (مراجعة بنود الحوالة: ما تم شراؤه وما لم يُشترَ بعد) -->
-                            <div id="custody-transfer-audit-box" style="display: none; padding: 0.85rem 1.25rem 0 1.25rem;"></div>
+                            <!-- Smart Transfer Purpose & Variance Reminder Banner (مخفي افتراضياً ويفتح عند الضغط فقط) -->
+                            <div id="custody-transfer-audit-box" style="display: none; padding: 0.75rem 1.25rem 0 1.25rem;"></div>
 
                             <div class="table-responsive">
                                 <table class="data-table">
                                     <thead>
                                         <tr>
-                                            <th style="width: 52px; text-align: center;">م</th>
-                                            <th style="width: 112px; text-align: center;">التاريخ</th>
-                                            <th style="width: 240px; max-width: 260px;">اسم الصنف / البيان</th>
-                                            <th style="width: 115px; text-align: center; color: var(--success);">وارد</th>
-                                            <th style="width: 115px; text-align: center; color: var(--danger);">منصرف</th>
-                                            <th style="width: 125px; text-align: center; background: var(--primary-light); color: var(--primary);">المتبقي</th>
-                                            <th style="min-width: 210px; width: 100%;">ملاحظات</th>
-                                            <th style="width: 195px; text-align: center;" class="no-print">الفواتير والمرفقات</th>
-                                            <th style="width: 90px; text-align: center;" class="no-print">إجراءات</th>
+                                            <th style="width: 50px; text-align: center;">م</th>
+                                            <th style="width: 110px; text-align: center;">التاريخ</th>
+                                            <th style="min-width: 310px; width: 34%;">اسم الصنف / البيان</th>
+                                            <th style="width: 110px; text-align: center; color: var(--success);">وارد</th>
+                                            <th style="width: 110px; text-align: center; color: var(--danger);">منصرف</th>
+                                            <th style="width: 120px; text-align: center; background: var(--primary-light); color: var(--primary);">المتبقي</th>
+                                            <th style="width: 190px; max-width: 210px;">ملاحظات</th>
+                                            <th style="width: 185px; text-align: center;" class="no-print">الفواتير والمرفقات</th>
+                                            <th style="width: 85px; text-align: center;" class="no-print">إجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="custody-table-body"></tbody>
