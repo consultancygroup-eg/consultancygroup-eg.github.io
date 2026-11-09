@@ -5198,8 +5198,8 @@ function handleUnlockSubmit(e) {
         if (errEl) {
             errEl.style.display = 'block';
             errEl.innerHTML = currentLang === 'ar' 
-                ? '❌ كلمة المرور غير صحيحة، يرجى كتابة: <code>Malik@112022</code> أو <code>123456</code> لوضع المستخدم'
-                : '❌ Incorrect password. Expected: <code>Malik@112022</code>';
+                ? '❌ كلمة المرور غير صحيحة، حاول مرة أخرى.'
+                : '❌ Incorrect password, please try again.';
         }
         input.focus();
         return false;
@@ -5431,7 +5431,7 @@ function updateCloudStatusBadge(state, text) {
 }
 
 // --- SHARING MODAL & QR CODE ---
-const PUBLIC_WEB_URL = 'https://walnut-onyx-rtfa0.ship.place/';
+const PUBLIC_WEB_URL = 'https://ahmed-elbaz84.github.io/consultancy-group-facilities/';
 const NETLIFY_BACKUP_URL = 'https://consualtancygroup.netlify.app/';
 
 function getShareableUrl(forRole) {
@@ -5466,12 +5466,12 @@ function openShareModal() {
         qrWarning.style.display = 'block';
         if (isViewer) {
             qrWarning.innerHTML = currentLang === 'ar'
-                ? `🔒 <b>رابط وضع المستخدم (للاطلاع والمشاهدة فقط):</b><br>هذا الرابط يفتح البرنامج بوضع العرض فقط، <b>ولا يمكن للمرسل له تعديل أو حذف أي بيانات إطلاقاً</b> (رمز الفتح: <code>123456</code>).<br><span style="font-size:0.74rem; color:var(--text-muted);">رابط Netlify البديل: <code>${NETLIFY_BACKUP_URL}?role=viewer</code></span>`
-                : `🔒 <b>User / Viewer Mode Link (Read-Only):</b><br>The recipient <b>cannot edit or delete any data</b>, view and print only (Unlock PIN: <code>123456</code>).<br><span style="font-size:0.74rem; color:var(--text-muted);">Backup: <code>${NETLIFY_BACKUP_URL}?role=viewer</code></span>`;
+                ? `🔒 <b>رابط وضع المستخدم (للاطلاع والمشاهدة فقط):</b><br>هذا الرابط يفتح البرنامج بوضع العرض فقط، <b>ولا يمكن للمرسل له تعديل أو حذف أي بيانات إطلاقاً</b> (يحتاج رمز وضع المستخدم).`
+                : `🔒 <b>User / Viewer Mode Link (Read-Only):</b><br>The recipient <b>cannot edit or delete any data</b>, view and print only (viewer PIN required).`;
         } else {
             qrWarning.innerHTML = currentLang === 'ar'
-                ? `👑 <b>رابط وضع المسؤول (تحكم كامل):</b><br>يتيح الإضافة والتعديل الكامل والمزامنة المباشرة.<br>كلمة المرور للمسؤول: <code>Malik@112022</code><br><span style="font-size:0.74rem; color:var(--text-muted);">رابط Netlify البديل: <code>${NETLIFY_BACKUP_URL}</code></span>`
-                : `👑 <b>Admin Mode Link (Full Control):</b><br>Scan QR code or share link. Admin Password: <code>Malik@112022</code>.<br><span style="font-size:0.74rem; color:var(--text-muted);">Backup: <code>${NETLIFY_BACKUP_URL}</code></span>`;
+                ? `👑 <b>رابط وضع المسؤول (تحكم كامل):</b><br>يتيح الإضافة والتعديل الكامل والمزامنة المباشرة.<br>يحتاج كلمة مرور المسؤول.`
+                : `👑 <b>Admin Mode Link (Full Control):</b><br>Scan QR code or share link. Admin password required.`;
         }
     }
 
@@ -5829,7 +5829,7 @@ function saveRoleSwitch() {
         const pin = pinInput ? pinInput.value.trim() : '';
         const pinClean = pin.toLowerCase().replace(/\s+/g, '');
         if (pinClean !== '123456' && pinClean !== 'malik@112022' && pinClean !== 'malek@112022' && pinClean !== '1234') {
-            showToast(currentLang === 'ar' ? 'رمز المرور غير صحيح! (الرمز: 123456 أو Malik@112022)' : 'Incorrect PIN! (Expected: 123456 or Malik@112022)', 'error');
+            showToast(currentLang === 'ar' ? 'رمز المرور غير صحيح!' : 'Incorrect PIN!', 'error');
             if (pinInput) pinInput.focus();
             return;
         }

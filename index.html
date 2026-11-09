@@ -82,7 +82,7 @@
                 } else {
                     if (errEl) {
                         errEl.style.display = 'block';
-                        errEl.innerHTML = '❌ كلمة المرور غير صحيحة، يرجى كتابة: <code>Malik@112022</code> أو <code>123456</code> لوضع المستخدم';
+                        errEl.innerHTML = '❌ كلمة المرور غير صحيحة، حاول مرة أخرى.';
                     }
                     input.focus();
                     return false;
@@ -1619,9 +1619,9 @@
                 </div>
 
                 <div id="role-pin-group" class="form-group" style="display: none; background: rgba(212,175,55,0.08); padding: 0.85rem; border-radius: 8px; border: 1px dashed var(--primary);">
-                    <label class="form-label" style="font-weight: 800; color: var(--primary);">رمز المرور (123456):</label>
-                    <input type="password" id="role-pin-input" class="form-control" placeholder="أدخل رمز المرور: 123456" style="letter-spacing: 4px; font-size: 1.1rem; text-align: center;">
-                    <span style="font-size: 0.74rem; color: var(--text-muted); display: block; margin-top: 0.35rem; text-align: center;">رمز المرور المعتمد: 123456 أو Malik@112022</span>
+                    <label class="form-label" style="font-weight: 800; color: var(--primary);">رمز المرور:</label>
+                    <input type="password" id="role-pin-input" class="form-control" placeholder="أدخل رمز المرور" style="letter-spacing: 4px; font-size: 1.1rem; text-align: center;">
+                    
                 </div>
             </div>
             <div class="modal-footer">
