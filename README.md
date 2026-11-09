@@ -13,7 +13,7 @@
    - فقط اضغط عليه مرتين لتفتح نافذة البرنامج المستقلة كأي برنامج ويندوز أصلي.
 
 2. **من خلال ملف التشغيل المباشر (`BuffetManager.exe`)**:
-   - داخل مجلد البرنامج: `C:\Users\adm.001\.gemini\antigravity\scratch\BuffetHygieneDeskApp`
+   - داخل مجلد البرنامج: `C:\Users\adm.001\Documents\consultancy-group-facilities`
    - شغل الملف التنفيذي `BuffetManager.exe`.
 
 3. **من خلال ملف البدء السريع (`Start-BuffetManager.bat`)**:

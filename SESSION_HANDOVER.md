@@ -9,9 +9,9 @@
 - **كلمة المرور:** `Malik@112022` (تُحفظ في `sessionStorage` لتطلب عند كل تشغيل جديد).
 
 ## 2. مسارات الملفات الأساسية
-- مجلد المشروع: `C:\Users\adm.001\.gemini\antigravity\scratch\BuffetHygieneDeskApp`
-- ملف الويب المدمج: `C:\Users\adm.001\.gemini\antigravity\scratch\BuffetHygieneDeskApp\ConsultancyGroup_Web.html`
-- أرشيف الإصدارات: `C:\Users\adm.001\.gemini\antigravity\scratch\BuffetHygieneDeskApp\versions_archive`
+- مجلد المشروع: `C:\Users\adm.001\Documents\consultancy-group-facilities`
+- ملف الويب المدمج: `C:\Users\adm.001\Documents\consultancy-group-facilities\ConsultancyGroup_Web.html`
+- أرشيف الإصدارات: `C:\Users\adm.001\Documents\consultancy-group-facilities\versions_archive`
 - الملف المضغوط على سطح المكتب: `C:\Users\adm.001\Desktop\BuffetHygieneDeskApp.zip`
 
 ## 3. أحدث رابط سحابي
