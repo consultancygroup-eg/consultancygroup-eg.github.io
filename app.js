@@ -5843,19 +5843,16 @@ function liveRefreshApp() {
         if (savedFurn) furnitureInventory = JSON.parse(savedFurn);
         const savedHq = localStorage.getItem('buffet_v9_hq');
         if (savedHq) hqInventory = JSON.parse(savedHq);
-        const savedFl = localStorage.getItem('buffet_v9_floors');
-        if (savedFl) floorStock = JSON.parse(savedFl);
+        const savedCust = localStorage.getItem('buffet_v9_custody');
+        if (savedCust) custodyTransactions = JSON.parse(savedCust);
     } catch (e) {
         console.error('Error reloading local state:', e);
     }
 
-    renderAll();
-    updateRoleHeaderBadge();
-
+    // Force browser to reload the HTML/JS file from disk/server so new structural updates appear immediately
     setTimeout(() => {
-        if (btn) btn.classList.remove('spinning');
-        showToast(currentLang === 'ar' ? 'تم التحديث الفوري بنجاح وعرض أحدث التغييرات! 🔄' : 'Live refreshed successfully! 🔄', 'success');
-    }, 450);
+        window.location.reload();
+    }, 250);
 }
 
 
