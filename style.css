@@ -3,57 +3,71 @@
    Style System: High-End Glassmorphism, Luxury Accents, Full RTL/LTR & Themes
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   CONSULTANCY GROUP BRAND
+   One brand color only: the logo gold (#C69A28) on the logo navy (#0F172A).
+   Neutrals are navy-tinted greys. Red is used only for numbers that need attention
+   (shortage / negative balance / delete).
+   -------------------------------------------------------------------------- */
 :root {
     --font-sans: 'Tajawal', 'Cairo', 'Segoe UI', system-ui, -apple-system, sans-serif;
-    
-    /* Default Theme: Royal Gold (الذهبي الملكي الفاخر) */
-    --primary: #d4af37;
-    --primary-hover: #b89325;
-    --primary-light: rgba(212, 175, 55, 0.12);
-    --primary-glow: rgba(212, 175, 55, 0.35);
-    --primary-gradient: linear-gradient(135deg, #d4af37 0%, #b89325 100%);
-    --accent: #f59e0b;
+
+    /* Brand */
+    --brand-gold: #c69a28;
+    --brand-gold-deep: #a8821f;
+    --brand-gold-soft: #e3c77a;
+    --brand-navy: #0f172a;
+
+    /* Light mode: gold is darkened slightly so gold text stays readable on white */
+    --primary: #b08a22;
+    --primary-hover: #94731b;
+    --primary-light: rgba(198, 154, 40, 0.12);
+    --primary-glow: rgba(198, 154, 40, 0.28);
+    --primary-gradient: linear-gradient(135deg, #c69a28 0%, #a8821f 100%);
+    --accent: var(--primary);
+    --on-primary: #0f172a;
 
     /* Light Mode Backgrounds & Surfaces */
-    --bg-app: #f8fafc;
+    --bg-app: #f6f7f9;
     --bg-sidebar: #ffffff;
-    --bg-header: rgba(255, 255, 255, 0.85);
+    --bg-header: rgba(255, 255, 255, 0.9);
     --bg-card: #ffffff;
-    --bg-card-hover: #fcfcfd;
+    --bg-card-hover: #fcfbf7;
     --bg-input: #ffffff;
-    --bg-subtle: #f1f5f9;
-    --border-color: #e2e8f0;
-    --border-subtle: #edf2f7;
+    --bg-subtle: #f2f3f6;
+    --border-color: #e2e5ea;
+    --border-subtle: #eceef2;
 
     /* Typography Colors */
     --text-primary: #0f172a;
     --text-secondary: #475569;
     --text-muted: #64748b;
-    --text-inverse: #ffffff;
+    --text-inverse: #0f172a;
 
-    /* Status & Semantic Colors */
-    --success: #10b981;
-    --success-light: #ecfdf5;
-    --warning: #f59e0b;
-    --warning-light: #fffbeb;
-    --danger: #ef4444;
-    --danger-light: #fef2f2;
-    --info: #3b82f6;
-    --info-light: #eff6ff;
+    /* Status colors collapse onto the brand: gold for normal/attention,
+       slate for information, red only for numbers that need attention */
+    --success: var(--primary);
+    --success-light: rgba(198, 154, 40, 0.12);
+    --warning: #9a7419;
+    --warning-light: rgba(198, 154, 40, 0.18);
+    --danger: #b42318;
+    --danger-light: rgba(180, 35, 24, 0.08);
+    --info: #475569;
+    --info-light: rgba(71, 85, 105, 0.1);
 
     /* Shadows & Elevation */
-    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-    --shadow-glow: 0 0 20px var(--primary-glow);
+    --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.07), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+    --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+    --shadow-glow: 0 0 0 3px var(--primary-glow);
 
     /* Radii */
     --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 22px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
     --radius-full: 9999px;
 
     /* Dimensions */
@@ -68,94 +82,41 @@
 }
 
 /* ==========================================================================
-   THEMES PALETTES
-   ========================================================================== */
-
-/* Imperial Emerald (زمردي فاخر) */
-body.theme-emerald {
-    --primary: #0f766e;
-    --primary-hover: #0d655e;
-    --primary-light: rgba(15, 118, 110, 0.12);
-    --primary-glow: rgba(15, 118, 110, 0.35);
-    --primary-gradient: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
-    --accent: #14b8a6;
-}
-
-/* Sapphire Corporate (أزرق ملكي عصري) */
-body.theme-blue {
-    --primary: #0284c7;
-    --primary-hover: #0369a1;
-    --primary-light: rgba(2, 132, 199, 0.12);
-    --primary-glow: rgba(2, 132, 199, 0.35);
-    --primary-gradient: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
-    --accent: #38bdf8;
-}
-
-/* Modern Amethyst (بنفسجي عصري) */
-body.theme-purple {
-    --primary: #7c3aed;
-    --primary-hover: #6d28d9;
-    --primary-light: rgba(124, 58, 237, 0.12);
-    --primary-glow: rgba(124, 58, 237, 0.35);
-    --primary-gradient: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-    --accent: #a855f7;
-}
-
-/* ==========================================================================
-   DARK MODE
+   DARK MODE (brand navy)
    ========================================================================== */
 body.dark {
-    --bg-app: #0b0f17;
-    --bg-sidebar: #111827;
-    --bg-header: rgba(17, 24, 39, 0.88);
-    --bg-card: #151e2e;
-    --bg-card-hover: #1c273a;
-    --bg-input: #0f1623;
-    --bg-subtle: #1a2333;
-    --border-color: #233044;
-    --border-subtle: #1a2436;
+    --primary: #d2a73a;
+    --primary-hover: #c69a28;
+    --primary-light: rgba(198, 154, 40, 0.14);
+    --primary-glow: rgba(198, 154, 40, 0.3);
+    --primary-gradient: linear-gradient(135deg, #d6ad45 0%, #b88f24 100%);
 
-    --text-primary: #f8fafc;
-    --text-secondary: #cbd5e1;
-    --text-muted: #94a3b8;
+    --bg-app: #0b1120;
+    --bg-sidebar: #0f172a;
+    --bg-header: rgba(15, 23, 42, 0.9);
+    --bg-card: #131c31;
+    --bg-card-hover: #18233b;
+    --bg-input: #0d1526;
+    --bg-subtle: #172036;
+    --border-color: #24304a;
+    --border-subtle: #1b2640;
+
+    --text-primary: #f1f3f7;
+    --text-secondary: #c3cad6;
+    --text-muted: #8f9bb0;
+
+    --success-light: rgba(198, 154, 40, 0.14);
+    --warning: #e0bd62;
+    --warning-light: rgba(198, 154, 40, 0.2);
+    --danger: #f07167;
+    --danger-light: rgba(240, 113, 103, 0.12);
+    --info: #aab4c5;
+    --info-light: rgba(170, 180, 197, 0.12);
 
     --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
-
-    --success-light: rgba(16, 185, 129, 0.18);
-    --warning-light: rgba(245, 158, 11, 0.18);
-    --danger-light: rgba(239, 68, 68, 0.18);
-    --info-light: rgba(59, 130, 246, 0.18);
-}
-
-body.dark.theme-gold {
-    --primary: #f0c541;
-    --primary-hover: #e0b42f;
-    --primary-light: rgba(240, 197, 65, 0.15);
-    --primary-glow: rgba(240, 197, 65, 0.4);
-}
-
-body.dark.theme-emerald {
-    --primary: #2dd4bf;
-    --primary-hover: #14b8a6;
-    --primary-light: rgba(45, 212, 191, 0.15);
-    --primary-glow: rgba(45, 212, 191, 0.4);
-}
-
-body.dark.theme-blue {
-    --primary: #38bdf8;
-    --primary-hover: #0ea5e9;
-    --primary-light: rgba(56, 189, 248, 0.15);
-    --primary-glow: rgba(56, 189, 248, 0.4);
-}
-
-body.dark.theme-purple {
-    --primary: #c084fc;
-    --primary-hover: #a855f7;
-    --primary-light: rgba(192, 132, 252, 0.15);
-    --primary-glow: rgba(192, 132, 252, 0.4);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.45);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.55);
 }
 
 /* ==========================================================================
@@ -636,7 +597,7 @@ header.app-header {
 
 .btn-success {
     background: var(--success);
-    color: white;
+    color: var(--text-inverse);
 }
 
 .btn-success:hover {
@@ -1647,13 +1608,13 @@ html[dir="ltr"] .dropdown-pane {
 }
 
 tr.wbs-main-group-row td {
-    background: linear-gradient(90deg, rgba(212, 175, 55, 0.22) 0%, rgba(30, 41, 59, 0.92) 100%);
+    background: linear-gradient(90deg, rgba(198, 154, 40, 0.22) 0%, rgba(30, 41, 59, 0.92) 100%);
     color: var(--primary);
     font-weight: 900;
     font-size: 0.96rem;
     padding: 0.6rem 1rem !important;
-    border-top: 2px solid rgba(212, 175, 55, 0.45);
-    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    border-top: 2px solid rgba(198, 154, 40, 0.45);
+    border-bottom: 1px solid rgba(198, 154, 40, 0.3);
 }
 
 tr.wbs-sub-group-row td {
@@ -1768,7 +1729,7 @@ tr.wbs-sub-group-row td {
 }
 
 /* ==========================================================================
-   MAIN 4-OPTIONS STARTUP PORTAL CARDS
+   MAIN 4-OPTIONS STARTUP PORTAL CARDS (brand: gold on navy, one color)
    ========================================================================== */
 .portal-cards-grid {
     display: grid;
@@ -1778,47 +1739,86 @@ tr.wbs-sub-group-row td {
 }
 
 .portal-option-card {
-    background: rgba(30, 41, 59, 0.88);
-    border: 1.5px solid rgba(212, 175, 55, 0.28);
-    border-radius: 18px;
-    padding: 1.5rem 1.15rem;
+    position: relative;
+    background: linear-gradient(180deg, rgba(23, 33, 56, 0.92) 0%, rgba(15, 23, 42, 0.92) 100%);
+    border: 1px solid rgba(198, 154, 40, 0.22);
+    border-radius: 16px;
+    padding: 1.6rem 1.15rem 1.25rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
     cursor: pointer;
-    transition: all 0.25s ease;
-    box-shadow: 0 16px 35px -10px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 14px 32px -14px rgba(0, 0, 0, 0.6);
+}
+
+/* thin gold rule on top of every card, like the logo line */
+.portal-option-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 22%;
+    right: 22%;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+    background: linear-gradient(90deg, transparent, #c69a28, transparent);
+    opacity: 0.7;
+    transition: left 0.25s ease, right 0.25s ease, opacity 0.25s ease;
 }
 
 .portal-option-card:hover {
-    transform: translateY(-6px);
-    border-color: #d4af37;
-    background: rgba(30, 41, 59, 0.98);
-    box-shadow: 0 22px 45px -12px rgba(212, 175, 55, 0.25);
+    transform: translateY(-4px);
+    border-color: rgba(198, 154, 40, 0.6);
+    box-shadow: 0 20px 40px -16px rgba(198, 154, 40, 0.28);
+}
+
+.portal-option-card:hover::before {
+    left: 0;
+    right: 0;
+    opacity: 1;
 }
 
 .portal-card-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 18px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
-    margin-bottom: 0.85rem;
+    margin-bottom: 0.9rem;
+    color: #c69a28;
+    background: rgba(198, 154, 40, 0.08);
+    border: 1px solid rgba(198, 154, 40, 0.4);
+}
+
+.portal-card-icon svg {
+    width: 26px;
+    height: 26px;
+    stroke-width: 1.6;
+}
+
+.portal-card-tag {
+    background: transparent !important;
+    color: #aab4c5 !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    padding: 0 !important;
+    margin-bottom: 0.55rem;
+    white-space: normal !important;
 }
 
 .portal-card-title {
-    font-size: 1.18rem;
-    font-weight: 900;
-    color: #f8fafc;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #f1f3f7;
     margin-bottom: 0.45rem;
 }
 
 .portal-card-desc {
     font-size: 0.84rem;
-    color: #cbd5e1;
+    color: #c3cad6;
     line-height: 1.55;
     margin-bottom: 1.15rem;
     flex: 1;
@@ -1826,23 +1826,36 @@ tr.wbs-sub-group-row td {
 
 .portal-card-btn {
     width: 100%;
-    padding: 0.65rem 0.85rem;
+    margin-top: auto;
+    padding: 0.62rem 0.85rem;
     border-radius: 10px;
-    background: rgba(212, 175, 55, 0.18);
-    border: 1px solid rgba(212, 175, 55, 0.45);
-    color: #d4af37;
-    font-weight: 800;
+    background: transparent;
+    border: 1px solid rgba(198, 154, 40, 0.45);
+    color: #d2a73a;
+    font-weight: 700;
     font-size: 0.85rem;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.45rem;
-    transition: all 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
 .portal-option-card:hover .portal-card-btn {
-    background: #d4af37;
+    background: #c69a28;
+    border-color: #c69a28;
     color: #0f172a;
+}
+
+.portal-footer-btn {
+    background: rgba(15, 23, 42, 0.85) !important;
+    border-color: rgba(198, 154, 40, 0.3) !important;
+    color: #e3e7ee !important;
+}
+
+.portal-footer-btn:hover {
+    border-color: #c69a28 !important;
+    color: #d2a73a !important;
 }
 
 @media (max-width: 1120px) {
@@ -1978,7 +1991,7 @@ body[data-active-module="custody"] .header-group-hq {
     .portal-return-btn {
         grid-column: 1 / -1 !important;
         justify-content: center !important;
-        background: rgba(212, 175, 55, 0.2) !important;
+        background: rgba(198, 154, 40, 0.2) !important;
         border: 1.5px solid var(--primary) !important;
         color: var(--primary) !important;
         font-weight: 900 !important;
@@ -2118,20 +2131,20 @@ body[data-active-module="custody"] .header-group-hq {
     transition: all 0.2s ease;
 }
 .role-badge-admin {
-    background: rgba(212, 175, 55, 0.16);
+    background: rgba(198, 154, 40, 0.16);
     color: var(--primary);
-    border-color: rgba(212, 175, 55, 0.4);
+    border-color: rgba(198, 154, 40, 0.4);
 }
 .role-badge-admin:hover {
-    background: rgba(212, 175, 55, 0.28);
+    background: rgba(198, 154, 40, 0.28);
 }
 .role-badge-viewer {
-    background: rgba(59, 130, 246, 0.16);
-    color: #60a5fa;
-    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(148, 163, 184, 0.16);
+    color: var(--text-secondary);
+    border-color: rgba(148, 163, 184, 0.4);
 }
 .role-badge-viewer:hover {
-    background: rgba(59, 130, 246, 0.28);
+    background: rgba(148, 163, 184, 0.28);
 }
 
 /* When in Viewer / Read-only Mode: disable/hide editing controls */
@@ -2170,9 +2183,9 @@ body.role-viewer .viewer-banner {
     justify-content: center;
     gap: 0.6rem;
     padding: 0.45rem 1rem;
-    background: rgba(59, 130, 246, 0.18);
-    border: 1px solid rgba(59, 130, 246, 0.35);
-    color: #93c5fd;
+    background: rgba(148, 163, 184, 0.18);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    color: var(--text-secondary);
     font-size: 0.82rem;
     font-weight: 700;
     border-radius: 8px;
@@ -2184,12 +2197,12 @@ body.role-viewer .viewer-banner {
     display: inline-block;
     padding: 0.2rem 0.55rem;
     border-radius: 6px;
-    background: rgba(212, 175, 55, 0.15);
+    background: rgba(198, 154, 40, 0.15);
     color: var(--primary);
     font-family: monospace, 'Courier New', sans-serif;
     font-weight: 800;
     font-size: 0.82rem;
-    border: 1px solid rgba(212, 175, 55, 0.3);
+    border: 1px solid rgba(198, 154, 40, 0.3);
     direction: ltr;
 }
 
@@ -2278,11 +2291,11 @@ body.role-viewer .viewer-banner {
     color: #0f172a;
     border-color: var(--primary);
     font-weight: 900;
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
+    box-shadow: 0 4px 12px rgba(198, 154, 40, 0.25);
 }
 
 .custody-search-summary-banner {
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.16) 0%, rgba(16, 185, 129, 0.12) 100%);
+    background: linear-gradient(135deg, rgba(198, 154, 40, 0.16) 0%, rgba(198, 154, 40, 0.12) 100%);
     border: 1.5px solid var(--primary);
     border-radius: 12px;
     padding: 0.9rem 1.25rem;
@@ -2302,8 +2315,8 @@ body.role-viewer .viewer-banner {
     border-radius: 6px;
     font-size: 0.76rem;
     font-weight: 800;
-    border: 1px solid rgba(212, 175, 55, 0.4);
-    background: rgba(212, 175, 55, 0.12);
+    border: 1px solid rgba(198, 154, 40, 0.4);
+    background: rgba(198, 154, 40, 0.12);
     color: var(--primary);
     cursor: pointer;
     white-space: nowrap;
@@ -2424,15 +2437,15 @@ body.role-viewer .viewer-banner {
     font-size: 0.73rem;
     font-weight: 900;
     border-radius: 6px;
-    background: rgba(16, 185, 129, 0.15);
+    background: rgba(198, 154, 40, 0.15);
     color: var(--success);
-    border: 1px solid rgba(16, 185, 129, 0.45);
+    border: 1px solid rgba(198, 154, 40, 0.45);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 .custody-inv-view-btn:hover {
     background: var(--success);
-    color: #fff;
+    color: var(--text-inverse);
 }
 
 /* Strictly 2-line formatted Item Name & Notes in Custody Table */
@@ -2480,20 +2493,20 @@ body.dark .data-table thead th {
 
 /* Positive & Negative Balance Cells in Custody Table */
 .custody-balance-cell.is-pos {
-    background: #fef9c3;
+    background: #f8f0db;
     color: #0f172a !important;
 }
 body.dark .custody-balance-cell.is-pos {
-    background: rgba(212, 175, 55, 0.14);
-    color: #fde047 !important;
+    background: rgba(198, 154, 40, 0.14);
+    color: #e3c77a !important;
 }
 .custody-balance-cell.is-neg {
-    background: #fee2e2;
-    color: #b91c1c !important;
+    background: #fdf1f0;
+    color: #b42318 !important;
 }
 body.dark .custody-balance-cell.is-neg {
-    background: rgba(239, 68, 68, 0.16);
-    color: #f87171 !important;
+    background: rgba(240, 113, 103, 0.14);
+    color: #f07167 !important;
 }
 
 /* High-Contrast Active Buttons & Light Mode Readability */
@@ -2504,28 +2517,28 @@ body.dark .custody-balance-cell.is-neg {
     font-weight: 900 !important;
 }
 body:not(.dark) #nav-btn-portal {
-    color: #78350f !important;
-    background: #fef3c7 !important;
-    border-color: #d97706 !important;
+    color: #6b5212 !important;
+    background: #f8f0db !important;
+    border-color: #c69a28 !important;
 }
 body:not(.dark) #sidebar-audit-btn-purchased {
-    color: #065f46 !important;
-    background: #ecfdf5 !important;
-    border-color: #10b981 !important;
+    color: #6b5212 !important;
+    background: #fbf6ea !important;
+    border-color: #c69a28 !important;
 }
 body:not(.dark) #sidebar-audit-btn-unpurchased {
-    color: #991b1b !important;
-    background: #fef2f2 !important;
-    border-color: #ef4444 !important;
+    color: #6b5212 !important;
+    background: #fbf6ea !important;
+    border-color: #c69a28 !important;
 }
 body:not(.dark) #sidebar-audit-btn-extra {
-    color: #92400e !important;
-    background: #fffbeb !important;
-    border-color: #f59e0b !important;
+    color: #6b5212 !important;
+    background: #fbf6ea !important;
+    border-color: #c69a28 !important;
 }
 body:not(.dark) .badge-warning {
-    color: #78350f !important;
-    background: #fde68a !important;
+    color: #6b5212 !important;
+    background: #f3e4bb !important;
 }
 
 @media print {
@@ -2551,3 +2564,87 @@ body:not(.dark) .badge-warning {
 }
 
 
+
+/* ==========================================================================
+   BRAND PRINT (light ink)
+   Printed reports: soft charcoal text instead of heavy black, light grey
+   grid lines, very light brand-gold header tint, thin gold title rule.
+   (app.js softenPrintInk() lowers the inline bold weights before printing.)
+   ========================================================================== */
+@media print {
+    html, body,
+    .voucher-print-container {
+        color: #3a3a3a !important;
+    }
+
+    .voucher-print-container h1,
+    .voucher-print-container h2,
+    .voucher-print-container h3,
+    .voucher-title {
+        color: #2e2e2e !important;
+        font-weight: 700 !important;
+    }
+
+    .voucher-print-container strong,
+    .voucher-print-container b {
+        font-weight: 600;
+    }
+
+    .voucher-header {
+        border-bottom: 1px solid #c69a28 !important;
+    }
+
+    .voucher-meta-grid {
+        border: 0.6pt solid #d0d0d0 !important;
+        color: #3a3a3a;
+    }
+
+    table.print-table th,
+    table.print-table td {
+        border: 0.6pt solid #c9c9c9 !important;
+        color: #3a3a3a;
+    }
+
+    table.print-table td {
+        font-weight: 400;
+    }
+
+    table.print-table th,
+    table.print-table tfoot th {
+        background: #f8f3e6 !important;
+        color: #3a3a3a !important;
+        font-weight: 600 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    table.print-table td.print-item-name,
+    table.print-table th.print-item-name,
+    .print-single-line-name {
+        font-weight: 600 !important;
+    }
+
+    tr.wbs-main-group-row td {
+        background: #f3ead2 !important;
+        color: #3a3a3a !important;
+        font-weight: 600 !important;
+        border-top: 0.6pt solid #c69a28 !important;
+        border-bottom: 0.6pt solid #d8c58f !important;
+    }
+
+    tr.wbs-sub-group-row td {
+        background: #faf7ef !important;
+        color: #3a3a3a !important;
+        font-weight: 600 !important;
+    }
+
+    .sig-line {
+        border-top: 1px dashed #9a9a9a !important;
+        color: #3a3a3a !important;
+        font-weight: 600 !important;
+    }
+
+    .print-invoice-card {
+        border: 0.6pt solid #c9c9c9 !important;
+    }
+}

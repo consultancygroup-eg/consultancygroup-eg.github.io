@@ -453,7 +453,7 @@ function migrateHqListToWbs(oldList) {
 // --- APP STATE ---
 let currentLang = localStorage.getItem('buffet_v9_lang') || 'ar';
 let currentTheme = localStorage.getItem('buffet_v9_theme') || 'dark';
-let currentPalette = localStorage.getItem('buffet_v9_palette') || 'gold'; // gold, emerald, blue, purple
+let currentPalette = 'gold'; // brand gold only (other color themes removed)
 let currentUserRole = localStorage.getItem('buffet_v9_role') || 'admin'; // 'admin' | 'viewer'
 
 // Check URL query parameters for direct role sharing (?role=viewer / ?mode=user)
@@ -1858,8 +1858,8 @@ function renderCharts() {
     const isDark = document.body.classList.contains('dark');
     const textColor = isDark ? '#cbd5e1' : '#475569';
     const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
-    const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary').trim() || '#d4af37';
-    const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#f59e0b';
+    const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary').trim() || '#c69a28';
+    const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#c69a28';
 
     // 1. Floors Bar Chart
     const ctxBar = document.getElementById('floors-bar-chart');
@@ -1915,7 +1915,7 @@ function renderCharts() {
             qty: currentCycleTrans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0)
         })).sort((a, b) => b.qty - a.qty).slice(0, 5);
 
-        const paletteColors = [primaryColor, '#10b981', '#3b82f6', accentColor, '#ec4899'];
+        const paletteColors = isDark ? [primaryColor, '#e3c77a', '#8a6a16', '#aab4c5', '#5b6780'] : [primaryColor, '#e3c77a', '#6b5212', '#94a3b8', '#334155'];
 
         if (topItemsPieChart) topItemsPieChart.destroy();
         topItemsPieChart = new Chart(ctxPie, {
@@ -2513,9 +2513,57 @@ function updatePoPricingField(itemId, field, val) {
     syncToCloud();
 }
 
+// Printed pages must not come out heavy/black: before printing, the report's
+// inline styles are softened (very bold weights lowered, near-black text turned
+// into a soft charcoal, dark rules turned into light grey / brand gold).
+const PRINT_INK_TEXT = '#3a3a3a';
+const PRINT_INK_RULE = '#c9c9c9';
+const PRINT_INK_GOLD = '#c69a28';
+
+function isDarkInk(colorStr) {
+    if (!colorStr) return false;
+    const m = colorStr.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+    let r, g, b;
+    if (m) {
+        r = +m[1]; g = +m[2]; b = +m[3];
+    } else if (/^#[0-9a-f]{6}$/i.test(colorStr.trim())) {
+        const h = colorStr.trim();
+        r = parseInt(h.slice(1, 3), 16); g = parseInt(h.slice(3, 5), 16); b = parseInt(h.slice(5, 7), 16);
+    } else {
+        return /^(black|#000|#111|#222|#333)$/i.test(colorStr.trim());
+    }
+    // near-black and dark slate/navy greys only (keeps gold accents)
+    return Math.max(r, g, b) < 90 && (Math.max(r, g, b) - Math.min(r, g, b)) < 45;
+}
+
+function softenPrintInk(root) {
+    if (!root) return;
+    root.querySelectorAll('[style]').forEach(el => {
+        const s = el.style;
+        const fw = String(s.fontWeight || '');
+        if (fw === '900' || fw === '800' || fw === 'bolder') {
+            s.setProperty('font-weight', fw === '800' ? '600' : '700', s.getPropertyPriority('font-weight'));
+        }
+        if (isDarkInk(s.color)) {
+            s.setProperty('color', PRINT_INK_TEXT, s.getPropertyPriority('color'));
+        }
+        ['top', 'right', 'bottom', 'left'].forEach(side => {
+            const prop = `border-${side}-color`;
+            const val = s.getPropertyValue(prop);
+            if (val && isDarkInk(val)) {
+                // the line under the logo/report title becomes a thin brand-gold rule
+                const isTitleRule = el.tagName === 'TH' && el.colSpan > 1 && side === 'bottom';
+                s.setProperty(prop, isTitleRule ? PRINT_INK_GOLD : PRINT_INK_RULE, s.getPropertyPriority(prop));
+                if (isTitleRule) s.setProperty('border-bottom-width', '1px', s.getPropertyPriority(prop));
+            }
+        });
+    });
+}
+
 function safeWindowPrint() {
     const prevTitle = document.title;
     document.title = ' ';
+    document.querySelectorAll('.print-only').forEach(softenPrintInk);
     window.print();
     setTimeout(() => {
         document.title = prevTitle;
@@ -3207,7 +3255,7 @@ function renderFurnitureView() {
                 <td colspan="${isViewer ? 9 : 10}">
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
                         <span>📌 ${trText(subCat)}</span>
-                        ${isViewer ? '' : `<button type="button" onclick="openAddFurnitureModal('${subCat}')" class="btn btn-sm btn-secondary no-print" style="padding:0.18rem 0.6rem; font-size:0.74rem; border-color:rgba(212,175,55,0.45); color:var(--primary);">+ ${currentLang === 'ar' ? `إضافة بند في (${subCat})` : `Add in (${trText(subCat)})`}</button>`}
+                        ${isViewer ? '' : `<button type="button" onclick="openAddFurnitureModal('${subCat}')" class="btn btn-sm btn-secondary no-print" style="padding:0.18rem 0.6rem; font-size:0.74rem; border-color:rgba(198, 154, 40, 0.45); color:var(--primary);">+ ${currentLang === 'ar' ? `إضافة بند في (${subCat})` : `Add in (${trText(subCat)})`}</button>`}
                     </div>
                 </td>
             `;
@@ -3239,7 +3287,7 @@ function renderFurnitureView() {
             </td>
             <td style="text-align: center; white-space: nowrap;">
                 ${isViewer 
-                    ? `<span style="display:inline-block; min-width:44px; padding:0.3rem 0.65rem; border-radius:8px; font-weight:900; font-size:1.05rem; background:rgba(212,175,55,0.12); color:var(--primary);">${qty}</span>` 
+                    ? `<span style="display:inline-block; min-width:44px; padding:0.3rem 0.65rem; border-radius:8px; font-weight:900; font-size:1.05rem; background:rgba(198, 154, 40, 0.12); color:var(--primary);">${qty}</span>` 
                     : `<div class="stepper-control">
                         <button type="button" class="stepper-btn" onclick="stepFurnitureQty(${item.id}, -1)">−</button>
                         <input type="number" min="0" value="${qty}" class="stepper-input" onchange="updateFurnitureQty(${item.id}, this.value)" style="font-weight: 900; color: var(--primary);">
@@ -4178,7 +4226,7 @@ function renderHqView() {
             </td>
             <td style="text-align: center; white-space: nowrap;">
                 ${isViewer 
-                    ? `<span style="display:inline-block; min-width:44px; padding:0.3rem 0.65rem; border-radius:8px; font-weight:900; font-size:1.05rem; background:rgba(59,130,246,0.12); color:#60a5fa;">${qty}</span>` 
+                    ? `<span style="display:inline-block; min-width:44px; padding:0.3rem 0.65rem; border-radius:8px; font-weight:900; font-size:1.05rem; background:var(--primary-light); color:var(--primary);">${qty}</span>` 
                     : `<div class="stepper-control">
                         <button type="button" class="stepper-btn" onclick="stepHqQty(${item.id}, -1)">−</button>
                         <input type="number" min="0" value="${qty}" class="stepper-input" onchange="updateHqField(${item.id}, 'qty', Number(this.value))" style="font-weight: 900; color: var(--primary);">
@@ -4187,7 +4235,7 @@ function renderHqView() {
             </td>
             <td style="text-align: center;">
                 ${isViewer 
-                    ? `<span class="badge" style="background: rgba(16,185,129,0.14); color: #34d399; font-size: 0.78rem;">${trText(status)}</span>` 
+                    ? `<span class="badge" style="background: var(--primary-light); color: var(--primary); font-size: 0.78rem;">${trText(status)}</span>` 
                     : `<select class="table-input" onchange="updateHqField(${item.id}, 'status', this.value)" style="font-size: 0.82rem; padding: 0.35rem 0.6rem;">
                         <option value="ممتاز" ${status === 'ممتاز' ? 'selected' : ''}>${trText('ممتاز')}</option>
                         <option value="جيد جداً" ${status === 'جيد جداً' ? 'selected' : ''}>${trText('جيد جداً')}</option>
@@ -6260,7 +6308,7 @@ function renderCustodyView() {
             const monthsSet = Array.from(new Set(rows.map(r => (r.date || '').slice(0, 7)).filter(Boolean)));
             searchSummaryBox.style.display = 'block';
             searchSummaryBox.innerHTML = `
-                <div style="background: rgba(212, 175, 55, 0.12); border: 1.5px solid var(--primary); border-radius: var(--radius-md); padding: 0.7rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.65rem;">
+                <div style="background: rgba(198, 154, 40, 0.12); border: 1.5px solid var(--primary); border-radius: var(--radius-md); padding: 0.7rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.65rem;">
                     <div>
                         <div style="font-weight: 900; font-size: 0.92rem; color: var(--primary);">
                             🔍 ${isAr ? `نتائج البحث التراكمي عن: "${rawSearch}"` : `Cumulative Search Results for: "${rawSearch}"`}
@@ -6467,9 +6515,9 @@ function renderCustodyView() {
         const hasInvoice = Boolean(custodyInvoicesMap[row.id]);
         const tr = document.createElement('tr');
         if (isTransferRow) {
-            tr.style.background = 'rgba(16, 185, 129, 0.07)';
+            tr.style.background = 'rgba(198, 154, 40, 0.07)';
         } else if (row.isNegative) {
-            tr.style.background = 'rgba(239, 68, 68, 0.05)';
+            tr.style.background = 'rgba(198, 154, 40, 0.05)';
         }
 
         const defaultNegNote = row.isNegative ? 'بالسالب (تغطية شخصية مؤقتة لحين تحويل الشركة)' : '';
@@ -6521,7 +6569,7 @@ function renderCustodyView() {
                             <button type="button" onclick="triggerDirectRowFileAttach(${row.id})" class="custody-inv-menu-item">
                                 📎 <span>إرفاق (Attach)</span>
                             </button>
-                            <button type="button" onclick="shareSingleCustodyRowByIdWhatsApp(${row.id})" class="custody-inv-menu-item" style="color: #16a34a;">
+                            <button type="button" onclick="shareSingleCustodyRowByIdWhatsApp(${row.id})" class="custody-inv-menu-item">
                                 📲 <span>إرسال واتس</span>
                             </button>
                             <button type="button" onclick="shareSingleCustodyRowByIdEmail(${row.id})" class="custody-inv-menu-item" style="color: var(--info);">
@@ -7268,9 +7316,9 @@ function printCustodyReport() {
                 <td style="width: 34px; text-align: center !important; font-weight: 800;">${r.serialNum}</td>
                 <td style="width: 10%; text-align: center !important; font-weight: 700; white-space: nowrap !important;">${r.date}</td>
                 <td class="print-item-name" style="width: 24% !important; min-width: 170px !important; max-width: 225px !important; white-space: normal !important; font-weight: 800 !important;"><strong>${trText(r.desc)}</strong></td>
-                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #15803d;">${r.inflow > 0 ? r.inflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
-                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #b91c1c;">${r.outflow > 0 ? r.outflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
-                <td style="width: 11%; text-align: center !important; font-weight: 900; font-size: 0.78rem !important; direction: ltr; color: ${r.isNegative ? '#b91c1c' : '#0f172a'};">${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #3a3a3a;">${r.inflow > 0 ? r.inflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
+                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #b42318;">${r.outflow > 0 ? r.outflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
+                <td style="width: 11%; text-align: center !important; font-weight: 900; font-size: 0.78rem !important; direction: ltr; color: ${r.isNegative ? '#b42318' : '#0f172a'};">${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 <td class="print-notes-col" style="width: 23% !important; min-width: 155px !important; max-width: 215px !important; font-size: 0.76rem !important; line-height: 1.32 !important; white-space: normal !important;">${negNote}</td>
             </tr>
         `;
