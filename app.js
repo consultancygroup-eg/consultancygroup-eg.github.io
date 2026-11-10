@@ -7430,6 +7430,8 @@ function renderSupplierPOsTable() {
         sumRem += rem;
 
         const tr = document.createElement('tr');
+        tr.title = isAr ? 'اضغط لعرض التفاصيل والتعديل' : 'Click to view / edit';
+        tr.onclick = (e) => { if (!e.target.closest('button')) openSupplierPOView(po.id); };
         tr.innerHTML = `
             <td style="text-align: center; font-weight: 800;">${idx + 1}</td>
             <td style="text-align: center; white-space: nowrap;">${po.date || '—'}</td>
@@ -7443,6 +7445,7 @@ function renderSupplierPOsTable() {
             <td style="text-align: center; font-weight: 800; color: ${rem > 0 ? 'var(--danger)' : 'var(--text-muted)'};">${rem.toLocaleString()}</td>
             <td>${trText(po.notes || '—')}</td>
             <td style="text-align: center; white-space: nowrap;" class="no-print">
+                <button onclick="openEditSupplierPOModal(${po.id})" class="btn btn-sm btn-secondary" style="padding: 0.2rem 0.45rem;" title="${isAr ? 'تعديل' : 'Edit'}">✏️</button>
                 <button onclick="deleteSupplierPOItem(${po.id})" class="btn btn-sm btn-danger" style="padding: 0.2rem 0.45rem;">🗑️</button>
             </td>
         `;
@@ -7476,6 +7479,66 @@ function openAddSupplierPOModal() {
     document.getElementById('sup-po-paid').value = '0';
     document.getElementById('sup-po-remaining').value = '0';
     document.getElementById('sup-po-notes').value = '';
+    document.getElementById('modal-supplier-po-title').textContent = 'تسجيل أمر شراء / تحويل مباشر لمورد (دفعات 50% / 70% / 100%)';
+    openModal('modal-supplier-po-add');
+}
+
+// Details view (label/value rows + amount cards, Delete / Edit in the footer)
+function openSupplierPOView(id) {
+    const po = supplierPOs.find(p => p.id === id);
+    if (!po) return;
+    const isAr = currentLang === 'ar';
+    const fmt = n => (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const schemeLabel = { '100%': '100% دفعة كاملة', '50%': '50% مقدم و 50% بعد التوريد', '70%': '70% مقدم و 30% بعد التوريد', 'custom': 'مبلغ مقدم مخصص' }[po.scheme] || po.scheme || '100%';
+    const rem = Number(po.remaining) || 0;
+    document.getElementById('sup-po-view-body').innerHTML = `
+        <dl class="po-view-fields">
+            <dt>التاريخ</dt><dd>${esc(po.date || '—')}</dd>
+            <dt>المورد / الشركة</dt><dd>${esc(po.supplier || '—')}</dd>
+            <dt>الصنف / البيان</dt><dd>${esc(po.item)}</dd>
+            <dt>الكمية</dt><dd>${esc(po.qty || 1)}</dd>
+            <dt>سعر الوحدة</dt><dd>${fmt(po.unitPrice)}</dd>
+            <dt>نظام السداد</dt><dd>${esc(schemeLabel)}</dd>
+            <dt>ملاحظات / الحالة</dt><dd>${esc(po.notes || '—')}</dd>
+        </dl>
+        <div class="po-view-cards">
+            <div class="po-view-card"><span>إجمالي الصفقة</span><strong>${fmt(po.total)}</strong></div>
+            <div class="po-view-card"><span>المدفوع للمورد</span><strong>${fmt(po.paid)}</strong></div>
+            <div class="po-view-card"><span>المتبقي بعد التوريد</span><strong style="color: ${rem > 0 ? 'var(--danger)' : 'var(--text-primary)'};">${fmt(rem)}</strong></div>
+        </div>
+        ${po.updatedAt ? `<div class="po-view-meta">آخر تعديل: ${new Date(po.updatedAt).toLocaleString('en-GB')}</div>` : ''}
+    `;
+    const canEdit = currentUserRole !== 'viewer';
+    const delBtn = document.getElementById('sup-po-view-delete');
+    const editBtn = document.getElementById('sup-po-view-edit');
+    delBtn.style.display = editBtn.style.display = canEdit ? '' : 'none';
+    delBtn.onclick = () => {
+        if (!confirm(isAr ? 'حذف أمر الشراء ده؟' : 'Delete this purchase order?')) return;
+        closeModal('modal-supplier-po-view');
+        deleteSupplierPOItem(id);
+    };
+    editBtn.onclick = () => { closeModal('modal-supplier-po-view'); openEditSupplierPOModal(id); };
+    openModal('modal-supplier-po-view');
+}
+
+// Edit: open the same form filled with the saved order; saving updates it in place
+function openEditSupplierPOModal(id) {
+    if (currentUserRole === 'viewer') return;
+    const po = supplierPOs.find(p => p.id === id);
+    if (!po) return;
+    document.getElementById('sup-po-edit-id').value = String(id);
+    document.getElementById('sup-po-date').value = po.date || '';
+    document.getElementById('sup-po-supplier').value = po.supplier || '';
+    document.getElementById('sup-po-item').value = po.item || '';
+    document.getElementById('sup-po-qty').value = po.qty || 1;
+    document.getElementById('sup-po-price').value = po.unitPrice ?? '';
+    document.getElementById('sup-po-scheme').value = ['100%', '50%', '70%', 'custom'].includes(po.scheme) ? po.scheme : 'custom';
+    document.getElementById('sup-po-total').value = Number(po.total) || 0;
+    document.getElementById('sup-po-paid').value = Number(po.paid) || 0;
+    document.getElementById('sup-po-remaining').value = Number(po.remaining) || 0;
+    document.getElementById('sup-po-notes').value = po.notes || '';
+    document.getElementById('modal-supplier-po-title').textContent = 'تعديل أمر الشراء / التحويل المباشر';
     openModal('modal-supplier-po-add');
 }
 
@@ -7532,11 +7595,21 @@ function saveSupplierPOItem() {
         return;
     }
 
-    const nextId = supplierPOs.length > 0 ? Math.max(...supplierPOs.map(p => p.id)) + 1 : 501;
-    supplierPOs.push({ id: nextId, date, item, supplier, qty, unitPrice, total, scheme, paid, remaining, notes });
+    const editId = Number(document.getElementById('sup-po-edit-id')?.value) || 0;
+    const existing = editId ? supplierPOs.find(p => p.id === editId) : null;
+    const updatedAt = new Date().toISOString();
+    if (existing) {
+        Object.assign(existing, { date, item, supplier, qty, unitPrice, total, scheme, paid, remaining, notes, updatedAt });
+    } else {
+        const nextId = supplierPOs.length > 0 ? Math.max(...supplierPOs.map(p => p.id)) + 1 : 501;
+        supplierPOs.push({ id: nextId, date, item, supplier, qty, unitPrice, total, scheme, paid, remaining, notes, updatedAt });
+    }
+    document.getElementById('sup-po-edit-id').value = '';
     persistState();
     closeModal('modal-supplier-po-add');
-    showToast(currentLang === 'ar' ? 'تم تسجيل التحويل المباشر للمورد بنجاح!' : 'Supplier PO saved!', 'success');
+    showToast(currentLang === 'ar'
+        ? (existing ? 'تم حفظ تعديلات أمر الشراء بنجاح!' : 'تم تسجيل التحويل المباشر للمورد بنجاح!')
+        : (existing ? 'Supplier PO updated!' : 'Supplier PO saved!'), 'success');
 }
 
 function deleteSupplierPOItem(id) {

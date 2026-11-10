@@ -2679,3 +2679,22 @@ aside.app-sidebar.collapsed .sidebar-logo-full-light {
 header.app-header {
     border-bottom: 2px solid var(--brand-gold) !important;
 }
+
+/* Supplier PO details view (same look as the CG reference: label/value rows,
+   paper cards with a thin brand line, outlined delete + gold edit in the footer) */
+.btn-danger-outline {
+    background: var(--bg-card);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+.btn-danger-outline:hover { background: var(--danger-light); }
+.po-view-fields { display: grid; grid-template-columns: 8rem 1fr; gap: 0.7rem 1rem; margin-bottom: 1.1rem; }
+.po-view-fields dt { color: var(--text-muted); font-size: 0.85rem; }
+.po-view-fields dd { margin: 0; color: var(--text-primary); font-weight: 600; }
+.po-view-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.po-view-card { background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.7rem 0.9rem; }
+.po-view-card span { display: block; color: var(--text-muted); font-size: 0.78rem; margin-bottom: 0.25rem; }
+.po-view-card strong { font-size: 1.2rem; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.po-view-meta { color: var(--text-muted); font-size: 0.75rem; margin-top: 0.9rem; }
+#supplier-pos-tbody tr { cursor: pointer; }
+body.dark .btn-danger-outline { background: transparent; }
