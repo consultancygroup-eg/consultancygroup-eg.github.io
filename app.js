@@ -4003,11 +4003,11 @@ function printSingleFloorFurnitureReport() {
 
         if (mainGroup !== lastMainGroup) {
             lastMainGroup = mainGroup;
-            rowsHtml += `<tr class="wbs-main-group-row"><td colspan="8">${trText(mainGroup)}</td></tr>`;
+            rowsHtml += `<tr class="wbs-main-group-row"><td colspan="8" style="text-align: start !important;">${trText(mainGroup)}</td></tr>`;
         }
         if (subCat !== lastSubCat) {
             lastSubCat = subCat;
-            rowsHtml += `<tr class="wbs-sub-group-row"><td colspan="8">${trText(subCat)}</td></tr>`;
+            rowsHtml += `<tr class="wbs-sub-group-row"><td colspan="8" style="text-align: start !important;">${trText(subCat)}</td></tr>`;
         }
 
         const qty = Number((item.floors || {})[selectedFurnitureFloor]) || 0;
@@ -4098,11 +4098,11 @@ function printFurnitureMatrixReport() {
 
         if (mainGroup !== lastMainGroup) {
             lastMainGroup = mainGroup;
-            rowsHtml += `<tr class="wbs-main-group-row"><td colspan="14">${trText(mainGroup)}</td></tr>`;
+            rowsHtml += `<tr class="wbs-main-group-row"><td colspan="14" style="text-align: start !important;">${trText(mainGroup)}</td></tr>`;
         }
         if (subCat !== lastSubCat) {
             lastSubCat = subCat;
-            rowsHtml += `<tr class="wbs-sub-group-row"><td colspan="14">${trText(subCat)}</td></tr>`;
+            rowsHtml += `<tr class="wbs-sub-group-row"><td colspan="14" style="text-align: start !important;">${trText(subCat)}</td></tr>`;
         }
 
         let rowSum = 0;

@@ -2764,6 +2764,10 @@ table.cg-sheet tr.wbs-sub-group-row td { background: var(--bg-subtle) !important
 body.dark table.cg-sheet tr.wbs-main-group-row td { background: rgba(217, 170, 40, 0.16) !important; color: var(--primary) !important; }
 body.dark table.cg-sheet tr.wbs-sub-group-row td { background: rgba(255, 255, 255, 0.04) !important; }
 .cg-edit-modal, .cg-edit-modal .modal-content-area, .cg-edit-modal .modal-footer { background: var(--bg-card) !important; }
+@media print {
+    .print-table tr.wbs-main-group-row td,
+    .print-table tr.wbs-sub-group-row td { text-align: start !important; }
+}
 
 </style>
 
@@ -8972,11 +8976,11 @@ function printSingleFloorFurnitureReport() {
 
         if (mainGroup !== lastMainGroup) {
             lastMainGroup = mainGroup;
-            rowsHtml += `<tr class="wbs-main-group-row"><td colspan="8">${trText(mainGroup)}</td></tr>`;
+            rowsHtml += `<tr class="wbs-main-group-row"><td colspan="8" style="text-align: start !important;">${trText(mainGroup)}</td></tr>`;
         }
         if (subCat !== lastSubCat) {
             lastSubCat = subCat;
-            rowsHtml += `<tr class="wbs-sub-group-row"><td colspan="8">${trText(subCat)}</td></tr>`;
+            rowsHtml += `<tr class="wbs-sub-group-row"><td colspan="8" style="text-align: start !important;">${trText(subCat)}</td></tr>`;
         }
 
         const qty = Number((item.floors || {})[selectedFurnitureFloor]) || 0;
@@ -9067,11 +9071,11 @@ function printFurnitureMatrixReport() {
 
         if (mainGroup !== lastMainGroup) {
             lastMainGroup = mainGroup;
-            rowsHtml += `<tr class="wbs-main-group-row"><td colspan="14">${trText(mainGroup)}</td></tr>`;
+            rowsHtml += `<tr class="wbs-main-group-row"><td colspan="14" style="text-align: start !important;">${trText(mainGroup)}</td></tr>`;
         }
         if (subCat !== lastSubCat) {
             lastSubCat = subCat;
-            rowsHtml += `<tr class="wbs-sub-group-row"><td colspan="14">${trText(subCat)}</td></tr>`;
+            rowsHtml += `<tr class="wbs-sub-group-row"><td colspan="14" style="text-align: start !important;">${trText(subCat)}</td></tr>`;
         }
 
         let rowSum = 0;

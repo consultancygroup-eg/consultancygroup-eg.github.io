@@ -2745,3 +2745,7 @@ table.cg-sheet tr.wbs-sub-group-row td { background: var(--bg-subtle) !important
 body.dark table.cg-sheet tr.wbs-main-group-row td { background: rgba(217, 170, 40, 0.16) !important; color: var(--primary) !important; }
 body.dark table.cg-sheet tr.wbs-sub-group-row td { background: rgba(255, 255, 255, 0.04) !important; }
 .cg-edit-modal, .cg-edit-modal .modal-content-area, .cg-edit-modal .modal-footer { background: var(--bg-card) !important; }
+@media print {
+    .print-table tr.wbs-main-group-row td,
+    .print-table tr.wbs-sub-group-row td { text-align: start !important; }
+}
