@@ -7482,16 +7482,27 @@ function openAddSupplierPOModal() {
 function calcSupplierPOModalPreview() {
     const qty = Number(document.getElementById('sup-po-qty')?.value) || 1;
     const price = Number(document.getElementById('sup-po-price')?.value) || 0;
-    const scheme = document.getElementById('sup-po-scheme')?.value || '100%';
     const total = +(qty * price).toFixed(2);
+    document.getElementById('sup-po-total').value = total;
+    applySupplierPOScheme(total);
+}
 
+// Typing the deal total directly: derive the unit price from it and re-split the payment.
+function onSupplierPOTotalManualInput() {
+    const total = Number(document.getElementById('sup-po-total')?.value) || 0;
+    const qty = Number(document.getElementById('sup-po-qty')?.value) || 1;
+    document.getElementById('sup-po-price').value = total ? +(total / qty).toFixed(2) : '';
+    applySupplierPOScheme(total);
+}
+
+function applySupplierPOScheme(total) {
+    const scheme = document.getElementById('sup-po-scheme')?.value || '100%';
     let paid = total;
     if (scheme === '50%') paid = +(total * 0.5).toFixed(2);
     else if (scheme === '70%') paid = +(total * 0.7).toFixed(2);
     else if (scheme === 'custom') paid = Number(document.getElementById('sup-po-paid')?.value) || 0;
 
     const rem = Math.max(0, +(total - paid).toFixed(2));
-    document.getElementById('sup-po-total').value = total;
     document.getElementById('sup-po-paid').value = paid;
     document.getElementById('sup-po-remaining').value = rem;
 }
