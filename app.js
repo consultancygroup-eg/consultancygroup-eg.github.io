@@ -7503,6 +7503,13 @@ function renderSupplierPOsTable() {
         sumPaid += paid;
         sumRem += rem;
 
+        const insts = Array.isArray(po.installments) ? po.installments : [];
+        const nextInst = insts.filter(i => !i.paid && i.date).sort((a, b) => a.date.localeCompare(b.date))[0];
+        const schemeCell = insts.length
+            ? `<span class="badge badge-info">${isAr ? 'أقساط' : 'Installments'} ${insts.filter(i => i.paid).length}/${insts.length}</span>`
+              + (nextInst ? `<div class="inst-next ${supPoDueClass(nextInst.date)}">${isAr ? 'القادمة:' : 'Next:'} ${fmtInstDate(nextInst.date)}</div>` : '')
+            : `<span class="badge badge-info">${po.scheme || '100%'}</span>`;
+
         const tr = document.createElement('tr');
         tr.title = isAr ? 'اضغط لعرض التفاصيل والتعديل' : 'Click to view / edit';
         tr.onclick = (e) => { if (!e.target.closest('button')) openSupplierPOView(po.id); };
@@ -7514,7 +7521,7 @@ function renderSupplierPOsTable() {
             <td style="text-align: center; font-weight: 700;">${po.qty || 1}</td>
             <td style="text-align: center;">${Number(po.unitPrice || 0).toLocaleString()}</td>
             <td style="text-align: center; font-weight: 900; background: var(--primary-light); color: var(--primary);">${total.toLocaleString()}</td>
-            <td style="text-align: center;"><span class="badge badge-info">${po.scheme || '100%'}</span></td>
+            <td style="text-align: center;">${schemeCell}</td>
             <td style="text-align: center; font-weight: 800; color: var(--success);">${paid.toLocaleString()}</td>
             <td style="text-align: center; font-weight: 800; color: ${rem > 0 ? 'var(--danger)' : 'var(--text-muted)'};">${rem.toLocaleString()}</td>
             <td>${trText(po.notes || '—')}</td>
@@ -7538,6 +7545,197 @@ function renderSupplierPOsTable() {
             </tr>
         `;
     }
+    renderSupplierPaymentReminders();
+}
+
+// ---------- Supplier installments (payment schedule) + reminders ----------
+const SUP_PO_REMIND_DAYS = 7;
+let supPoInstDraft = [];
+
+function todayIsoDate() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function daysUntil(isoDate) {
+    const [y, m, d] = String(isoDate).split('-').map(Number);
+    if (!y || !m || !d) return Infinity;
+    const t = new Date(); t.setHours(0, 0, 0, 0);
+    return Math.round((new Date(y, m - 1, d) - t) / 86400000);
+}
+function addMonthsIso(isoDate, months) {
+    const [y, m, d] = isoDate.split('-').map(Number);
+    const target = new Date(y, m - 1 + months, 1);
+    const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+    target.setDate(Math.min(d, lastDay));
+    return `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}-${String(target.getDate()).padStart(2, '0')}`;
+}
+function fmtInstDate(iso) {
+    const [y, m, d] = String(iso || '').split('-');
+    return y && m && d ? `${d}/${m}/${y}` : '—';
+}
+function supPoDueClass(iso) {
+    const n = daysUntil(iso);
+    if (n < 0) return 'is-overdue';
+    if (n <= SUP_PO_REMIND_DAYS) return 'is-due';
+    return '';
+}
+function supPoDueText(iso) {
+    const n = daysUntil(iso);
+    if (n < 0) return `متأخرة ${-n} يوم`;
+    if (n === 0) return 'النهارده';
+    if (n === 1) return 'بكره';
+    if (n === 2) return 'بعد يومين';
+    return `بعد ${n} ${n <= 10 ? 'أيام' : 'يوم'}`;
+}
+
+// All unpaid installments due within the reminder window (or overdue)
+function getDueSupplierInstallments() {
+    const out = [];
+    supplierPOs.forEach(po => {
+        (Array.isArray(po.installments) ? po.installments : []).forEach((inst, idx) => {
+            if (!inst.paid && inst.date && daysUntil(inst.date) <= SUP_PO_REMIND_DAYS) {
+                out.push({ po, inst, idx, n: po.installments.length });
+            }
+        });
+    });
+    return out.sort((a, b) => a.inst.date.localeCompare(b.inst.date));
+}
+
+let supPoReminderToastShown = false;
+function renderSupplierPaymentReminders() {
+    const due = getDueSupplierInstallments();
+    const fmt = n => (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const canEdit = currentUserRole !== 'viewer';
+    const rows = due.map(d => `
+        <div class="pay-rem-row ${supPoDueClass(d.inst.date)}">
+            <div class="pay-rem-main">
+                <strong>${esc(d.po.item)}</strong>
+                <span>${esc(d.po.supplier || '')} • الدفعة ${d.idx + 1} من ${d.n}</span>
+            </div>
+            <div class="pay-rem-amt">${fmt(d.inst.amount)} ج.م</div>
+            <div class="pay-rem-date">${fmtInstDate(d.inst.date)}<em>${supPoDueText(d.inst.date)}</em></div>
+            ${canEdit ? `<button type="button" class="btn btn-sm btn-secondary" onclick="markSupplierInstallmentPaid(${d.po.id}, ${d.idx})">تم الدفع</button>` : ''}
+        </div>`).join('');
+
+    const box = document.getElementById('sup-po-reminders');
+    if (box) {
+        box.innerHTML = due.length ? `<div class="pay-rem-box"><div class="pay-rem-title">🔔 دفعات موردين مستحقة خلال أسبوع (${due.length})</div>${rows}</div>` : '';
+    }
+    const portalBox = document.getElementById('portal-payment-reminders');
+    if (portalBox) {
+        portalBox.innerHTML = due.length ? `
+            <div class="portal-pay-rem" onclick="enterPortalSection('custody'); switchCustodySubtab('suppliers');">
+                🔔 عندك ${due.length} ${due.length === 1 ? 'دفعة مورد مستحقة' : 'دفعات موردين مستحقة'} خلال أسبوع — أقربها: ${esc(due[0].po.item)} ${fmtInstDate(due[0].inst.date)} (${supPoDueText(due[0].inst.date)})
+                <span>اضغط للعرض</span>
+            </div>` : '';
+    }
+    if (due.length && !supPoReminderToastShown && typeof showToast === 'function') {
+        supPoReminderToastShown = true;
+        showToast(`🔔 تذكير: ${due.length} ${due.length === 1 ? 'دفعة مورد مستحقة' : 'دفعات موردين مستحقة'} خلال أسبوع — أقربها ${fmtInstDate(due[0].inst.date)}`, 'warning');
+    }
+}
+
+function recalcSupplierPOFromInstallments(po) {
+    const insts = Array.isArray(po.installments) ? po.installments : [];
+    const paid = +insts.filter(i => i.paid).reduce((s, i) => s + (Number(i.amount) || 0), 0).toFixed(2);
+    po.paid = paid;
+    po.remaining = Math.max(0, +((Number(po.total) || 0) - paid).toFixed(2));
+}
+
+function markSupplierInstallmentPaid(poId, idx) {
+    if (currentUserRole === 'viewer') return;
+    const po = supplierPOs.find(p => p.id === poId);
+    if (!po || !po.installments || !po.installments[idx]) return;
+    po.installments[idx].paid = true;
+    po.installments[idx].paidOn = todayIsoDate();
+    recalcSupplierPOFromInstallments(po);
+    po.updatedAt = new Date().toISOString();
+    persistState();
+    renderSupplierPOsTable();
+    showToast(`تم تسجيل دفع الدفعة ${idx + 1} من "${po.item}"`, 'success');
+}
+
+// --- schedule editor inside the PO window ---
+function renderSupPoInstallments() {
+    const list = document.getElementById('sup-po-inst-list');
+    if (!list) return;
+    if (!supPoInstDraft.length) {
+        list.innerHTML = `<div class="inst-empty">لسه مفيش دفعات. اكتب عدد الدفعات وتاريخ أول دفعة واضغط "توزيع الدفعات"، أو أضف دفعة بدفعة.</div>`;
+    } else {
+        list.innerHTML = `
+            <div class="inst-row inst-row-head"><span>#</span><span>تاريخ الدفعة</span><span>المبلغ (ج.م)</span><span>اتدفعت؟</span><span></span></div>
+            ${supPoInstDraft.map((it, i) => `
+            <div class="inst-row ${it.paid ? 'is-paid' : supPoDueClass(it.date)}">
+                <span>${i + 1}</span>
+                <input type="date" class="form-control" value="${it.date || ''}" onchange="onSupPoInstChange(${i}, 'date', this.value)">
+                <input type="number" class="form-control" min="0" step="0.01" value="${it.amount ?? ''}" oninput="onSupPoInstChange(${i}, 'amount', this.value)">
+                <span class="inst-paid">
+                    <label><input type="checkbox" ${it.paid ? 'checked' : ''} onchange="onSupPoInstChange(${i}, 'paid', this.checked)"> ${it.paid ? 'مدفوعة' : 'لسه'}</label>
+                    ${it.paid ? `<input type="date" class="form-control" title="تاريخ الدفع الفعلي" value="${it.paidOn || ''}" onchange="onSupPoInstChange(${i}, 'paidOn', this.value)">` : ''}
+                </span>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="removeSupPoInstallment(${i})" title="حذف الدفعة">✖</button>
+            </div>`).join('')}`;
+    }
+    syncSupPoTotalsFromInstallments();
+}
+
+function syncSupPoTotalsFromInstallments() {
+    if (document.getElementById('sup-po-scheme')?.value !== 'installments') return;
+    const total = Number(document.getElementById('sup-po-total')?.value) || 0;
+    const paid = +supPoInstDraft.filter(i => i.paid).reduce((s, i) => s + (Number(i.amount) || 0), 0).toFixed(2);
+    document.getElementById('sup-po-paid').value = paid;
+    document.getElementById('sup-po-remaining').value = Math.max(0, +(total - paid).toFixed(2));
+}
+
+function generateSupPoInstallments() {
+    const total = Number(document.getElementById('sup-po-total')?.value) || 0;
+    const count = Math.max(1, parseInt(document.getElementById('sup-po-inst-count')?.value, 10) || 1);
+    const every = Math.max(1, parseInt(document.getElementById('sup-po-inst-every')?.value, 10) || 1);
+    const first = document.getElementById('sup-po-inst-first')?.value;
+    if (!first) { showToast('اكتب تاريخ أول دفعة الأول', 'warning'); return; }
+    if (supPoInstDraft.some(i => i.paid) && !confirm('فيه دفعات متسجلة إنها اتدفعت. إعادة التوزيع هتمسح الجدول الحالي. تكمل؟')) return;
+    const base = Math.floor((total / count) * 100) / 100;
+    supPoInstDraft = Array.from({ length: count }, (_, i) => ({
+        date: addMonthsIso(first, i * every),
+        amount: i === count - 1 ? +(total - base * (count - 1)).toFixed(2) : base,
+        paid: false
+    }));
+    renderSupPoInstallments();
+}
+
+function addSupPoInstallment() {
+    const last = supPoInstDraft[supPoInstDraft.length - 1];
+    const every = Math.max(1, parseInt(document.getElementById('sup-po-inst-every')?.value, 10) || 1);
+    const date = last && last.date ? addMonthsIso(last.date, every) : (document.getElementById('sup-po-inst-first')?.value || todayIsoDate());
+    supPoInstDraft.push({ date, amount: 0, paid: false });
+    renderSupPoInstallments();
+}
+
+function removeSupPoInstallment(i) {
+    supPoInstDraft.splice(i, 1);
+    renderSupPoInstallments();
+}
+
+function onSupPoInstChange(i, field, val) {
+    const it = supPoInstDraft[i];
+    if (!it) return;
+    if (field === 'amount') { it.amount = Math.max(0, Number(val) || 0); syncSupPoTotalsFromInstallments(); return; }
+    if (field === 'paidOn') { it.paidOn = val; return; }
+    if (field === 'paid') { it.paid = !!val; it.paidOn = val ? (it.paidOn || (daysUntil(it.date) <= 0 ? it.date : todayIsoDate())) : undefined; }
+    if (field === 'date') it.date = val;
+    renderSupPoInstallments();
+}
+
+function toggleSupPoInstallmentsUI() {
+    const isInst = document.getElementById('sup-po-scheme')?.value === 'installments';
+    document.getElementById('sup-po-inst-wrap').style.display = isInst ? '' : 'none';
+    document.getElementById('sup-po-paid').readOnly = isInst;
+    if (isInst) {
+        const firstInp = document.getElementById('sup-po-inst-first');
+        if (firstInp && !firstInp.value) firstInp.value = document.getElementById('sup-po-date')?.value || todayIsoDate();
+        renderSupPoInstallments();
+    }
 }
 
 function openAddSupplierPOModal() {
@@ -7554,6 +7752,9 @@ function openAddSupplierPOModal() {
     document.getElementById('sup-po-remaining').value = '0';
     document.getElementById('sup-po-notes').value = '';
     document.getElementById('modal-supplier-po-title').textContent = 'تسجيل أمر شراء / تحويل مباشر لمورد (دفعات 50% / 70% / 100%)';
+    supPoInstDraft = [];
+    document.getElementById('sup-po-inst-first').value = '';
+    toggleSupPoInstallmentsUI();
     openModal('modal-supplier-po-add');
 }
 
@@ -7564,8 +7765,22 @@ function openSupplierPOView(id) {
     const isAr = currentLang === 'ar';
     const fmt = n => (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const schemeLabel = { '100%': '100% دفعة كاملة', '50%': '50% مقدم و 50% بعد التوريد', '70%': '70% مقدم و 30% بعد التوريد', 'custom': 'مبلغ مقدم مخصص' }[po.scheme] || po.scheme || '100%';
+    const schemeLabel = { '100%': '100% دفعة كاملة', '50%': '50% مقدم و 50% بعد التوريد', '70%': '70% مقدم و 30% بعد التوريد', 'custom': 'مبلغ مقدم مخصص', 'installments': 'دفعات بتواريخ (أقساط)' }[po.scheme] || po.scheme || '100%';
     const rem = Number(po.remaining) || 0;
+    const insts = Array.isArray(po.installments) ? po.installments : [];
+    const instHtml = insts.length ? `
+        <div class="cg-edit-section">جدول الدفعات</div>
+        <table class="po-view-inst">
+            <thead><tr><th>#</th><th>التاريخ</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+            <tbody>${insts.map((it, i) => `
+                <tr class="${it.paid ? 'is-paid' : supPoDueClass(it.date)}">
+                    <td>${i + 1}</td>
+                    <td>${fmtInstDate(it.date)}</td>
+                    <td>${fmt(it.amount)}</td>
+                    <td>${it.paid ? `مدفوعة${it.paidOn ? ' ' + fmtInstDate(it.paidOn) : ''}` : supPoDueText(it.date)}${!it.paid && currentUserRole !== 'viewer' ? ` <button type="button" class="btn btn-sm btn-secondary" onclick="markSupplierInstallmentPaid(${po.id}, ${i}); openSupplierPOView(${po.id});">تم الدفع</button>` : ''}</td>
+                </tr>`).join('')}
+            </tbody>
+        </table>` : '';
     document.getElementById('sup-po-view-body').innerHTML = `
         <dl class="po-view-fields">
             <dt>التاريخ</dt><dd>${esc(po.date || '—')}</dd>
@@ -7581,6 +7796,7 @@ function openSupplierPOView(id) {
             <div class="po-view-card"><span>المدفوع للمورد</span><strong>${fmt(po.paid)}</strong></div>
             <div class="po-view-card"><span>المتبقي بعد التوريد</span><strong style="color: ${rem > 0 ? 'var(--danger)' : 'var(--text-primary)'};">${fmt(rem)}</strong></div>
         </div>
+        ${instHtml}
         ${po.updatedAt ? `<div class="po-view-meta">آخر تعديل: ${new Date(po.updatedAt).toLocaleString('en-GB')}</div>` : ''}
     `;
     const canEdit = currentUserRole !== 'viewer';
@@ -7607,12 +7823,16 @@ function openEditSupplierPOModal(id) {
     document.getElementById('sup-po-item').value = po.item || '';
     document.getElementById('sup-po-qty').value = po.qty || 1;
     document.getElementById('sup-po-price').value = po.unitPrice ?? '';
-    document.getElementById('sup-po-scheme').value = ['100%', '50%', '70%', 'custom'].includes(po.scheme) ? po.scheme : 'custom';
+    document.getElementById('sup-po-scheme').value = ['100%', '50%', '70%', 'custom', 'installments'].includes(po.scheme) ? po.scheme : 'custom';
+    supPoInstDraft = (Array.isArray(po.installments) ? po.installments : []).map(i => ({ ...i }));
+    document.getElementById('sup-po-inst-first').value = supPoInstDraft[0]?.date || '';
+    if (supPoInstDraft.length) document.getElementById('sup-po-inst-count').value = supPoInstDraft.length;
     document.getElementById('sup-po-total').value = Number(po.total) || 0;
     document.getElementById('sup-po-paid').value = Number(po.paid) || 0;
     document.getElementById('sup-po-remaining').value = Number(po.remaining) || 0;
     document.getElementById('sup-po-notes').value = po.notes || '';
     document.getElementById('modal-supplier-po-title').textContent = 'تعديل أمر الشراء / التحويل المباشر';
+    toggleSupPoInstallmentsUI();
     openModal('modal-supplier-po-add');
 }
 
@@ -7634,6 +7854,8 @@ function onSupplierPOTotalManualInput() {
 
 function applySupplierPOScheme(total) {
     const scheme = document.getElementById('sup-po-scheme')?.value || '100%';
+    toggleSupPoInstallmentsUI();
+    if (scheme === 'installments') return; // paid/remaining come from the schedule
     let paid = total;
     if (scheme === '50%') paid = +(total * 0.5).toFixed(2);
     else if (scheme === '70%') paid = +(total * 0.7).toFixed(2);
@@ -7647,6 +7869,7 @@ function applySupplierPOScheme(total) {
 function onSupplierPOPaidManualInput() {
     const total = Number(document.getElementById('sup-po-total')?.value) || 0;
     const paid = Number(document.getElementById('sup-po-paid')?.value) || 0;
+    if (document.getElementById('sup-po-scheme').value === 'installments') return;
     document.getElementById('sup-po-scheme').value = 'custom';
     document.getElementById('sup-po-remaining').value = Math.max(0, +(total - paid).toFixed(2));
 }
@@ -7669,14 +7892,34 @@ function saveSupplierPOItem() {
         return;
     }
 
+    let installments;
+    if (scheme === 'installments') {
+        installments = supPoInstDraft.filter(i => i.date || Number(i.amount) > 0).map(i => ({ date: i.date || '', amount: Number(i.amount) || 0, paid: !!i.paid, ...(i.paid && i.paidOn ? { paidOn: i.paidOn } : {}) }));
+        if (!installments.length) {
+            showToast('اكتب الدفعات وتواريخها في جدول الدفعات الأول', 'warning');
+            return;
+        }
+        const instSum = +installments.reduce((s, i) => s + i.amount, 0).toFixed(2);
+        if (Math.abs(instSum - total) > 0.5 && !confirm(`مجموع الدفعات (${instSum.toLocaleString()}) مش مساوي لإجمالي الصفقة (${total.toLocaleString()}). تحفظ كده؟`)) return;
+    }
+
     const editId = Number(document.getElementById('sup-po-edit-id')?.value) || 0;
     const existing = editId ? supplierPOs.find(p => p.id === editId) : null;
     const updatedAt = new Date().toISOString();
+    let target;
     if (existing) {
         Object.assign(existing, { date, item, supplier, qty, unitPrice, total, scheme, paid, remaining, notes, updatedAt });
+        target = existing;
     } else {
         const nextId = supplierPOs.length > 0 ? Math.max(...supplierPOs.map(p => p.id)) + 1 : 501;
-        supplierPOs.push({ id: nextId, date, item, supplier, qty, unitPrice, total, scheme, paid, remaining, notes, updatedAt });
+        target = { id: nextId, date, item, supplier, qty, unitPrice, total, scheme, paid, remaining, notes, updatedAt };
+        supplierPOs.push(target);
+    }
+    if (installments) {
+        target.installments = installments;
+        recalcSupplierPOFromInstallments(target);
+    } else {
+        delete target.installments;
     }
     document.getElementById('sup-po-edit-id').value = '';
     persistState();

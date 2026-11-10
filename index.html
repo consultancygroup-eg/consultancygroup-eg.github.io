@@ -103,6 +103,9 @@
                 <p style="font-size:0.9rem; color:#a8a396; margin-top:0.65rem;">اختر القسم المراد إدارته أو استعراض تقاريره الآن:</p>
             </div>
 
+            <!-- Upcoming supplier payment reminders (filled by app.js) -->
+            <div id="portal-payment-reminders"></div>
+
             <!-- 4 Main Section Cards -->
             <div class="portal-cards-grid">
                 <!-- Option 1: مصروفات البوفيه -->
@@ -1389,6 +1392,7 @@
                                     </button>
                                 </div>
                             </div>
+                            <div id="sup-po-reminders"></div>
                             <div class="table-responsive">
                                 <table class="data-table">
                                     <thead>
@@ -2118,6 +2122,7 @@
                             <option value="50%">50% مقدم و 50% بعد التوريد</option>
                             <option value="70%">70% مقدم و 30% بعد التوريد</option>
                             <option value="custom">مبلغ مقدم مخصص</option>
+                            <option value="installments">دفعات بتواريخ (أقساط)</option>
                         </select>
                     </div>
                 </div>
@@ -2134,6 +2139,23 @@
                         <label class="form-label" style="font-size: 0.75rem; color: var(--danger);">المتبقي بعد التوريد (ج.م):</label>
                         <input type="number" id="sup-po-remaining" class="form-control" readonly style="font-weight: 900; color: var(--danger);">
                     </div>
+                </div>
+                <div id="sup-po-inst-wrap" class="inst-wrap" style="display: none;">
+                    <div class="inst-head">جدول الدفعات <span>(هيتم تذكيرك قبل كل دفعة بأسبوع)</span></div>
+                    <div class="inst-gen">
+                        <label>عدد الدفعات
+                            <input type="number" id="sup-po-inst-count" class="form-control" min="1" value="4">
+                        </label>
+                        <label>تاريخ أول دفعة
+                            <input type="date" id="sup-po-inst-first" class="form-control">
+                        </label>
+                        <label>كل كام شهر
+                            <input type="number" id="sup-po-inst-every" class="form-control" min="1" value="3">
+                        </label>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="generateSupPoInstallments()">توزيع الدفعات</button>
+                    </div>
+                    <div id="sup-po-inst-list"></div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addSupPoInstallment()" style="margin-top: 0.5rem;">+ إضافة دفعة</button>
                 </div>
                 <div class="form-group" style="margin-top: 0.75rem;">
                     <label class="form-label">ملاحظات وحالة التوريد:</label>
