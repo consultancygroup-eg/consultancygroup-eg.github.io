@@ -1856,10 +1856,10 @@ function renderCharts() {
     });
 
     const isDark = document.body.classList.contains('dark');
-    const textColor = isDark ? '#cbd5e1' : '#475569';
+    const textColor = isDark ? '#c9c3b4' : '#55524b';
     const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
-    const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary').trim() || '#c69a28';
-    const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#c69a28';
+    const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary-fill').trim() || '#d9aa28';
+    const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#d9aa28';
 
     // 1. Floors Bar Chart
     const ctxBar = document.getElementById('floors-bar-chart');
@@ -1915,7 +1915,7 @@ function renderCharts() {
             qty: currentCycleTrans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0)
         })).sort((a, b) => b.qty - a.qty).slice(0, 5);
 
-        const paletteColors = isDark ? [primaryColor, '#e3c77a', '#8a6a16', '#aab4c5', '#5b6780'] : [primaryColor, '#e3c77a', '#6b5212', '#94a3b8', '#334155'];
+        const paletteColors = isDark ? [primaryColor, '#f6e7bc', '#94700f', '#c9c3b4', '#55524b'] : [primaryColor, '#f6e7bc', '#94700f', '#a8a396', '#55524b'];
 
         if (topItemsPieChart) topItemsPieChart.destroy();
         topItemsPieChart = new Chart(ctxPie, {
@@ -1926,7 +1926,7 @@ function renderCharts() {
                     data: itemUsage.map(i => i.qty > 0 ? i.qty : 1),
                     backgroundColor: paletteColors,
                     borderWidth: 2,
-                    borderColor: isDark ? '#151e2e' : '#ffffff'
+                    borderColor: isDark ? '#1c1a15' : '#ffffff'
                 }]
             },
             options: {
@@ -2321,7 +2321,7 @@ function renderFloorsMatrix() {
             <tr>
                 <th colspan="3" style="text-align: inherit; font-weight: 900;">${currentLang === 'ar' ? 'إجمالي استهلاك الطابق' : 'Total Floor Consumption'}</th>
                 ${footCells}
-                <th style="text-align: center; font-weight: 900; background: var(--primary); color: var(--text-inverse);">${grandTotal}</th>
+                <th style="text-align: center; font-weight: 900; background: var(--primary-fill); color: var(--text-inverse);">${grandTotal}</th>
             </tr>
         `;
     }
@@ -2473,7 +2473,7 @@ function renderPurchaseOrder() {
         tfoot.innerHTML = `
             <tr>
                 <th colspan="7" style="text-align: inherit; font-weight: 900; font-size: 1rem;">${currentLang === 'ar' ? 'إجمالي قيمة أمر الشراء للمورد' : 'Grand Total Purchase Order Value'}</th>
-                <th style="text-align: center; font-weight: 900; font-size: 1.08rem; background: var(--primary); color: var(--text-inverse);" id="po-grand-total-cell">
+                <th style="text-align: center; font-weight: 900; font-size: 1.08rem; background: var(--primary-fill); color: var(--text-inverse);" id="po-grand-total-cell">
                     ${grandTotalOrderCost.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}
                 </th>
                 <th></th>
@@ -2516,9 +2516,9 @@ function updatePoPricingField(itemId, field, val) {
 // Printed pages must not come out heavy/black: before printing, the report's
 // inline styles are softened (very bold weights lowered, near-black text turned
 // into a soft charcoal, dark rules turned into light grey / brand gold).
-const PRINT_INK_TEXT = '#3a3a3a';
-const PRINT_INK_RULE = '#c9c9c9';
-const PRINT_INK_GOLD = '#c69a28';
+const PRINT_INK_TEXT = '#55524b';
+const PRINT_INK_RULE = '#e0d6bd';
+const PRINT_INK_GOLD = '#d9aa28';
 
 function isDarkInk(colorStr) {
     if (!colorStr) return false;
@@ -2593,9 +2593,9 @@ function buildCenteredPrintHeader(reportTitle, itemOrSubDef = '') {
     return `
         <div class="voucher-header" style="border:none; margin:0; padding:6px 0 0.45rem 0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
             <img src="${logoSrc}" alt="المجموعة الإستشارية | Consultancy Group" style="height:58px; width:auto; object-fit:contain; display:block; margin:4px auto 0.25rem auto;">
-            <p style="margin:0 0 0.25rem 0; font-size:0.86rem; font-weight:800; color:#1e293b; text-align:center;">${isAr ? 'إدارة المرافق - مدير المرافق' : 'Facilities Management - Facilities Manager'}</p>
-            <h3 style="margin:0; font-size:1.12rem; font-weight:900; color:#0f172a; text-align:center;">${reportTitle}</h3>
-            ${itemOrSubDef ? `<p style="margin:0.18rem 0 0 0; font-size:0.82rem; font-weight:700; color:#334155; text-align:center;">${itemOrSubDef}</p>` : ''}
+            <p style="margin:0 0 0.25rem 0; font-size:0.86rem; font-weight:800; color:#2a2722; text-align:center;">${isAr ? 'إدارة المرافق - مدير المرافق' : 'Facilities Management - Facilities Manager'}</p>
+            <h3 style="margin:0; font-size:1.12rem; font-weight:900; color:#1f1d19; text-align:center;">${reportTitle}</h3>
+            ${itemOrSubDef ? `<p style="margin:0.18rem 0 0 0; font-size:0.82rem; font-weight:700; color:#55524b; text-align:center;">${itemOrSubDef}</p>` : ''}
         </div>
     `;
 }
@@ -2627,7 +2627,7 @@ function printFloorsReport() {
                 <td class="print-item-name" style="width: 22% !important; min-width: 155px !important; white-space: nowrap !important; font-size: 0.94rem !important; font-weight: 800 !important;"><strong>${trText(item.name)}</strong></td>
                 <td style="width: 7.5%; text-align:center !important; font-size: 0.86rem !important; font-weight: 700 !important; white-space: nowrap !important;">${trText(item.unit)}</td>
                 ${cells}
-                <td style="width: 8.5%; text-align:center !important; font-weight:900; font-size: 0.92rem !important; background:#f8fafc; white-space: nowrap !important;">${rowSum}</td>
+                <td style="width: 8.5%; text-align:center !important; font-weight:900; font-size: 0.92rem !important; background:#f4efe3; white-space: nowrap !important;">${rowSum}</td>
                 <td class="print-notes-col" style="width: 13% !important; max-width: 120px !important; font-size: 0.82rem; text-align: center;">—</td>
             </tr>
         `;
@@ -2641,7 +2641,7 @@ function printFloorsReport() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="11" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="11" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'تقرير تحليل استهلاك الطوابق (4 - 9)' : 'Floors Consumption Analysis (4 - 9)',
                                 `${isAr ? 'الدورة:' : 'Cycle:'} ${activeCycleKey} | ${isAr ? 'تاريخ التقرير:' : 'Date:'} ${todayDate}`
@@ -2730,7 +2730,7 @@ function printPurchaseOrder() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'أمر شراء للمورد' : 'Supplier Purchase Order',
                                 `${isAr ? 'رقم أمر الشراء:' : 'PO Number:'} ${poNumber} | ${isAr ? 'التاريخ:' : 'Date:'} ${todayDate}`
@@ -2863,7 +2863,7 @@ function printIssueVoucherBatch(batchItems, floor, date, recipient, notes) {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="6" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.5rem 0 !important;">
+                        <th colspan="6" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.5rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'إذن صرف مواد' : 'Material Issue Voucher',
                                 `${singleItemLabel}${isAr ? 'رقم السند:' : 'Voucher No:'} ${serialNum} | ${isAr ? 'التاريخ:' : 'Date:'} ${date}`
@@ -2871,7 +2871,7 @@ function printIssueVoucherBatch(batchItems, floor, date, recipient, notes) {
                         </th>
                     </tr>
                     <tr>
-                        <th colspan="6" style="background:#f8fafc !important; font-size:0.78rem; padding:0.35rem 0.6rem;">
+                        <th colspan="6" style="background:#f4efe3 !important; font-size:0.78rem; padding:0.35rem 0.6rem;">
                             <div style="display:flex; justify-content:space-between;">
                                 <span><strong>${isAr ? 'الطابق المستلم:' : 'Receiving Floor:'}</strong> ${trText(floor)}</span>
                                 <span><strong>${isAr ? 'اسم المستلم:' : 'Recipient:'}</strong> ${trText(recipient)}</span>
@@ -3061,7 +3061,7 @@ function renderFurniturePurchasesModalTable(item) {
                 <th colspan="3" style="text-align: inherit;">إجمالي جميع دفعات شراء الصنف</th>
                 <th style="text-align: center; font-weight: 900;">${sumQty}</th>
                 <th></th>
-                <th style="text-align: center; font-weight: 900; background: var(--primary); color: var(--text-inverse);">${sumTotal.toLocaleString()} ج.م</th>
+                <th style="text-align: center; font-weight: 900; background: var(--primary-fill); color: var(--text-inverse);">${sumTotal.toLocaleString()} ج.م</th>
                 <th colspan="2"></th>
             </tr>
         `;
@@ -3255,7 +3255,7 @@ function renderFurnitureView() {
                 <td colspan="${isViewer ? 9 : 10}">
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
                         <span>📌 ${trText(subCat)}</span>
-                        ${isViewer ? '' : `<button type="button" onclick="openAddFurnitureModal('${subCat}')" class="btn btn-sm btn-secondary no-print" style="padding:0.18rem 0.6rem; font-size:0.74rem; border-color:rgba(198, 154, 40, 0.45); color:var(--primary);">+ ${currentLang === 'ar' ? `إضافة بند في (${subCat})` : `Add in (${trText(subCat)})`}</button>`}
+                        ${isViewer ? '' : `<button type="button" onclick="openAddFurnitureModal('${subCat}')" class="btn btn-sm btn-secondary no-print" style="padding:0.18rem 0.6rem; font-size:0.74rem; border-color:rgba(217, 170, 40, 0.45); color:var(--primary);">+ ${currentLang === 'ar' ? `إضافة بند في (${subCat})` : `Add in (${trText(subCat)})`}</button>`}
                     </div>
                 </td>
             `;
@@ -3287,7 +3287,7 @@ function renderFurnitureView() {
             </td>
             <td style="text-align: center; white-space: nowrap;">
                 ${isViewer 
-                    ? `<span style="display:inline-block; min-width:44px; padding:0.3rem 0.65rem; border-radius:8px; font-weight:900; font-size:1.05rem; background:rgba(198, 154, 40, 0.12); color:var(--primary);">${qty}</span>` 
+                    ? `<span style="display:inline-block; min-width:44px; padding:0.3rem 0.65rem; border-radius:8px; font-weight:900; font-size:1.05rem; background:rgba(217, 170, 40, 0.12); color:var(--primary);">${qty}</span>` 
                     : `<div class="stepper-control">
                         <button type="button" class="stepper-btn" onclick="stepFurnitureQty(${item.id}, -1)">−</button>
                         <input type="number" min="0" value="${qty}" class="stepper-input" onchange="updateFurnitureQty(${item.id}, this.value)" style="font-weight: 900; color: var(--primary);">
@@ -3340,7 +3340,7 @@ function renderFurnitureView() {
                 <th colspan="3" style="text-align: inherit; font-weight: 900;">${currentLang === 'ar' ? `إجمالي أصول (${selectedFurnitureFloor})` : `Total Assets (${trText(selectedFurnitureFloor)})`}</th>
                 <th style="text-align: center; font-weight: 900; font-size: 1.05rem; color: var(--primary);">${floorTotalUnits}</th>
                 <th colspan="2" style="text-align: inherit; font-weight: 800;">${currentLang === 'ar' ? 'إجمالي التكلفة المسجلة:' : 'Total Recorded Cost:'}</th>
-                <th style="text-align: center; font-weight: 900; background: var(--primary); color: var(--text-inverse);">${floorGrandTotalCost > 0 ? floorGrandTotalCost.toLocaleString() + (currentLang === 'ar' ? ' ج.م' : ' EGP') : '—'}</th>
+                <th style="text-align: center; font-weight: 900; background: var(--primary-fill); color: var(--text-inverse);">${floorGrandTotalCost > 0 ? floorGrandTotalCost.toLocaleString() + (currentLang === 'ar' ? ' ج.م' : ' EGP') : '—'}</th>
                 <th></th>
                 <th style="text-align: center; font-weight: 900; color: var(--success);">${allFloorsTotalUnits}</th>
                 <th class="no-print admin-only"></th>
@@ -3720,7 +3720,7 @@ function printSingleFurnitureItemReport(itemId) {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="4" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="4" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'تقرير جرد وتحليل أثاث الطوابق' : 'Floors Furniture Inventory & Analysis Report',
                                 `${isAr ? 'الصنف:' : 'Item:'} [${item.code || ''}] ${trText(item.name)} (${trText(item.cat)}) | ${isAr ? 'تاريخ التقرير:' : 'Date:'} ${todayDate}`
@@ -3887,7 +3887,7 @@ function renderFurnitureMatrix() {
             <tr>
                 <th colspan="3" style="text-align: inherit; font-weight: 900;">${currentLang === 'ar' ? 'إجمالي قطع الأصول بكل طابق' : 'Total Assets per Floor'}</th>
                 ${footCells}
-                <th style="text-align: center; font-weight: 900; background: var(--primary); color: var(--text-inverse); font-size: 1.1rem;">${grandTotal}</th>
+                <th style="text-align: center; font-weight: 900; background: var(--primary-fill); color: var(--text-inverse); font-size: 1.1rem;">${grandTotal}</th>
                 <th colspan="2" style="text-align: inherit; font-weight: 800;">${currentLang === 'ar' ? 'إجمالي التكلفة:' : 'Total Cost:'}</th>
                 <th style="text-align: center; font-weight: 900; background: var(--success); color: white; font-size: 1rem;">${grandTotalCost > 0 ? grandTotalCost.toLocaleString() + (currentLang === 'ar' ? ' ج.م' : ' EGP') : '—'}</th>
                 <th></th>
@@ -3962,7 +3962,7 @@ function printSingleFloorFurnitureReport() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="8" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="8" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'تقرير جرد وتحليل أصول الطوابق' : 'Floors Assets Inventory & Analysis Report',
                                 subDef
@@ -4049,7 +4049,7 @@ function printFurnitureMatrixReport() {
                 <td class="print-item-name" style="width: 1% !important; white-space: nowrap !important; font-size: 0.9rem !important; font-weight: 800 !important;"><strong>${trText(item.name)}</strong></td>
                 <td style="width: 1%; font-size: 0.84rem !important; font-weight: 700 !important; text-align: center; white-space: nowrap !important;">${trText(item.size) || '—'}</td>
                 ${cells}
-                <td style="width: 1%; text-align: center; font-weight: 900; background: #f8fafc; font-size: 0.9rem !important; white-space: nowrap !important;">${rowSum}</td>
+                <td style="width: 1%; text-align: center; font-weight: 900; background: #f4efe3; font-size: 0.9rem !important; white-space: nowrap !important;">${rowSum}</td>
                 <td style="width: 1%; text-align: center; font-size: 0.8rem !important; white-space: nowrap !important;">${fin.dateDisplay || '—'}</td>
                 <td style="width: 1%; text-align: center; font-size: 0.82rem !important; font-weight: 700; white-space: nowrap !important;">${fin.priceDisplay || '—'}</td>
                 <td style="width: 1%; text-align: center; font-size: 0.86rem !important; font-weight: 900; white-space: nowrap !important;">${fin.totalCost > 0 ? fin.totalCost.toLocaleString() : '—'}</td>
@@ -4065,7 +4065,7 @@ function printFurnitureMatrixReport() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="14" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.5rem 0 !important;">
+                        <th colspan="14" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.5rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'تقرير جرد وتحليل أصول الطوابق' : 'Floors Assets Inventory & Analysis Report',
                                 `${isAr ? 'الأدوار (من الدور الرابع إلى الدور التاسع)' : 'Floors 4 to 9'} | ${isAr ? 'تاريخ التقرير:' : 'Date:'} ${todayDate}`
@@ -4221,7 +4221,7 @@ function renderHqView() {
             </td>
             <td style="font-size: 0.76rem; color: var(--text-muted); white-space: nowrap;">
                 ${isViewer 
-                    ? `<span class="badge" style="background: rgba(148,163,184,0.14); color: var(--text-muted); font-size: 0.72rem;">${trText(item.cat)}</span>` 
+                    ? `<span class="badge" style="background: rgba(138, 139, 140, 0.14); color: var(--text-muted); font-size: 0.72rem;">${trText(item.cat)}</span>` 
                     : `<input type="text" class="table-input" value="${trText(item.cat)}" onchange="updateHqField(${item.id}, 'cat', this.value)" style="width: 115px; font-size: 0.75rem;">`}
             </td>
             <td style="text-align: center; white-space: nowrap;">
@@ -4439,7 +4439,7 @@ function printHqReport() {
                 <td style="width: 1%; text-align: center; font-family: monospace; font-weight: bold; font-size: 0.86rem; white-space: nowrap !important;">${item.code || (idx + 1)}</td>
                 <td class="print-item-name" style="width: 1% !important; white-space: nowrap !important; font-size: 0.94rem !important; font-weight: 800 !important;"><strong>${trText(item.name)}</strong></td>
                 <td style="width: 1%; font-size: 0.88rem !important; font-weight: 700 !important; text-align: center; white-space: nowrap !important;">${item.size || '—'}</td>
-                <td style="width: 1%; font-size: 0.85rem !important; font-weight: 700 !important; color: #1e293b; white-space: nowrap !important;">${trText(item.cat)}</td>
+                <td style="width: 1%; font-size: 0.85rem !important; font-weight: 700 !important; color: #2a2722; white-space: nowrap !important;">${trText(item.cat)}</td>
                 <td style="width: 1%; text-align: center; font-weight: 900; font-size: 0.94rem; white-space: nowrap !important;">${qty}</td>
                 <td style="width: 1%; text-align: center; font-size: 0.84rem !important; font-weight: 700; white-space: nowrap !important;">${trText(item.status || 'ممتاز')}</td>
                 <td style="font-size: 0.84rem; text-align: right; line-height: 1.4;">${item.notes || '—'}</td>
@@ -4452,7 +4452,7 @@ function printHqReport() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.5rem 0 !important;">
+                        <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.5rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'بيان جرد وتجهيزات مقر الإدارة العليا' : 'Executive Management HQ Inventory Report',
                                 `${isAr ? 'تاريخ التقرير:' : 'Date:'} ${todayDate}`
@@ -6308,7 +6308,7 @@ function renderCustodyView() {
             const monthsSet = Array.from(new Set(rows.map(r => (r.date || '').slice(0, 7)).filter(Boolean)));
             searchSummaryBox.style.display = 'block';
             searchSummaryBox.innerHTML = `
-                <div style="background: rgba(198, 154, 40, 0.12); border: 1.5px solid var(--primary); border-radius: var(--radius-md); padding: 0.7rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.65rem;">
+                <div style="background: rgba(217, 170, 40, 0.12); border: 1.5px solid var(--primary); border-radius: var(--radius-md); padding: 0.7rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.65rem;">
                     <div>
                         <div style="font-weight: 900; font-size: 0.92rem; color: var(--primary);">
                             🔍 ${isAr ? `نتائج البحث التراكمي عن: "${rawSearch}"` : `Cumulative Search Results for: "${rawSearch}"`}
@@ -6515,9 +6515,9 @@ function renderCustodyView() {
         const hasInvoice = Boolean(custodyInvoicesMap[row.id]);
         const tr = document.createElement('tr');
         if (isTransferRow) {
-            tr.style.background = 'rgba(198, 154, 40, 0.07)';
+            tr.style.background = 'rgba(217, 170, 40, 0.07)';
         } else if (row.isNegative) {
-            tr.style.background = 'rgba(198, 154, 40, 0.05)';
+            tr.style.background = 'rgba(217, 170, 40, 0.05)';
         }
 
         const defaultNegNote = row.isNegative ? 'بالسالب (تغطية شخصية مؤقتة لحين تحويل الشركة)' : '';
@@ -6544,7 +6544,7 @@ function renderCustodyView() {
             <td style="width: 24%; min-width: 215px; max-width: 270px;">
                 ${isViewer
                     ? `<div class="custody-2line-static" style="font-size: 0.8rem; color: ${row.isNegative ? 'var(--danger)' : 'var(--text-secondary)'}; font-weight: ${row.isNegative ? '800' : '600'};">${trText(effectiveNoteVal) || '—'}</div>`
-                    : `<textarea rows="2" class="custody-2line-input" placeholder="${isAr ? 'أضف ملاحظات (سطرين)...' : 'Notes...'}" onchange="updateCustodyRowField(${row.id}, 'notes', this.value)" style="font-size: 0.8rem; color: ${row.isNegative ? 'var(--danger)' : 'var(--text-primary)'}; font-weight: ${row.isNegative ? '800' : '600'}; border-color: rgba(148,163,184,0.25);">${effectiveNoteVal}</textarea>`
+                    : `<textarea rows="2" class="custody-2line-input" placeholder="${isAr ? 'أضف ملاحظات (سطرين)...' : 'Notes...'}" onchange="updateCustodyRowField(${row.id}, 'notes', this.value)" style="font-size: 0.8rem; color: ${row.isNegative ? 'var(--danger)' : 'var(--text-primary)'}; font-weight: ${row.isNegative ? '800' : '600'}; border-color: rgba(138, 139, 140, 0.25);">${effectiveNoteVal}</textarea>`
                 }
             </td>
             <td style="width: 130px; text-align: center; white-space: nowrap;" class="no-print">
@@ -6602,7 +6602,7 @@ function renderCustodyView() {
                 <th style="text-align: center; font-weight: 900; color: var(--danger); font-size: 0.9rem;">
                     ${filteredOutflow.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${isAr ? 'ج.م' : 'EGP'}
                 </th>
-                <th style="text-align: center; font-weight: 900; background: var(--primary); color: var(--text-inverse); font-size: 0.84rem; direction: ltr;">
+                <th style="text-align: center; font-weight: 900; background: var(--primary-fill); color: var(--text-inverse); font-size: 0.84rem; direction: ltr;">
                     ${lastDisplayedBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isAr ? 'ج.م' : 'EGP'}
                 </th>
                 <th colspan="3"></th>
@@ -7220,7 +7220,7 @@ function printSingleCustodyInvoice() {
                 </tbody>
             </table>
             ${inv && inv.dataUrl && !inv.mimeType.includes('pdf') ? `
-                <div style="text-align: center; margin-top: 1rem; border: 1px solid #cbd5e1; padding: 0.75rem; border-radius: 6px;">
+                <div style="text-align: center; margin-top: 1rem; border: 1px solid #c9c3b4; padding: 0.75rem; border-radius: 6px;">
                     <div style="font-weight: 800; margin-bottom: 0.5rem;">صورة المرفق (${inv.name})</div>
                     <img src="${inv.dataUrl}" style="max-width: 92%; max-height: 540px; object-fit: contain;">
                 </div>
@@ -7316,9 +7316,9 @@ function printCustodyReport() {
                 <td style="width: 34px; text-align: center !important; font-weight: 800;">${r.serialNum}</td>
                 <td style="width: 10%; text-align: center !important; font-weight: 700; white-space: nowrap !important;">${r.date}</td>
                 <td class="print-item-name" style="width: 24% !important; min-width: 170px !important; max-width: 225px !important; white-space: normal !important; font-weight: 800 !important;"><strong>${trText(r.desc)}</strong></td>
-                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #3a3a3a;">${r.inflow > 0 ? r.inflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
-                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #b42318;">${r.outflow > 0 ? r.outflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
-                <td style="width: 11%; text-align: center !important; font-weight: 900; font-size: 0.78rem !important; direction: ltr; color: ${r.isNegative ? '#b42318' : '#0f172a'};">${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #55524b;">${r.inflow > 0 ? r.inflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
+                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #b3261e;">${r.outflow > 0 ? r.outflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
+                <td style="width: 11%; text-align: center !important; font-weight: 900; font-size: 0.78rem !important; direction: ltr; color: ${r.isNegative ? '#b3261e' : '#1f1d19'};">${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 <td class="print-notes-col" style="width: 23% !important; min-width: 155px !important; max-width: 215px !important; font-size: 0.76rem !important; line-height: 1.32 !important; white-space: normal !important;">${negNote}</td>
             </tr>
         `;
@@ -7326,7 +7326,7 @@ function printCustodyReport() {
         const inv = custodyInvoicesMap[r.id];
         if (includeInvoices && inv && inv.dataUrl && !inv.mimeType.includes('pdf')) {
             attachedGalleryHtml += `
-                <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.5rem; text-align: center; page-break-inside: avoid;">
+                <div style="border: 1px solid #c9c3b4; border-radius: 6px; padding: 0.5rem; text-align: center; page-break-inside: avoid;">
                     <div style="font-weight: 800; font-size: 0.8rem; margin-bottom: 0.3rem;">#${r.serialNum} — ${inv.name} (${r.date}: ${trText(r.desc)})</div>
                     <img src="${inv.dataUrl}" style="max-width: 100%; max-height: 240px; object-fit: contain;">
                 </div>
@@ -7344,7 +7344,7 @@ function printCustodyReport() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'بيان جرد وتسوية عهدة الشركة' : 'Company Custody Audit & Settlement Report',
                                 reportSubtitle
@@ -7566,7 +7566,7 @@ function printSupplierPOsReport() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="10" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="10" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'بيان المشتريات والتحويلات المباشرة للموردين (50% / 70% / 100%)' : 'Direct Supplier Transfers & Split Payments Report',
                                 `${isAr ? 'التاريخ:' : 'Date:'} ${getFormattedTodayDate(isAr)}`
@@ -7696,7 +7696,7 @@ function printMonthlyCoreExpenses() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="4" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="4" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'بيان المصروفات الأساسية الثابتة للشركة كل شهر' : 'Company Monthly Core Expenses Statement',
                                 `${isAr ? 'التاريخ:' : 'Date:'} ${getFormattedTodayDate(isAr)}`

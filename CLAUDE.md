@@ -20,3 +20,4 @@ Every change must be committed and pushed to `main`, or the phone keeps showing 
 - Re-rendering while the user types drops focus. Cloud snapshot renders go through `renderAllWhenNotTyping`.
 - `--bg-surface` is not defined in style.css; use `--bg-card` for solid panels.
 - The repo is public, and secrets are present in the docs and app.js. Don't add more.
+- Brand: every visual change follows the CG brand (tokens at the top of style.css; source `GeneralCG - Brand Guidelines.pdf` and the consultancygroup-sa reference site). Design uses brand colors only; green/red only for data values. Solid gold surfaces use `--primary-fill`; `--primary` is gold text (darker in light mode).

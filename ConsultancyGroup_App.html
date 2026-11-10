@@ -8,12 +8,12 @@
     <meta name="application-name" content="المجموعة الاستشارية - إدارة المرافق">
     <meta property="og:title" content="المجموعة الاستشارية - إدارة المرافق | Consultancy Group">
     <meta property="og:site_name" content="المجموعة الاستشارية - Consultancy Group">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#1f1d19">
 
     <!-- Google Fonts for High-End Arabic Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 
     <!-- Application Stylesheet -->
     <style>
@@ -23,120 +23,122 @@
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   CONSULTANCY GROUP BRAND
-   One brand color only: the logo gold (#C69A28) on the logo navy (#0F172A).
-   Neutrals are navy-tinted greys. Red is used only for numbers that need attention
-   (shortage / negative balance / delete).
+   CONSULTANCY GROUP BRAND (CG - Brand Guidelines + reference site
+   consultancygroup-eg.github.io/consultancygroup-sa)
+   Gold #D9AA28 · gold-ink #94700F · gold-soft #F6E7BC · cream #FEF2CE
+   paper #FBF8F1 · ink #252525 · ink-2 #55524B · muted #8A8B8C
+   line #E8E0CB · rail #1F1D19 · font Tajawal · radius 10px
+   Design uses brand colors only. Status colors are for data values only.
    -------------------------------------------------------------------------- */
 :root {
-    --font-sans: 'Tajawal', 'Cairo', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif;
 
     /* Brand */
-    --brand-gold: #c69a28;
-    --brand-gold-deep: #a8821f;
-    --brand-gold-soft: #e3c77a;
-    --brand-navy: #0f172a;
+    --brand-gold: #d9aa28;
+    --brand-gold-ink: #94700f;
+    --brand-gold-soft: #f6e7bc;
+    --brand-cream: #fef2ce;
+    --brand-ink: #252525;
+    --brand-rail: #1f1d19;
 
-    /* Light mode: gold is darkened slightly so gold text stays readable on white */
-    --primary: #b08a22;
-    --primary-hover: #94731b;
-    --primary-light: rgba(198, 154, 40, 0.12);
-    --primary-glow: rgba(198, 154, 40, 0.28);
-    --primary-gradient: linear-gradient(135deg, #c69a28 0%, #a8821f 100%);
-    --accent: var(--primary);
-    --on-primary: #0f172a;
+    /* Light mode */
+    --primary: #94700f;               /* gold text on light surfaces */
+    --primary-hover: #7a5c0c;
+    --primary-light: #fef2ce;
+    --primary-glow: rgba(217, 170, 40, 0.3);
+    --primary-gradient: linear-gradient(135deg, #d9aa28 0%, #c99a1f 100%);
+    --accent: #d9aa28;
+    --on-primary: #1b1a17;
+    --primary-fill: #d9aa28;          /* solid gold surfaces (buttons, active items) */
 
-    /* Light Mode Backgrounds & Surfaces */
-    --bg-app: #f6f7f9;
-    --bg-sidebar: #ffffff;
-    --bg-header: rgba(255, 255, 255, 0.9);
+    --bg-app: #fbf8f1;
+    --bg-sidebar: #1f1d19;
+    --bg-header: rgba(251, 248, 241, 0.92);
     --bg-card: #ffffff;
-    --bg-card-hover: #fcfbf7;
+    --bg-card-hover: #fffdf8;
     --bg-input: #ffffff;
-    --bg-subtle: #f2f3f6;
-    --border-color: #e2e5ea;
-    --border-subtle: #eceef2;
+    --bg-subtle: #f1ebdb;
+    --border-color: #e8e0cb;
+    --border-subtle: #f1ebdb;
 
-    /* Typography Colors */
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #64748b;
-    --text-inverse: #0f172a;
+    --text-primary: #252525;
+    --text-secondary: #55524b;
+    --text-muted: #8a8b8c;
+    --text-inverse: #1b1a17;
 
-    /* Status colors collapse onto the brand: gold for normal/attention,
-       slate for information, red only for numbers that need attention */
-    --success: var(--primary);
-    --success-light: rgba(198, 154, 40, 0.12);
-    --warning: #9a7419;
-    --warning-light: rgba(198, 154, 40, 0.18);
-    --danger: #b42318;
-    --danger-light: rgba(180, 35, 24, 0.08);
-    --info: #475569;
-    --info-light: rgba(71, 85, 105, 0.1);
+    /* Data status (values only) */
+    --success: #2e7d4f;
+    --success-light: #e5f3ea;
+    --warning: #b26a00;
+    --warning-light: #fff1d6;
+    --danger: #b3261e;
+    --danger-light: #fbe4e2;
+    --info: #55524b;
+    --info-light: #f1ebdb;
 
-    /* Shadows & Elevation */
-    --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
-    --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.07), 0 1px 2px -1px rgba(15, 23, 42, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
-    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
-    --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+    --shadow-xs: 0 1px 2px 0 rgba(37, 37, 37, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(37, 37, 37, 0.06), 0 1px 2px -1px rgba(37, 37, 37, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(37, 37, 37, 0.06), 0 2px 4px -2px rgba(37, 37, 37, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(37, 37, 37, 0.07), 0 4px 6px -4px rgba(37, 37, 37, 0.04);
+    --shadow-xl: 0 20px 25px -5px rgba(37, 37, 37, 0.09), 0 8px 10px -6px rgba(37, 37, 37, 0.04);
     --shadow-glow: 0 0 0 3px var(--primary-glow);
 
-    /* Radii */
     --radius-sm: 8px;
     --radius-md: 10px;
-    --radius-lg: 14px;
-    --radius-xl: 18px;
+    --radius-lg: 10px;
+    --radius-xl: 12px;
     --radius-full: 9999px;
 
-    /* Dimensions */
     --sidebar-width: 270px;
     --sidebar-collapsed-width: 78px;
     --header-height: 72px;
 
-    /* Transitions */
     --transition-fast: 0.15s ease;
     --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ==========================================================================
-   DARK MODE (brand navy)
+   DARK MODE (brand dark: warm near-black, from the reference site)
    ========================================================================== */
 body.dark {
-    --primary: #d2a73a;
-    --primary-hover: #c69a28;
-    --primary-light: rgba(198, 154, 40, 0.14);
-    --primary-glow: rgba(198, 154, 40, 0.3);
-    --primary-gradient: linear-gradient(135deg, #d6ad45 0%, #b88f24 100%);
+    --primary: #ddb03a;
+    --primary-hover: #e8c35e;
+    --primary-light: #3a3020;
+    --primary-glow: rgba(221, 176, 58, 0.3);
+    --primary-gradient: linear-gradient(135deg, #ddb03a 0%, #c99a1f 100%);
+    --accent: #ddb03a;
+    --primary-fill: #ddb03a;
 
-    --bg-app: #0b1120;
-    --bg-sidebar: #0f172a;
-    --bg-header: rgba(15, 23, 42, 0.9);
-    --bg-card: #131c31;
-    --bg-card-hover: #18233b;
-    --bg-input: #0d1526;
-    --bg-subtle: #172036;
-    --border-color: #24304a;
-    --border-subtle: #1b2640;
+    --bg-app: #14130f;
+    --bg-sidebar: #0f0e0b;
+    --bg-header: rgba(20, 19, 15, 0.92);
+    --bg-card: #1c1a15;
+    --bg-card-hover: #221f19;
+    --bg-input: #17150f;
+    --bg-subtle: #29261f;
+    --border-color: #35302a;
+    --border-subtle: #29261f;
 
-    --text-primary: #f1f3f7;
-    --text-secondary: #c3cad6;
-    --text-muted: #8f9bb0;
+    --text-primary: #f1ecdf;
+    --text-secondary: #c9c3b4;
+    --text-muted: #9a968c;
 
-    --success-light: rgba(198, 154, 40, 0.14);
-    --warning: #e0bd62;
-    --warning-light: rgba(198, 154, 40, 0.2);
-    --danger: #f07167;
-    --danger-light: rgba(240, 113, 103, 0.12);
-    --info: #aab4c5;
-    --info-light: rgba(170, 180, 197, 0.12);
+    --success: #6fcb94;
+    --success-light: #1d3326;
+    --warning: #f0b35a;
+    --warning-light: #3a2c14;
+    --danger: #f08a80;
+    --danger-light: #3d1c19;
+    --info: #c9c3b4;
+    --info-light: #29261f;
 
     --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.35);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.45);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.55);
 }
+
 
 /* ==========================================================================
    BASE & RESET
@@ -362,7 +364,7 @@ aside.app-sidebar.collapsed .sidebar-logo-full-light {
     bottom: 18%;
     width: 4px;
     border-radius: var(--radius-full);
-    background: var(--primary);
+    background: var(--primary-fill);
 }
 
 .sidebar-nav-item i, .sidebar-nav-item svg {
@@ -384,7 +386,7 @@ aside.app-sidebar.collapsed .sidebar-logo-full-light {
 }
 
 .sidebar-nav-item.active .sidebar-nav-badge {
-    background: var(--primary);
+    background: var(--primary-fill);
     color: var(--text-inverse);
     border-color: transparent;
 }
@@ -615,7 +617,7 @@ header.app-header {
 }
 
 .btn-success {
-    background: var(--success);
+    background: var(--primary-gradient);
     color: var(--text-inverse);
 }
 
@@ -964,7 +966,7 @@ table.data-table tbody tr:last-child td {
 }
 
 .chip-btn.active {
-    background: var(--primary);
+    background: var(--primary-fill);
     color: var(--text-inverse);
     border-color: var(--primary);
 }
@@ -1207,7 +1209,7 @@ input.table-input:focus {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.65);
+    background: rgba(31, 29, 25, 0.65);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     z-index: 100;
@@ -1475,7 +1477,7 @@ html[dir="ltr"] .dropdown-pane {
     }
 
     .voucher-header {
-        border-bottom: 1.5px solid #1e293b;
+        border-bottom: 1.5px solid #2a2722;
         padding-bottom: 0.55rem;
         margin-bottom: 0.75rem;
         display: flex;
@@ -1515,7 +1517,7 @@ html[dir="ltr"] .dropdown-pane {
         grid-template-columns: 1fr 1fr 1fr;
         gap: 0.6rem;
         margin-bottom: 0.75rem;
-        border: 1px solid #cbd5e1;
+        border: 1px solid #c9c3b4;
         padding: 0.45rem 0.65rem;
         font-size: 0.8rem;
         border-radius: 4px;
@@ -1557,7 +1559,7 @@ html[dir="ltr"] .dropdown-pane {
     }
 
     table.print-table th, table.print-table td {
-        border: 1px solid #334155;
+        border: 1px solid #55524b;
         padding: 0.34rem 0.52rem !important;
         text-align: inherit;
         box-sizing: border-box !important;
@@ -1574,7 +1576,7 @@ html[dir="ltr"] .dropdown-pane {
     }
 
     table.print-table th {
-        background: #f1f5f9 !important;
+        background: #f1ebdb !important;
         font-size: 0.82rem !important;
         font-weight: 800 !important;
         white-space: nowrap !important;
@@ -1604,20 +1606,20 @@ html[dir="ltr"] .dropdown-pane {
     }
 
     tr.wbs-main-group-row td {
-        background: #cbd5e1 !important;
-        color: #0f172a !important;
+        background: #c9c3b4 !important;
+        color: #1f1d19 !important;
         font-weight: 700 !important;
         font-size: 0.88rem !important;
         padding: 0.3rem 0.65rem !important;
-        border-top: 1.5px solid #64748b !important;
-        border-bottom: 1px solid #64748b !important;
+        border-top: 1.5px solid #8a8b8c !important;
+        border-bottom: 1px solid #8a8b8c !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
 
     tr.wbs-sub-group-row td {
-        background: #f1f5f9 !important;
-        color: #1e293b !important;
+        background: #f1ebdb !important;
+        color: #2a2722 !important;
         font-weight: 600 !important;
         font-size: 0.82rem !important;
         padding: 0.24rem 0.65rem !important;
@@ -1627,17 +1629,17 @@ html[dir="ltr"] .dropdown-pane {
 }
 
 tr.wbs-main-group-row td {
-    background: linear-gradient(90deg, rgba(198, 154, 40, 0.22) 0%, rgba(30, 41, 59, 0.92) 100%);
+    background: linear-gradient(90deg, rgba(217, 170, 40, 0.22) 0%, rgba(31, 29, 25, 0.92) 100%);
     color: var(--primary);
     font-weight: 900;
     font-size: 0.96rem;
     padding: 0.6rem 1rem !important;
-    border-top: 2px solid rgba(198, 154, 40, 0.45);
-    border-bottom: 1px solid rgba(198, 154, 40, 0.3);
+    border-top: 2px solid rgba(217, 170, 40, 0.45);
+    border-bottom: 1px solid rgba(217, 170, 40, 0.3);
 }
 
 tr.wbs-sub-group-row td {
-    background: rgba(148, 163, 184, 0.12);
+    background: rgba(138, 139, 140, 0.12);
     color: var(--text-primary);
     font-weight: 800;
     font-size: 0.88rem;
@@ -1759,8 +1761,8 @@ tr.wbs-sub-group-row td {
 
 .portal-option-card {
     position: relative;
-    background: linear-gradient(180deg, rgba(23, 33, 56, 0.92) 0%, rgba(15, 23, 42, 0.92) 100%);
-    border: 1px solid rgba(198, 154, 40, 0.22);
+    background: linear-gradient(180deg, rgba(36, 33, 28, 0.92) 0%, rgba(31, 29, 25, 0.92) 100%);
+    border: 1px solid rgba(217, 170, 40, 0.22);
     border-radius: 16px;
     padding: 1.6rem 1.15rem 1.25rem;
     display: flex;
@@ -1782,15 +1784,15 @@ tr.wbs-sub-group-row td {
     right: 22%;
     height: 2px;
     border-radius: 0 0 2px 2px;
-    background: linear-gradient(90deg, transparent, #c69a28, transparent);
+    background: linear-gradient(90deg, transparent, #d9aa28, transparent);
     opacity: 0.7;
     transition: left 0.25s ease, right 0.25s ease, opacity 0.25s ease;
 }
 
 .portal-option-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(198, 154, 40, 0.6);
-    box-shadow: 0 20px 40px -16px rgba(198, 154, 40, 0.28);
+    border-color: rgba(217, 170, 40, 0.6);
+    box-shadow: 0 20px 40px -16px rgba(217, 170, 40, 0.28);
 }
 
 .portal-option-card:hover::before {
@@ -1807,9 +1809,9 @@ tr.wbs-sub-group-row td {
     align-items: center;
     justify-content: center;
     margin-bottom: 0.9rem;
-    color: #c69a28;
-    background: rgba(198, 154, 40, 0.08);
-    border: 1px solid rgba(198, 154, 40, 0.4);
+    color: #d9aa28;
+    background: rgba(217, 170, 40, 0.08);
+    border: 1px solid rgba(217, 170, 40, 0.4);
 }
 
 .portal-card-icon svg {
@@ -1820,7 +1822,7 @@ tr.wbs-sub-group-row td {
 
 .portal-card-tag {
     background: transparent !important;
-    color: #aab4c5 !important;
+    color: #c9c3b4 !important;
     font-size: 0.72rem !important;
     font-weight: 600 !important;
     padding: 0 !important;
@@ -1831,13 +1833,13 @@ tr.wbs-sub-group-row td {
 .portal-card-title {
     font-size: 1.15rem;
     font-weight: 800;
-    color: #f1f3f7;
+    color: #f1ecdf;
     margin-bottom: 0.45rem;
 }
 
 .portal-card-desc {
     font-size: 0.84rem;
-    color: #c3cad6;
+    color: #c9c3b4;
     line-height: 1.55;
     margin-bottom: 1.15rem;
     flex: 1;
@@ -1849,8 +1851,8 @@ tr.wbs-sub-group-row td {
     padding: 0.62rem 0.85rem;
     border-radius: 10px;
     background: transparent;
-    border: 1px solid rgba(198, 154, 40, 0.45);
-    color: #d2a73a;
+    border: 1px solid rgba(217, 170, 40, 0.45);
+    color: #ddb03a;
     font-weight: 700;
     font-size: 0.85rem;
     display: flex;
@@ -1861,20 +1863,20 @@ tr.wbs-sub-group-row td {
 }
 
 .portal-option-card:hover .portal-card-btn {
-    background: #c69a28;
-    border-color: #c69a28;
-    color: #0f172a;
+    background: #d9aa28;
+    border-color: #d9aa28;
+    color: #1f1d19;
 }
 
 .portal-footer-btn {
-    background: rgba(15, 23, 42, 0.85) !important;
-    border-color: rgba(198, 154, 40, 0.3) !important;
-    color: #e3e7ee !important;
+    background: rgba(31, 29, 25, 0.85) !important;
+    border-color: rgba(217, 170, 40, 0.3) !important;
+    color: #f4efe3 !important;
 }
 
 .portal-footer-btn:hover {
-    border-color: #c69a28 !important;
-    color: #d2a73a !important;
+    border-color: #d9aa28 !important;
+    color: #ddb03a !important;
 }
 
 @media (max-width: 1120px) {
@@ -1967,8 +1969,8 @@ body[data-active-module="custody"] .header-group-hq {
     }
 
     .mob-sec-btn.active {
-        background: var(--primary);
-        color: #0f172a;
+        background: var(--primary-fill);
+        color: #1f1d19;
         border-color: var(--primary);
         font-weight: 900;
     }
@@ -2010,7 +2012,7 @@ body[data-active-module="custody"] .header-group-hq {
     .portal-return-btn {
         grid-column: 1 / -1 !important;
         justify-content: center !important;
-        background: rgba(198, 154, 40, 0.2) !important;
+        background: rgba(217, 170, 40, 0.2) !important;
         border: 1.5px solid var(--primary) !important;
         color: var(--primary) !important;
         font-weight: 900 !important;
@@ -2150,20 +2152,20 @@ body[data-active-module="custody"] .header-group-hq {
     transition: all 0.2s ease;
 }
 .role-badge-admin {
-    background: rgba(198, 154, 40, 0.16);
+    background: rgba(217, 170, 40, 0.16);
     color: var(--primary);
-    border-color: rgba(198, 154, 40, 0.4);
+    border-color: rgba(217, 170, 40, 0.4);
 }
 .role-badge-admin:hover {
-    background: rgba(198, 154, 40, 0.28);
+    background: rgba(217, 170, 40, 0.28);
 }
 .role-badge-viewer {
-    background: rgba(148, 163, 184, 0.16);
+    background: rgba(138, 139, 140, 0.16);
     color: var(--text-secondary);
-    border-color: rgba(148, 163, 184, 0.4);
+    border-color: rgba(138, 139, 140, 0.4);
 }
 .role-badge-viewer:hover {
-    background: rgba(148, 163, 184, 0.28);
+    background: rgba(138, 139, 140, 0.28);
 }
 
 /* When in Viewer / Read-only Mode: disable/hide editing controls */
@@ -2202,8 +2204,8 @@ body.role-viewer .viewer-banner {
     justify-content: center;
     gap: 0.6rem;
     padding: 0.45rem 1rem;
-    background: rgba(148, 163, 184, 0.18);
-    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(138, 139, 140, 0.18);
+    border: 1px solid rgba(138, 139, 140, 0.35);
     color: var(--text-secondary);
     font-size: 0.82rem;
     font-weight: 700;
@@ -2216,12 +2218,12 @@ body.role-viewer .viewer-banner {
     display: inline-block;
     padding: 0.2rem 0.55rem;
     border-radius: 6px;
-    background: rgba(198, 154, 40, 0.15);
+    background: rgba(217, 170, 40, 0.15);
     color: var(--primary);
     font-family: monospace, 'Courier New', sans-serif;
     font-weight: 800;
     font-size: 0.82rem;
-    border: 1px solid rgba(198, 154, 40, 0.3);
+    border: 1px solid rgba(217, 170, 40, 0.3);
     direction: ltr;
 }
 
@@ -2229,11 +2231,11 @@ body.role-viewer .viewer-banner {
     display: inline-block;
     padding: 0.18rem 0.5rem;
     border-radius: 6px;
-    background: rgba(148, 163, 184, 0.12);
+    background: rgba(138, 139, 140, 0.12);
     color: var(--text-main);
     font-size: 0.78rem;
     font-weight: 700;
-    border: 1px solid rgba(148, 163, 184, 0.25);
+    border: 1px solid rgba(138, 139, 140, 0.25);
 }
 
 /* Compact header action buttons */
@@ -2306,15 +2308,15 @@ body.role-viewer .viewer-banner {
 }
 
 .custody-subtab-btn.active {
-    background: var(--primary);
-    color: #0f172a;
+    background: var(--primary-fill);
+    color: #1f1d19;
     border-color: var(--primary);
     font-weight: 900;
-    box-shadow: 0 4px 12px rgba(198, 154, 40, 0.25);
+    box-shadow: 0 4px 12px rgba(217, 170, 40, 0.25);
 }
 
 .custody-search-summary-banner {
-    background: linear-gradient(135deg, rgba(198, 154, 40, 0.16) 0%, rgba(198, 154, 40, 0.12) 100%);
+    background: linear-gradient(135deg, rgba(217, 170, 40, 0.16) 0%, rgba(217, 170, 40, 0.12) 100%);
     border: 1.5px solid var(--primary);
     border-radius: 12px;
     padding: 0.9rem 1.25rem;
@@ -2334,8 +2336,8 @@ body.role-viewer .viewer-banner {
     border-radius: 6px;
     font-size: 0.76rem;
     font-weight: 800;
-    border: 1px solid rgba(198, 154, 40, 0.4);
-    background: rgba(198, 154, 40, 0.12);
+    border: 1px solid rgba(217, 170, 40, 0.4);
+    background: rgba(217, 170, 40, 0.12);
     color: var(--primary);
     cursor: pointer;
     white-space: nowrap;
@@ -2343,8 +2345,8 @@ body.role-viewer .viewer-banner {
 }
 
 .furn-batches-btn:hover {
-    background: var(--primary);
-    color: #0f172a;
+    background: var(--primary-fill);
+    color: #1f1d19;
 }
 
 /* Compact single-row filter bar in Custody */
@@ -2456,14 +2458,14 @@ body.role-viewer .viewer-banner {
     font-size: 0.73rem;
     font-weight: 900;
     border-radius: 6px;
-    background: rgba(198, 154, 40, 0.15);
-    color: var(--success);
-    border: 1px solid rgba(198, 154, 40, 0.45);
+    background: rgba(217, 170, 40, 0.15);
+    color: var(--primary);
+    border: 1px solid rgba(217, 170, 40, 0.45);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 .custody-inv-view-btn:hover {
-    background: var(--success);
+    background: var(--brand-gold);
     color: var(--text-inverse);
 }
 
@@ -2507,57 +2509,37 @@ body.role-viewer .viewer-banner {
     z-index: 15;
 }
 body.dark .data-table thead th {
-    background: #1e293b !important;
+    background: #2a2722 !important;
 }
 
 /* Positive & Negative Balance Cells in Custody Table */
 .custody-balance-cell.is-pos {
-    background: #f8f0db;
-    color: #0f172a !important;
+    background: #fef2ce;
+    color: #1f1d19 !important;
 }
 body.dark .custody-balance-cell.is-pos {
-    background: rgba(198, 154, 40, 0.14);
-    color: #e3c77a !important;
+    background: rgba(217, 170, 40, 0.14);
+    color: #f6e7bc !important;
 }
 .custody-balance-cell.is-neg {
-    background: #fdf1f0;
-    color: #b42318 !important;
+    background: #fbe4e2;
+    color: #b3261e !important;
 }
 body.dark .custody-balance-cell.is-neg {
-    background: rgba(240, 113, 103, 0.14);
-    color: #f07167 !important;
+    background: rgba(240, 138, 128, 0.14);
+    color: #f08a80 !important;
 }
 
 /* High-Contrast Active Buttons & Light Mode Readability */
 .sidebar-nav-item.active,
 .chip-btn.active {
-    background: var(--primary) !important;
-    color: #0f172a !important;
+    background: var(--primary-fill) !important;
+    color: #1f1d19 !important;
     font-weight: 900 !important;
 }
-body:not(.dark) #nav-btn-portal {
-    color: #6b5212 !important;
-    background: #f8f0db !important;
-    border-color: #c69a28 !important;
-}
-body:not(.dark) #sidebar-audit-btn-purchased {
-    color: #6b5212 !important;
-    background: #fbf6ea !important;
-    border-color: #c69a28 !important;
-}
-body:not(.dark) #sidebar-audit-btn-unpurchased {
-    color: #6b5212 !important;
-    background: #fbf6ea !important;
-    border-color: #c69a28 !important;
-}
-body:not(.dark) #sidebar-audit-btn-extra {
-    color: #6b5212 !important;
-    background: #fbf6ea !important;
-    border-color: #c69a28 !important;
-}
 body:not(.dark) .badge-warning {
-    color: #6b5212 !important;
-    background: #f3e4bb !important;
+    color: #94700f !important;
+    background: #f6e7bc !important;
 }
 
 @media print {
@@ -2566,7 +2548,7 @@ body:not(.dark) .badge-warning {
         page-break-before: auto;
     }
     .print-invoice-card {
-        border: 1px solid #475569;
+        border: 1px solid #55524b;
         border-radius: 6px;
         padding: 0.5rem;
         margin-bottom: 0.85rem;
@@ -2593,14 +2575,14 @@ body:not(.dark) .badge-warning {
 @media print {
     html, body,
     .voucher-print-container {
-        color: #3a3a3a !important;
+        color: #55524b !important;
     }
 
     .voucher-print-container h1,
     .voucher-print-container h2,
     .voucher-print-container h3,
     .voucher-title {
-        color: #2e2e2e !important;
+        color: #252525 !important;
         font-weight: 700 !important;
     }
 
@@ -2610,18 +2592,18 @@ body:not(.dark) .badge-warning {
     }
 
     .voucher-header {
-        border-bottom: 1px solid #c69a28 !important;
+        border-bottom: 1px solid #d9aa28 !important;
     }
 
     .voucher-meta-grid {
-        border: 0.6pt solid #d0d0d0 !important;
-        color: #3a3a3a;
+        border: 0.6pt solid #e0d6bd !important;
+        color: #55524b;
     }
 
     table.print-table th,
     table.print-table td {
-        border: 0.6pt solid #c9c9c9 !important;
-        color: #3a3a3a;
+        border: 0.6pt solid #e0d6bd !important;
+        color: #55524b;
     }
 
     table.print-table td {
@@ -2630,8 +2612,8 @@ body:not(.dark) .badge-warning {
 
     table.print-table th,
     table.print-table tfoot th {
-        background: #f8f3e6 !important;
-        color: #3a3a3a !important;
+        background: #fef2ce !important;
+        color: #55524b !important;
         font-weight: 600 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
@@ -2644,28 +2626,77 @@ body:not(.dark) .badge-warning {
     }
 
     tr.wbs-main-group-row td {
-        background: #f3ead2 !important;
-        color: #3a3a3a !important;
+        background: #f6e7bc !important;
+        color: #55524b !important;
         font-weight: 600 !important;
-        border-top: 0.6pt solid #c69a28 !important;
-        border-bottom: 0.6pt solid #d8c58f !important;
+        border-top: 0.6pt solid #d9aa28 !important;
+        border-bottom: 0.6pt solid #e8e0cb !important;
     }
 
     tr.wbs-sub-group-row td {
-        background: #faf7ef !important;
-        color: #3a3a3a !important;
+        background: #fbf8f1 !important;
+        color: #55524b !important;
         font-weight: 600 !important;
     }
 
     .sig-line {
-        border-top: 1px dashed #9a9a9a !important;
-        color: #3a3a3a !important;
+        border-top: 1px dashed #8a8b8c !important;
+        color: #55524b !important;
         font-weight: 600 !important;
     }
 
     .print-invoice-card {
-        border: 0.6pt solid #c9c9c9 !important;
+        border: 0.6pt solid #e0d6bd !important;
     }
+}
+
+/* ==========================================================================
+   BRAND SIDEBAR (dark rail in both modes, logo on a white plate,
+   as in the CG reference design)
+   ========================================================================== */
+aside.app-sidebar {
+    --bg-sidebar: #1f1d19;
+    --text-primary: #f4efe3;
+    --text-secondary: #c9c3b4;
+    --text-muted: #a8a396;
+    --border-color: #34312a;
+    --border-subtle: #34312a;
+    --bg-subtle: rgba(255, 255, 255, 0.06);
+    --bg-card: #2a2722;
+    --bg-card-hover: #34312a;
+    --bg-input: #2a2722;
+    --primary: #ddb03a;
+    --primary-light: rgba(217, 170, 40, 0.14);
+    background: #1f1d19 !important;
+    color: #f4efe3;
+}
+body.dark aside.app-sidebar {
+    --bg-sidebar: #0f0e0b;
+    background: #0f0e0b !important;
+}
+aside.app-sidebar .sidebar-logo-full-light {
+    display: block !important;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 8px 12px;
+    box-sizing: content-box;
+}
+aside.app-sidebar .sidebar-logo-full-dark,
+aside.app-sidebar.collapsed .sidebar-logo-full-light {
+    display: none !important;
+}
+#nav-btn-portal,
+#sidebar-audit-btn-purchased,
+#sidebar-audit-btn-unpurchased,
+#sidebar-audit-btn-extra {
+    color: #ddb03a !important;
+    background: rgba(217, 170, 40, 0.1) !important;
+    border-color: rgba(217, 170, 40, 0.4) !important;
+}
+
+/* Brand page header: thin gold rule under the page title */
+header.app-header {
+    border-bottom: 2px solid var(--brand-gold) !important;
 }
 
 </style>
@@ -2681,24 +2712,24 @@ body:not(.dark) .badge-warning {
 <body class="dark theme-gold">
 
     <!-- ==================== SECURITY LOCK OVERLAY ==================== -->
-    <div id="app-lock-overlay" class="no-print" style="position:fixed; inset:0; z-index:99999; background:radial-gradient(ellipse at top, #18233b 0%, #0b1120 70%); display:flex; align-items:center; justify-content:center; padding:1.25rem; backdrop-filter:blur(16px);">
-        <div style="background:rgba(30, 41, 59, 0.92); border:1px solid rgba(198, 154, 40, 0.35); border-radius:18px; max-width:440px; width:100%; padding:2.2rem 1.8rem; box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); text-align:center; color:#f8fafc;">
+    <div id="app-lock-overlay" class="no-print" style="position:fixed; inset:0; z-index:99999; background:radial-gradient(ellipse at top, #221f19 0%, #14130f 70%); display:flex; align-items:center; justify-content:center; padding:1.25rem; backdrop-filter:blur(16px);">
+        <div style="background:rgba(31, 29, 25, 0.92); border:1px solid rgba(217, 170, 40, 0.35); border-radius:18px; max-width:440px; width:100%; padding:2.2rem 1.8rem; box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); text-align:center; color:#f4efe3;">
             <div style="display:flex; align-items:center; justify-content:center; margin:0 auto 0.75rem;">
                 <img class="cg-logo-dark" src="data:image/png;base64,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" alt="المجموعة الإستشارية | Consultancy Group" style="height:68px; width:auto; max-width:100%; object-fit:contain; display:block;">
             </div>
-            <div style="font-size:1rem; font-weight:800; color:#c69a28; margin-bottom:0.35rem; background:rgba(198, 154, 40, 0.14); border:1px solid rgba(198, 154, 40, 0.35); display:inline-block; padding:0.25rem 1.1rem; border-radius:999px;">إدارة المرافق - مدير المرافق</div>
-            <p style="font-size:0.82rem; color:#94a3b8; margin-bottom:1.4rem;">منظومة إدارة المرافق والأصول — منطقة محمية 🔒</p>
+            <div style="font-size:1rem; font-weight:800; color:#d9aa28; margin-bottom:0.35rem; background:rgba(217, 170, 40, 0.14); border:1px solid rgba(217, 170, 40, 0.35); display:inline-block; padding:0.25rem 1.1rem; border-radius:999px;">إدارة المرافق - مدير المرافق</div>
+            <p style="font-size:0.82rem; color:#a8a396; margin-bottom:1.4rem;">منظومة إدارة المرافق والأصول — منطقة محمية 🔒</p>
             <div style="display:flex; flex-direction:column; gap:0.85rem;">
                 <div style="position:relative; width:100%;">
-                    <input type="password" id="lock-password-input" placeholder="أدخل كلمة المرور..." autocomplete="current-password" onkeydown="if(event.key==='Enter'){handleUnlockSubmit();}" style="padding:0.8rem 2.8rem 0.8rem 1rem; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:rgba(15,23,42,0.85); color:#fff; font-size:1rem; text-align:center; direction:ltr; outline:none; width:100%; box-sizing:border-box;">
-                    <button type="button" onclick="toggleLockPasswordVisibility()" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1.15rem; padding:4px;" title="إظهار / إخفاء كلمة المرور">👁️</button>
+                    <input type="password" id="lock-password-input" placeholder="أدخل كلمة المرور..." autocomplete="current-password" onkeydown="if(event.key==='Enter'){handleUnlockSubmit();}" style="padding:0.8rem 2.8rem 0.8rem 1rem; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:rgba(31, 29, 25, 0.85); color:#fff; font-size:1rem; text-align:center; direction:ltr; outline:none; width:100%; box-sizing:border-box;">
+                    <button type="button" onclick="toggleLockPasswordVisibility()" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#a8a396; cursor:pointer; font-size:1.15rem; padding:4px;" title="إظهار / إخفاء كلمة المرور">👁️</button>
                 </div>
-                <div id="lock-error-msg" style="display:none; color:#e3c77a; font-size:0.82rem; font-weight:700; line-height:1.4;">❌ كلمة المرور غير صحيحة، حاول مرة أخرى</div>
+                <div id="lock-error-msg" style="display:none; color:#f6e7bc; font-size:0.82rem; font-weight:700; line-height:1.4;">❌ كلمة المرور غير صحيحة، حاول مرة أخرى</div>
                 <button type="button" onclick="handleUnlockSubmit()" class="btn btn-primary" style="width:100%; justify-content:center; padding:0.8rem; font-size:1rem; border-radius:10px;">
                     <span>فتح النظام والمزامنة</span>
                 </button>
             </div>
-            <div style="margin-top:1.25rem; font-size:0.75rem; color:#64748b;">محمي بتشفير SHA-256 ومزامنة Google Firebase</div>
+            <div style="margin-top:1.25rem; font-size:0.75rem; color:#8a8b8c;">محمي بتشفير SHA-256 ومزامنة Google Firebase</div>
         </div>
         <script>
             window.toggleLockPasswordVisibility = function() {
@@ -2744,15 +2775,15 @@ body:not(.dark) .badge-warning {
     </div>
 
     <!-- ==================== MAIN 4-OPTIONS STARTUP PORTAL ==================== -->
-    <div id="app-home-portal" class="no-print" style="position:fixed; inset:0; z-index:9000; background:radial-gradient(ellipse at top, #18233b 0%, #0b1120 70%); display:flex; align-items:center; justify-content:center; padding:1.5rem; overflow-y:auto;">
-        <div style="max-width:1200px; width:100%; margin:auto; text-align:center; color:#f8fafc; padding:1rem 0;">
+    <div id="app-home-portal" class="no-print" style="position:fixed; inset:0; z-index:9000; background:radial-gradient(ellipse at top, #221f19 0%, #14130f 70%); display:flex; align-items:center; justify-content:center; padding:1.5rem; overflow-y:auto;">
+        <div style="max-width:1200px; width:100%; margin:auto; text-align:center; color:#f4efe3; padding:1rem 0;">
             <!-- Official Brand Header -->
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:2rem;">
                 <div style="display:flex; align-items:center; justify-content:center; margin-bottom:0.65rem; padding:0.35rem 1rem;">
                     <img class="cg-logo-dark" src="data:image/png;base64,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" alt="المجموعة الإستشارية | Consultancy Group" style="height:82px; width:auto; max-width:100%; object-fit:contain; display:block;">
                 </div>
-                <div style="font-size:1.1rem; font-weight:800; color:#f8fafc; margin-top:0.15rem; background:rgba(198, 154, 40, 0.16); border:1px solid rgba(198, 154, 40, 0.35); padding:0.3rem 1.35rem; border-radius:999px;">إدارة المرافق - مدير المرافق</div>
-                <p style="font-size:0.9rem; color:#94a3b8; margin-top:0.65rem;">اختر القسم المراد إدارته أو استعراض تقاريره الآن:</p>
+                <div style="font-size:1.1rem; font-weight:800; color:#f4efe3; margin-top:0.15rem; background:rgba(217, 170, 40, 0.16); border:1px solid rgba(217, 170, 40, 0.35); padding:0.3rem 1.35rem; border-radius:999px;">إدارة المرافق - مدير المرافق</div>
+                <p style="font-size:0.9rem; color:#a8a396; margin-top:0.65rem;">اختر القسم المراد إدارته أو استعراض تقاريره الآن:</p>
             </div>
 
             <!-- 4 Main Section Cards -->
@@ -2841,7 +2872,7 @@ body:not(.dark) .badge-warning {
 
             <nav class="sidebar-nav">
                 <!-- Single Unified Main Sections Button (Shown on PC under Consultancy Group) -->
-                <button onclick="openHomePortal()" id="nav-btn-portal" class="sidebar-nav-item portal-return-btn" style="background: rgba(198, 154, 40, 0.16); border: 1.5px solid var(--primary); color: var(--primary); margin-bottom: 0.35rem; font-weight: 900;">
+                <button onclick="openHomePortal()" id="nav-btn-portal" class="sidebar-nav-item portal-return-btn" style="background: rgba(217, 170, 40, 0.16); border: 1.5px solid var(--primary); color: var(--primary); margin-bottom: 0.35rem; font-weight: 900;">
                     <i data-lucide="layout-grid"></i>
                     <span>الأقسام الرئيسية (4)</span>
                 </button>
@@ -2863,7 +2894,7 @@ body:not(.dark) .badge-warning {
                 <button onclick="switchTab('terminal')" id="nav-btn-terminal" class="sidebar-nav-item nav-group-buffet">
                     <i data-lucide="clipboard-check"></i>
                     <span data-i18n="navTerminal">تسجيل صرف الطوابق</span>
-                    <span class="sidebar-nav-badge" style="background: var(--primary); color: white;">⚡ سريع</span>
+                    <span class="sidebar-nav-badge" style="background: var(--primary-fill); color: var(--text-inverse);">⚡ سريع</span>
                 </button>
 
                 <span class="nav-section-label nav-group-buffet" style="margin-top: 0.65rem;">التقارير والمشتريات</span>
@@ -2919,15 +2950,15 @@ body:not(.dark) .badge-warning {
                         <span id="sidebar-audit-chevron" style="font-size: 0.7rem; color: var(--primary);">▾</span>
                     </button>
                     <div id="sidebar-audit-items-list" style="display: flex; flex-direction: column; gap: 0.3rem; padding-right: 0.35rem;">
-                        <button onclick="toggleCustodyAuditPanel('purchased')" id="sidebar-audit-btn-purchased" class="sidebar-nav-item" style="padding: 0.42rem 0.6rem; font-size: 0.75rem; border: 1px solid rgba(198, 154, 40, 0.3); background: rgba(198, 154, 40, 0.06); justify-content: space-between;">
+                        <button onclick="toggleCustodyAuditPanel('purchased')" id="sidebar-audit-btn-purchased" class="sidebar-nav-item" style="padding: 0.42rem 0.6rem; font-size: 0.75rem; border: 1px solid rgba(217, 170, 40, 0.3); background: rgba(217, 170, 40, 0.06); justify-content: space-between;">
                             <span style="display:flex; align-items:center; gap:0.35rem;">✅ <span>بنود تم شراؤها</span></span>
                             <span class="badge badge-success" id="sidebar-audit-cnt-purchased" style="font-size:0.68rem;">0</span>
                         </button>
-                        <button onclick="toggleCustodyAuditPanel('unpurchased')" id="sidebar-audit-btn-unpurchased" class="sidebar-nav-item" style="padding: 0.42rem 0.6rem; font-size: 0.75rem; border: 1px solid rgba(198, 154, 40, 0.35); background: rgba(198, 154, 40, 0.07); justify-content: space-between;">
+                        <button onclick="toggleCustodyAuditPanel('unpurchased')" id="sidebar-audit-btn-unpurchased" class="sidebar-nav-item" style="padding: 0.42rem 0.6rem; font-size: 0.75rem; border: 1px solid rgba(217, 170, 40, 0.35); background: rgba(217, 170, 40, 0.07); justify-content: space-between;">
                             <span style="display:flex; align-items:center; gap:0.35rem;">⚠️ <span>تذكير (لم تشترِ بعد)</span></span>
                             <span class="badge badge-danger" id="sidebar-audit-cnt-unpurchased" style="font-size:0.68rem;">0</span>
                         </button>
-                        <button onclick="toggleCustodyAuditPanel('extra')" id="sidebar-audit-btn-extra" class="sidebar-nav-item" style="padding: 0.42rem 0.6rem; font-size: 0.75rem; border: 1px solid rgba(198, 154, 40, 0.35); background: rgba(198, 154, 40, 0.07); justify-content: space-between;">
+                        <button onclick="toggleCustodyAuditPanel('extra')" id="sidebar-audit-btn-extra" class="sidebar-nav-item" style="padding: 0.42rem 0.6rem; font-size: 0.75rem; border: 1px solid rgba(217, 170, 40, 0.35); background: rgba(217, 170, 40, 0.07); justify-content: space-between;">
                             <span style="display:flex; align-items:center; gap:0.35rem;">🔄 <span>مصروفات أخرى دخلت معها</span></span>
                             <span class="badge badge-warning" id="sidebar-audit-cnt-extra" style="font-size:0.68rem;">0</span>
                         </button>
@@ -3009,7 +3040,7 @@ body:not(.dark) .badge-warning {
                     </div>
 
                     <!-- Live Refresh Icon Button -->
-                    <button id="live-refresh-btn" onclick="liveRefreshApp()" class="action-icon-btn" title="تحديث فوري لجميع البيانات والتقارير" style="width:34px; height:34px; border-color: rgba(148, 163, 184, 0.45);">
+                    <button id="live-refresh-btn" onclick="liveRefreshApp()" class="action-icon-btn" title="تحديث فوري لجميع البيانات والتقارير" style="width:34px; height:34px; border-color: rgba(138, 139, 140, 0.45);">
                         <i data-lucide="refresh-cw" style="width:15px;height:15px;color:var(--primary);"></i>
                     </button>
 
@@ -3025,13 +3056,13 @@ body:not(.dark) .badge-warning {
                     </button>
 
                     <!-- Download Desktop App Icon Button -->
-                    <button onclick="downloadStandaloneDesktopPackage()" class="action-icon-btn" style="width:34px; height:34px; border-color: rgba(198, 154, 40, 0.45);" title="تنزيل البرنامج للكمبيوتر">
-                        <i data-lucide="monitor-down" style="width:15px;height:15px;color:var(--success);"></i>
+                    <button onclick="downloadStandaloneDesktopPackage()" class="action-icon-btn" style="width:34px; height:34px; border-color: rgba(217, 170, 40, 0.45);" title="تنزيل البرنامج للكمبيوتر">
+                        <i data-lucide="monitor-down" style="width:15px;height:15px;color:var(--primary);"></i>
                     </button>
 
                     <!-- Lock App Icon Button -->
                     <button onclick="lockAppNow()" class="action-icon-btn" style="width:34px; height:34px;" title="قفل البرنامج بكلمة المرور">
-                        <i data-lucide="lock" style="width:15px;height:15px;color:var(--warning);"></i>
+                        <i data-lucide="lock" style="width:15px;height:15px;color:var(--primary);"></i>
                     </button>
 
                     <!-- Hidden Clock element kept for compatibility -->
@@ -3499,7 +3530,7 @@ body:not(.dark) .badge-warning {
                     <div class="card">
                         <div class="card-header">
                             <div class="card-title-group">
-                                <i data-lucide="shopping-cart" style="color: var(--success);"></i>
+                                <i data-lucide="shopping-cart" style="color: var(--primary);"></i>
                                 <div>
                                     <h2>أمر شراء للمورد</h2>
                                     <span style="font-size: 0.78rem; color: var(--text-muted);">أدخل أسعار المورد والكميات ليتم احتساب الإجمالي تلقائياً وإرسال عرض الأسعار منظماً للشركة</span>
@@ -3531,7 +3562,7 @@ body:not(.dark) .badge-warning {
                                         <th style="text-align: center;" data-i18n="thUnit">الوحدة</th>
                                         <th style="text-align: center;" data-i18n="thRemaining">الرصيد الفعلي الحالي</th>
                                         <th style="text-align: center;" data-i18n="thIssued">المنصرف خلال الدورة</th>
-                                        <th style="text-align: center; background: var(--success-light); color: var(--success);" data-i18n="thOrderQty">الكمية المطلوبة</th>
+                                        <th style="text-align: center; background: var(--primary-light); color: var(--primary);" data-i18n="thOrderQty">الكمية المطلوبة</th>
                                         <th style="text-align: center; width: 135px;">سعر الوحدة</th>
                                         <th style="text-align: center; width: 135px; background: var(--primary-light); color: var(--primary);">الإجمالي</th>
                                         <th style="min-width: 190px;">ملاحظات</th>
@@ -3761,7 +3792,7 @@ body:not(.dark) .badge-warning {
                                         <th style="text-align: center; white-space: nowrap; background: var(--primary-light); color: var(--primary);">الإجمالي</th>
                                         <th style="text-align: center; white-space: nowrap;">تاريخ الشراء</th>
                                         <th style="text-align: center; white-space: nowrap;">السعر / الدفعات</th>
-                                        <th style="text-align: center; white-space: nowrap; background: var(--success-light); color: var(--success);">إجمالي التكلفة</th>
+                                        <th style="text-align: center; white-space: nowrap; background: var(--primary-light); color: var(--primary);">إجمالي التكلفة</th>
                                         <th style="min-width: 140px;">ملاحظات</th>
                                     </tr>
                                 </thead>
@@ -4006,7 +4037,7 @@ body:not(.dark) .badge-warning {
                                             <th style="width: 44px; text-align: center;">م</th>
                                             <th style="width: 96px; text-align: center;">التاريخ</th>
                                             <th style="width: 23%; min-width: 190px; max-width: 240px;">اسم الصنف / البيان</th>
-                                            <th style="width: 92px; text-align: center; color: var(--success);">وارد</th>
+                                            <th style="width: 92px; text-align: center; color: var(--primary);">وارد</th>
                                             <th style="width: 92px; text-align: center; color: var(--danger);">منصرف</th>
                                             <th style="width: 88px; text-align: center; font-size: 0.78rem;">المتبقي</th>
                                             <th style="width: 24%; min-width: 215px; max-width: 270px;">ملاحظات</th>
@@ -4024,7 +4055,7 @@ body:not(.dark) .badge-warning {
                         <div id="cust-subpane-suppliers" class="card" style="display: none;">
                             <div class="card-header">
                                 <div class="card-title-group">
-                                    <i data-lucide="building-2" style="color: var(--info);"></i>
+                                    <i data-lucide="building-2" style="color: var(--primary);"></i>
                                     <div>
                                         <h2>سجل المشتريات والتحويلات المباشرة للموردين (دفعات 50% / 70% / 100%)</h2>
                                         <span style="font-size: 0.78rem; color: var(--text-muted);">المشتريات التي تحولها الشركة مباشرة لحساب المورد (سواء دفعة كاملة 100% أو مقسمة 50% / 70% مقدم والباقي بعد التوريد) دون خصمها من رصيد العهدة النقدية</span>
@@ -4053,7 +4084,7 @@ body:not(.dark) .badge-warning {
                                             <th style="text-align: center;">سعر الوحدة</th>
                                             <th style="text-align: center;">إجمالي الصفقة</th>
                                             <th style="text-align: center;">نظام الدفع</th>
-                                            <th style="text-align: center; color: var(--success);">المدفوع للمورد</th>
+                                            <th style="text-align: center; color: var(--primary);">المدفوع للمورد</th>
                                             <th style="text-align: center; color: var(--danger);">المتبقي بعد التوريد</th>
                                             <th style="min-width: 160px;">ملاحظات وحالة التوريد</th>
                                             <th style="text-align: center;" class="no-print">الفاتورة / إجراءات</th>
@@ -4069,7 +4100,7 @@ body:not(.dark) .badge-warning {
                         <div id="cust-subpane-monthly" class="card" style="display: none;">
                             <div class="card-header">
                                 <div class="card-title-group">
-                                    <i data-lucide="calendar-check-2" style="color: var(--success);"></i>
+                                    <i data-lucide="calendar-check-2" style="color: var(--primary);"></i>
                                     <div>
                                         <h2>المصروفات الأساسية الثابتة للشركة كل شهر</h2>
                                         <span style="font-size: 0.78rem; color: var(--text-muted);">بيان الالتزامات والمصروفات الدورية الشهرية للمقر والمرافق (إيجار، صيانة، كهرباء، مياه، بوفيه، ضيافة)</span>
@@ -4164,7 +4195,7 @@ body:not(.dark) .badge-warning {
                 </div>
                 <div class="form-group">
                     <label class="form-label">الترقيم التسلسلي التلقائي (كود الحصر):</label>
-                    <input type="text" id="new-furn-code" class="form-control" readonly style="background: rgba(198, 154, 40, 0.12); color: var(--primary); font-weight: 900; font-family: monospace; font-size: 1.05rem; text-align: center;" placeholder="يُكتب تلقائياً (مثال: 1.1.1)">
+                    <input type="text" id="new-furn-code" class="form-control" readonly style="background: rgba(217, 170, 40, 0.12); color: var(--primary); font-weight: 900; font-family: monospace; font-size: 1.05rem; text-align: center;" placeholder="يُكتب تلقائياً (مثال: 1.1.1)">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
                     <div class="form-group">
@@ -4263,7 +4294,7 @@ body:not(.dark) .badge-warning {
                     </label>
                 </div>
 
-                <div id="role-pin-group" class="form-group" style="display: none; background: rgba(198, 154, 40, 0.08); padding: 0.85rem; border-radius: 8px; border: 1px dashed var(--primary);">
+                <div id="role-pin-group" class="form-group" style="display: none; background: rgba(217, 170, 40, 0.08); padding: 0.85rem; border-radius: 8px; border: 1px dashed var(--primary);">
                     <label class="form-label" style="font-weight: 800; color: var(--primary);">رمز المرور:</label>
                     <input type="password" id="role-pin-input" class="form-control" placeholder="أدخل رمز المرور" style="letter-spacing: 4px; font-size: 1.1rem; text-align: center;">
                     
@@ -4428,7 +4459,7 @@ body:not(.dark) .badge-warning {
                             <span>مشاركة سريعة</span>
                         </button>
                     </div>
-                    <div id="share-url-warning" style="display:none; margin-top:0.6rem; padding:0.65rem 0.8rem; border-radius:8px; background:rgba(198, 154, 40, 0.14); border:1px solid rgba(198, 154, 40, 0.35); font-size:0.78rem; color:var(--text-main); line-height:1.55;"></div>
+                    <div id="share-url-warning" style="display:none; margin-top:0.6rem; padding:0.65rem 0.8rem; border-radius:8px; background:rgba(217, 170, 40, 0.14); border:1px solid rgba(217, 170, 40, 0.35); font-size:0.78rem; color:var(--text-main); line-height:1.55;"></div>
                 </div>
 
                 <!-- QR Code Box for Phone Scanning -->
@@ -4436,14 +4467,14 @@ body:not(.dark) .badge-warning {
                     <label class="form-label" style="display:block; margin-bottom: 0.4rem;">📱 امسح الباركود لفتحه فوراً من كاميرا هاتفك:</label>
                     <div class="qr-code-container">
                         <img id="share-qr-image" src="" alt="QR Code" style="width: 140px; height: 140px; display: block;">
-                        <span style="font-size: 0.72rem; color: #64748b; margin-top: 0.35rem;">مسح سريع من الموبايل</span>
+                        <span style="font-size: 0.72rem; color: #8a8b8c; margin-top: 0.35rem;">مسح سريع من الموبايل</span>
                     </div>
                 </div>
 
                 <!-- Install on New PC Card inside Share Modal -->
-                <div class="cloud-step-card" style="border-inline-start: 4px solid var(--success); margin-top: 0.75rem;">
+                <div class="cloud-step-card" style="border-inline-start: 4px solid var(--primary); margin-top: 0.75rem;">
                     <div class="cloud-step-title">
-                        <i data-lucide="monitor-down" style="color: var(--success);"></i>
+                        <i data-lucide="monitor-down" style="color: var(--primary);"></i>
                         <span>نقل وتثبيت البرنامج كنافذة سطح مكتب على أي جهاز كمبيوتر جديد:</span>
                     </div>
                     <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.55rem;">
@@ -4638,7 +4669,7 @@ body:not(.dark) .badge-warning {
                         <input type="number" id="cust-input-outflow" class="form-control" min="0" step="0.01" placeholder="0.00">
                     </div>
                     <div class="form-group" id="cust-group-inflow" style="display: none;">
-                        <label class="form-label" style="color: var(--success);">قيمة الوارد للعهدة (ج.م):</label>
+                        <label class="form-label" style="color: var(--primary);">قيمة الوارد للعهدة (ج.م):</label>
                         <input type="number" id="cust-input-inflow" class="form-control" min="0" step="0.01" placeholder="0.00">
                     </div>
                     <div class="form-group">
@@ -4779,7 +4810,7 @@ body:not(.dark) .badge-warning {
                         <input type="number" id="sup-po-total" class="form-control" readonly style="font-weight: 900;">
                     </div>
                     <div>
-                        <label class="form-label" style="font-size: 0.75rem; color: var(--success);">المدفوع للمورد (ج.م):</label>
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--primary);">المدفوع للمورد (ج.م):</label>
                         <input type="number" id="sup-po-paid" class="form-control" step="0.01" oninput="onSupplierPOPaidManualInput()">
                     </div>
                     <div>
@@ -6665,10 +6696,10 @@ function renderCharts() {
     });
 
     const isDark = document.body.classList.contains('dark');
-    const textColor = isDark ? '#cbd5e1' : '#475569';
+    const textColor = isDark ? '#c9c3b4' : '#55524b';
     const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
-    const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary').trim() || '#c69a28';
-    const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#c69a28';
+    const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary-fill').trim() || '#d9aa28';
+    const accentColor = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#d9aa28';
 
     // 1. Floors Bar Chart
     const ctxBar = document.getElementById('floors-bar-chart');
@@ -6724,7 +6755,7 @@ function renderCharts() {
             qty: currentCycleTrans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0)
         })).sort((a, b) => b.qty - a.qty).slice(0, 5);
 
-        const paletteColors = isDark ? [primaryColor, '#e3c77a', '#8a6a16', '#aab4c5', '#5b6780'] : [primaryColor, '#e3c77a', '#6b5212', '#94a3b8', '#334155'];
+        const paletteColors = isDark ? [primaryColor, '#f6e7bc', '#94700f', '#c9c3b4', '#55524b'] : [primaryColor, '#f6e7bc', '#94700f', '#a8a396', '#55524b'];
 
         if (topItemsPieChart) topItemsPieChart.destroy();
         topItemsPieChart = new Chart(ctxPie, {
@@ -6735,7 +6766,7 @@ function renderCharts() {
                     data: itemUsage.map(i => i.qty > 0 ? i.qty : 1),
                     backgroundColor: paletteColors,
                     borderWidth: 2,
-                    borderColor: isDark ? '#151e2e' : '#ffffff'
+                    borderColor: isDark ? '#1c1a15' : '#ffffff'
                 }]
             },
             options: {
@@ -7130,7 +7161,7 @@ function renderFloorsMatrix() {
             <tr>
                 <th colspan="3" style="text-align: inherit; font-weight: 900;">${currentLang === 'ar' ? 'إجمالي استهلاك الطابق' : 'Total Floor Consumption'}</th>
                 ${footCells}
-                <th style="text-align: center; font-weight: 900; background: var(--primary); color: var(--text-inverse);">${grandTotal}</th>
+                <th style="text-align: center; font-weight: 900; background: var(--primary-fill); color: var(--text-inverse);">${grandTotal}</th>
             </tr>
         `;
     }
@@ -7282,7 +7313,7 @@ function renderPurchaseOrder() {
         tfoot.innerHTML = `
             <tr>
                 <th colspan="7" style="text-align: inherit; font-weight: 900; font-size: 1rem;">${currentLang === 'ar' ? 'إجمالي قيمة أمر الشراء للمورد' : 'Grand Total Purchase Order Value'}</th>
-                <th style="text-align: center; font-weight: 900; font-size: 1.08rem; background: var(--primary); color: var(--text-inverse);" id="po-grand-total-cell">
+                <th style="text-align: center; font-weight: 900; font-size: 1.08rem; background: var(--primary-fill); color: var(--text-inverse);" id="po-grand-total-cell">
                     ${grandTotalOrderCost.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}
                 </th>
                 <th></th>
@@ -7325,9 +7356,9 @@ function updatePoPricingField(itemId, field, val) {
 // Printed pages must not come out heavy/black: before printing, the report's
 // inline styles are softened (very bold weights lowered, near-black text turned
 // into a soft charcoal, dark rules turned into light grey / brand gold).
-const PRINT_INK_TEXT = '#3a3a3a';
-const PRINT_INK_RULE = '#c9c9c9';
-const PRINT_INK_GOLD = '#c69a28';
+const PRINT_INK_TEXT = '#55524b';
+const PRINT_INK_RULE = '#e0d6bd';
+const PRINT_INK_GOLD = '#d9aa28';
 
 function isDarkInk(colorStr) {
     if (!colorStr) return false;
@@ -7402,9 +7433,9 @@ function buildCenteredPrintHeader(reportTitle, itemOrSubDef = '') {
     return `
         <div class="voucher-header" style="border:none; margin:0; padding:6px 0 0.45rem 0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
             <img src="${logoSrc}" alt="المجموعة الإستشارية | Consultancy Group" style="height:58px; width:auto; object-fit:contain; display:block; margin:4px auto 0.25rem auto;">
-            <p style="margin:0 0 0.25rem 0; font-size:0.86rem; font-weight:800; color:#1e293b; text-align:center;">${isAr ? 'إدارة المرافق - مدير المرافق' : 'Facilities Management - Facilities Manager'}</p>
-            <h3 style="margin:0; font-size:1.12rem; font-weight:900; color:#0f172a; text-align:center;">${reportTitle}</h3>
-            ${itemOrSubDef ? `<p style="margin:0.18rem 0 0 0; font-size:0.82rem; font-weight:700; color:#334155; text-align:center;">${itemOrSubDef}</p>` : ''}
+            <p style="margin:0 0 0.25rem 0; font-size:0.86rem; font-weight:800; color:#2a2722; text-align:center;">${isAr ? 'إدارة المرافق - مدير المرافق' : 'Facilities Management - Facilities Manager'}</p>
+            <h3 style="margin:0; font-size:1.12rem; font-weight:900; color:#1f1d19; text-align:center;">${reportTitle}</h3>
+            ${itemOrSubDef ? `<p style="margin:0.18rem 0 0 0; font-size:0.82rem; font-weight:700; color:#55524b; text-align:center;">${itemOrSubDef}</p>` : ''}
         </div>
     `;
 }
@@ -7436,7 +7467,7 @@ function printFloorsReport() {
                 <td class="print-item-name" style="width: 22% !important; min-width: 155px !important; white-space: nowrap !important; font-size: 0.94rem !important; font-weight: 800 !important;"><strong>${trText(item.name)}</strong></td>
                 <td style="width: 7.5%; text-align:center !important; font-size: 0.86rem !important; font-weight: 700 !important; white-space: nowrap !important;">${trText(item.unit)}</td>
                 ${cells}
-                <td style="width: 8.5%; text-align:center !important; font-weight:900; font-size: 0.92rem !important; background:#f8fafc; white-space: nowrap !important;">${rowSum}</td>
+                <td style="width: 8.5%; text-align:center !important; font-weight:900; font-size: 0.92rem !important; background:#f4efe3; white-space: nowrap !important;">${rowSum}</td>
                 <td class="print-notes-col" style="width: 13% !important; max-width: 120px !important; font-size: 0.82rem; text-align: center;">—</td>
             </tr>
         `;
@@ -7450,7 +7481,7 @@ function printFloorsReport() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="11" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="11" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'تقرير تحليل استهلاك الطوابق (4 - 9)' : 'Floors Consumption Analysis (4 - 9)',
                                 `${isAr ? 'الدورة:' : 'Cycle:'} ${activeCycleKey} | ${isAr ? 'تاريخ التقرير:' : 'Date:'} ${todayDate}`
@@ -7539,7 +7570,7 @@ function printPurchaseOrder() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'أمر شراء للمورد' : 'Supplier Purchase Order',
                                 `${isAr ? 'رقم أمر الشراء:' : 'PO Number:'} ${poNumber} | ${isAr ? 'التاريخ:' : 'Date:'} ${todayDate}`
@@ -7672,7 +7703,7 @@ function printIssueVoucherBatch(batchItems, floor, date, recipient, notes) {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="6" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.5rem 0 !important;">
+                        <th colspan="6" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.5rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'إذن صرف مواد' : 'Material Issue Voucher',
                                 `${singleItemLabel}${isAr ? 'رقم السند:' : 'Voucher No:'} ${serialNum} | ${isAr ? 'التاريخ:' : 'Date:'} ${date}`
@@ -7680,7 +7711,7 @@ function printIssueVoucherBatch(batchItems, floor, date, recipient, notes) {
                         </th>
                     </tr>
                     <tr>
-                        <th colspan="6" style="background:#f8fafc !important; font-size:0.78rem; padding:0.35rem 0.6rem;">
+                        <th colspan="6" style="background:#f4efe3 !important; font-size:0.78rem; padding:0.35rem 0.6rem;">
                             <div style="display:flex; justify-content:space-between;">
                                 <span><strong>${isAr ? 'الطابق المستلم:' : 'Receiving Floor:'}</strong> ${trText(floor)}</span>
                                 <span><strong>${isAr ? 'اسم المستلم:' : 'Recipient:'}</strong> ${trText(recipient)}</span>
@@ -7870,7 +7901,7 @@ function renderFurniturePurchasesModalTable(item) {
                 <th colspan="3" style="text-align: inherit;">إجمالي جميع دفعات شراء الصنف</th>
                 <th style="text-align: center; font-weight: 900;">${sumQty}</th>
                 <th></th>
-                <th style="text-align: center; font-weight: 900; background: var(--primary); color: var(--text-inverse);">${sumTotal.toLocaleString()} ج.م</th>
+                <th style="text-align: center; font-weight: 900; background: var(--primary-fill); color: var(--text-inverse);">${sumTotal.toLocaleString()} ج.م</th>
                 <th colspan="2"></th>
             </tr>
         `;
@@ -8064,7 +8095,7 @@ function renderFurnitureView() {
                 <td colspan="${isViewer ? 9 : 10}">
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem;">
                         <span>📌 ${trText(subCat)}</span>
-                        ${isViewer ? '' : `<button type="button" onclick="openAddFurnitureModal('${subCat}')" class="btn btn-sm btn-secondary no-print" style="padding:0.18rem 0.6rem; font-size:0.74rem; border-color:rgba(198, 154, 40, 0.45); color:var(--primary);">+ ${currentLang === 'ar' ? `إضافة بند في (${subCat})` : `Add in (${trText(subCat)})`}</button>`}
+                        ${isViewer ? '' : `<button type="button" onclick="openAddFurnitureModal('${subCat}')" class="btn btn-sm btn-secondary no-print" style="padding:0.18rem 0.6rem; font-size:0.74rem; border-color:rgba(217, 170, 40, 0.45); color:var(--primary);">+ ${currentLang === 'ar' ? `إضافة بند في (${subCat})` : `Add in (${trText(subCat)})`}</button>`}
                     </div>
                 </td>
             `;
@@ -8096,7 +8127,7 @@ function renderFurnitureView() {
             </td>
             <td style="text-align: center; white-space: nowrap;">
                 ${isViewer 
-                    ? `<span style="display:inline-block; min-width:44px; padding:0.3rem 0.65rem; border-radius:8px; font-weight:900; font-size:1.05rem; background:rgba(198, 154, 40, 0.12); color:var(--primary);">${qty}</span>` 
+                    ? `<span style="display:inline-block; min-width:44px; padding:0.3rem 0.65rem; border-radius:8px; font-weight:900; font-size:1.05rem; background:rgba(217, 170, 40, 0.12); color:var(--primary);">${qty}</span>` 
                     : `<div class="stepper-control">
                         <button type="button" class="stepper-btn" onclick="stepFurnitureQty(${item.id}, -1)">−</button>
                         <input type="number" min="0" value="${qty}" class="stepper-input" onchange="updateFurnitureQty(${item.id}, this.value)" style="font-weight: 900; color: var(--primary);">
@@ -8149,7 +8180,7 @@ function renderFurnitureView() {
                 <th colspan="3" style="text-align: inherit; font-weight: 900;">${currentLang === 'ar' ? `إجمالي أصول (${selectedFurnitureFloor})` : `Total Assets (${trText(selectedFurnitureFloor)})`}</th>
                 <th style="text-align: center; font-weight: 900; font-size: 1.05rem; color: var(--primary);">${floorTotalUnits}</th>
                 <th colspan="2" style="text-align: inherit; font-weight: 800;">${currentLang === 'ar' ? 'إجمالي التكلفة المسجلة:' : 'Total Recorded Cost:'}</th>
-                <th style="text-align: center; font-weight: 900; background: var(--primary); color: var(--text-inverse);">${floorGrandTotalCost > 0 ? floorGrandTotalCost.toLocaleString() + (currentLang === 'ar' ? ' ج.م' : ' EGP') : '—'}</th>
+                <th style="text-align: center; font-weight: 900; background: var(--primary-fill); color: var(--text-inverse);">${floorGrandTotalCost > 0 ? floorGrandTotalCost.toLocaleString() + (currentLang === 'ar' ? ' ج.م' : ' EGP') : '—'}</th>
                 <th></th>
                 <th style="text-align: center; font-weight: 900; color: var(--success);">${allFloorsTotalUnits}</th>
                 <th class="no-print admin-only"></th>
@@ -8529,7 +8560,7 @@ function printSingleFurnitureItemReport(itemId) {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="4" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="4" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'تقرير جرد وتحليل أثاث الطوابق' : 'Floors Furniture Inventory & Analysis Report',
                                 `${isAr ? 'الصنف:' : 'Item:'} [${item.code || ''}] ${trText(item.name)} (${trText(item.cat)}) | ${isAr ? 'تاريخ التقرير:' : 'Date:'} ${todayDate}`
@@ -8696,7 +8727,7 @@ function renderFurnitureMatrix() {
             <tr>
                 <th colspan="3" style="text-align: inherit; font-weight: 900;">${currentLang === 'ar' ? 'إجمالي قطع الأصول بكل طابق' : 'Total Assets per Floor'}</th>
                 ${footCells}
-                <th style="text-align: center; font-weight: 900; background: var(--primary); color: var(--text-inverse); font-size: 1.1rem;">${grandTotal}</th>
+                <th style="text-align: center; font-weight: 900; background: var(--primary-fill); color: var(--text-inverse); font-size: 1.1rem;">${grandTotal}</th>
                 <th colspan="2" style="text-align: inherit; font-weight: 800;">${currentLang === 'ar' ? 'إجمالي التكلفة:' : 'Total Cost:'}</th>
                 <th style="text-align: center; font-weight: 900; background: var(--success); color: white; font-size: 1rem;">${grandTotalCost > 0 ? grandTotalCost.toLocaleString() + (currentLang === 'ar' ? ' ج.م' : ' EGP') : '—'}</th>
                 <th></th>
@@ -8771,7 +8802,7 @@ function printSingleFloorFurnitureReport() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="8" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="8" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'تقرير جرد وتحليل أصول الطوابق' : 'Floors Assets Inventory & Analysis Report',
                                 subDef
@@ -8858,7 +8889,7 @@ function printFurnitureMatrixReport() {
                 <td class="print-item-name" style="width: 1% !important; white-space: nowrap !important; font-size: 0.9rem !important; font-weight: 800 !important;"><strong>${trText(item.name)}</strong></td>
                 <td style="width: 1%; font-size: 0.84rem !important; font-weight: 700 !important; text-align: center; white-space: nowrap !important;">${trText(item.size) || '—'}</td>
                 ${cells}
-                <td style="width: 1%; text-align: center; font-weight: 900; background: #f8fafc; font-size: 0.9rem !important; white-space: nowrap !important;">${rowSum}</td>
+                <td style="width: 1%; text-align: center; font-weight: 900; background: #f4efe3; font-size: 0.9rem !important; white-space: nowrap !important;">${rowSum}</td>
                 <td style="width: 1%; text-align: center; font-size: 0.8rem !important; white-space: nowrap !important;">${fin.dateDisplay || '—'}</td>
                 <td style="width: 1%; text-align: center; font-size: 0.82rem !important; font-weight: 700; white-space: nowrap !important;">${fin.priceDisplay || '—'}</td>
                 <td style="width: 1%; text-align: center; font-size: 0.86rem !important; font-weight: 900; white-space: nowrap !important;">${fin.totalCost > 0 ? fin.totalCost.toLocaleString() : '—'}</td>
@@ -8874,7 +8905,7 @@ function printFurnitureMatrixReport() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="14" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.5rem 0 !important;">
+                        <th colspan="14" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.5rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'تقرير جرد وتحليل أصول الطوابق' : 'Floors Assets Inventory & Analysis Report',
                                 `${isAr ? 'الأدوار (من الدور الرابع إلى الدور التاسع)' : 'Floors 4 to 9'} | ${isAr ? 'تاريخ التقرير:' : 'Date:'} ${todayDate}`
@@ -9030,7 +9061,7 @@ function renderHqView() {
             </td>
             <td style="font-size: 0.76rem; color: var(--text-muted); white-space: nowrap;">
                 ${isViewer 
-                    ? `<span class="badge" style="background: rgba(148,163,184,0.14); color: var(--text-muted); font-size: 0.72rem;">${trText(item.cat)}</span>` 
+                    ? `<span class="badge" style="background: rgba(138, 139, 140, 0.14); color: var(--text-muted); font-size: 0.72rem;">${trText(item.cat)}</span>` 
                     : `<input type="text" class="table-input" value="${trText(item.cat)}" onchange="updateHqField(${item.id}, 'cat', this.value)" style="width: 115px; font-size: 0.75rem;">`}
             </td>
             <td style="text-align: center; white-space: nowrap;">
@@ -9248,7 +9279,7 @@ function printHqReport() {
                 <td style="width: 1%; text-align: center; font-family: monospace; font-weight: bold; font-size: 0.86rem; white-space: nowrap !important;">${item.code || (idx + 1)}</td>
                 <td class="print-item-name" style="width: 1% !important; white-space: nowrap !important; font-size: 0.94rem !important; font-weight: 800 !important;"><strong>${trText(item.name)}</strong></td>
                 <td style="width: 1%; font-size: 0.88rem !important; font-weight: 700 !important; text-align: center; white-space: nowrap !important;">${item.size || '—'}</td>
-                <td style="width: 1%; font-size: 0.85rem !important; font-weight: 700 !important; color: #1e293b; white-space: nowrap !important;">${trText(item.cat)}</td>
+                <td style="width: 1%; font-size: 0.85rem !important; font-weight: 700 !important; color: #2a2722; white-space: nowrap !important;">${trText(item.cat)}</td>
                 <td style="width: 1%; text-align: center; font-weight: 900; font-size: 0.94rem; white-space: nowrap !important;">${qty}</td>
                 <td style="width: 1%; text-align: center; font-size: 0.84rem !important; font-weight: 700; white-space: nowrap !important;">${trText(item.status || 'ممتاز')}</td>
                 <td style="font-size: 0.84rem; text-align: right; line-height: 1.4;">${item.notes || '—'}</td>
@@ -9261,7 +9292,7 @@ function printHqReport() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.5rem 0 !important;">
+                        <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.5rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'بيان جرد وتجهيزات مقر الإدارة العليا' : 'Executive Management HQ Inventory Report',
                                 `${isAr ? 'تاريخ التقرير:' : 'Date:'} ${todayDate}`
@@ -11117,7 +11148,7 @@ function renderCustodyView() {
             const monthsSet = Array.from(new Set(rows.map(r => (r.date || '').slice(0, 7)).filter(Boolean)));
             searchSummaryBox.style.display = 'block';
             searchSummaryBox.innerHTML = `
-                <div style="background: rgba(198, 154, 40, 0.12); border: 1.5px solid var(--primary); border-radius: var(--radius-md); padding: 0.7rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.65rem;">
+                <div style="background: rgba(217, 170, 40, 0.12); border: 1.5px solid var(--primary); border-radius: var(--radius-md); padding: 0.7rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.65rem;">
                     <div>
                         <div style="font-weight: 900; font-size: 0.92rem; color: var(--primary);">
                             🔍 ${isAr ? `نتائج البحث التراكمي عن: "${rawSearch}"` : `Cumulative Search Results for: "${rawSearch}"`}
@@ -11324,9 +11355,9 @@ function renderCustodyView() {
         const hasInvoice = Boolean(custodyInvoicesMap[row.id]);
         const tr = document.createElement('tr');
         if (isTransferRow) {
-            tr.style.background = 'rgba(198, 154, 40, 0.07)';
+            tr.style.background = 'rgba(217, 170, 40, 0.07)';
         } else if (row.isNegative) {
-            tr.style.background = 'rgba(198, 154, 40, 0.05)';
+            tr.style.background = 'rgba(217, 170, 40, 0.05)';
         }
 
         const defaultNegNote = row.isNegative ? 'بالسالب (تغطية شخصية مؤقتة لحين تحويل الشركة)' : '';
@@ -11353,7 +11384,7 @@ function renderCustodyView() {
             <td style="width: 24%; min-width: 215px; max-width: 270px;">
                 ${isViewer
                     ? `<div class="custody-2line-static" style="font-size: 0.8rem; color: ${row.isNegative ? 'var(--danger)' : 'var(--text-secondary)'}; font-weight: ${row.isNegative ? '800' : '600'};">${trText(effectiveNoteVal) || '—'}</div>`
-                    : `<textarea rows="2" class="custody-2line-input" placeholder="${isAr ? 'أضف ملاحظات (سطرين)...' : 'Notes...'}" onchange="updateCustodyRowField(${row.id}, 'notes', this.value)" style="font-size: 0.8rem; color: ${row.isNegative ? 'var(--danger)' : 'var(--text-primary)'}; font-weight: ${row.isNegative ? '800' : '600'}; border-color: rgba(148,163,184,0.25);">${effectiveNoteVal}</textarea>`
+                    : `<textarea rows="2" class="custody-2line-input" placeholder="${isAr ? 'أضف ملاحظات (سطرين)...' : 'Notes...'}" onchange="updateCustodyRowField(${row.id}, 'notes', this.value)" style="font-size: 0.8rem; color: ${row.isNegative ? 'var(--danger)' : 'var(--text-primary)'}; font-weight: ${row.isNegative ? '800' : '600'}; border-color: rgba(138, 139, 140, 0.25);">${effectiveNoteVal}</textarea>`
                 }
             </td>
             <td style="width: 130px; text-align: center; white-space: nowrap;" class="no-print">
@@ -11411,7 +11442,7 @@ function renderCustodyView() {
                 <th style="text-align: center; font-weight: 900; color: var(--danger); font-size: 0.9rem;">
                     ${filteredOutflow.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${isAr ? 'ج.م' : 'EGP'}
                 </th>
-                <th style="text-align: center; font-weight: 900; background: var(--primary); color: var(--text-inverse); font-size: 0.84rem; direction: ltr;">
+                <th style="text-align: center; font-weight: 900; background: var(--primary-fill); color: var(--text-inverse); font-size: 0.84rem; direction: ltr;">
                     ${lastDisplayedBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isAr ? 'ج.م' : 'EGP'}
                 </th>
                 <th colspan="3"></th>
@@ -12029,7 +12060,7 @@ function printSingleCustodyInvoice() {
                 </tbody>
             </table>
             ${inv && inv.dataUrl && !inv.mimeType.includes('pdf') ? `
-                <div style="text-align: center; margin-top: 1rem; border: 1px solid #cbd5e1; padding: 0.75rem; border-radius: 6px;">
+                <div style="text-align: center; margin-top: 1rem; border: 1px solid #c9c3b4; padding: 0.75rem; border-radius: 6px;">
                     <div style="font-weight: 800; margin-bottom: 0.5rem;">صورة المرفق (${inv.name})</div>
                     <img src="${inv.dataUrl}" style="max-width: 92%; max-height: 540px; object-fit: contain;">
                 </div>
@@ -12125,9 +12156,9 @@ function printCustodyReport() {
                 <td style="width: 34px; text-align: center !important; font-weight: 800;">${r.serialNum}</td>
                 <td style="width: 10%; text-align: center !important; font-weight: 700; white-space: nowrap !important;">${r.date}</td>
                 <td class="print-item-name" style="width: 24% !important; min-width: 170px !important; max-width: 225px !important; white-space: normal !important; font-weight: 800 !important;"><strong>${trText(r.desc)}</strong></td>
-                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #3a3a3a;">${r.inflow > 0 ? r.inflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
-                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #b42318;">${r.outflow > 0 ? r.outflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
-                <td style="width: 11%; text-align: center !important; font-weight: 900; font-size: 0.78rem !important; direction: ltr; color: ${r.isNegative ? '#b42318' : '#0f172a'};">${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #55524b;">${r.inflow > 0 ? r.inflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
+                <td style="width: 11%; text-align: center !important; font-weight: 800; color: #b3261e;">${r.outflow > 0 ? r.outflow.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
+                <td style="width: 11%; text-align: center !important; font-weight: 900; font-size: 0.78rem !important; direction: ltr; color: ${r.isNegative ? '#b3261e' : '#1f1d19'};">${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 <td class="print-notes-col" style="width: 23% !important; min-width: 155px !important; max-width: 215px !important; font-size: 0.76rem !important; line-height: 1.32 !important; white-space: normal !important;">${negNote}</td>
             </tr>
         `;
@@ -12135,7 +12166,7 @@ function printCustodyReport() {
         const inv = custodyInvoicesMap[r.id];
         if (includeInvoices && inv && inv.dataUrl && !inv.mimeType.includes('pdf')) {
             attachedGalleryHtml += `
-                <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.5rem; text-align: center; page-break-inside: avoid;">
+                <div style="border: 1px solid #c9c3b4; border-radius: 6px; padding: 0.5rem; text-align: center; page-break-inside: avoid;">
                     <div style="font-weight: 800; font-size: 0.8rem; margin-bottom: 0.3rem;">#${r.serialNum} — ${inv.name} (${r.date}: ${trText(r.desc)})</div>
                     <img src="${inv.dataUrl}" style="max-width: 100%; max-height: 240px; object-fit: contain;">
                 </div>
@@ -12153,7 +12184,7 @@ function printCustodyReport() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'بيان جرد وتسوية عهدة الشركة' : 'Company Custody Audit & Settlement Report',
                                 reportSubtitle
@@ -12375,7 +12406,7 @@ function printSupplierPOsReport() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="10" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="10" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'بيان المشتريات والتحويلات المباشرة للموردين (50% / 70% / 100%)' : 'Direct Supplier Transfers & Split Payments Report',
                                 `${isAr ? 'التاريخ:' : 'Date:'} ${getFormattedTodayDate(isAr)}`
@@ -12505,7 +12536,7 @@ function printMonthlyCoreExpenses() {
             <table class="print-table">
                 <thead>
                     <tr>
-                        <th colspan="4" style="background:white !important; border:none !important; border-bottom:1.5px solid #1e293b !important; padding:0 0 0.55rem 0 !important;">
+                        <th colspan="4" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
                                 isAr ? 'بيان المصروفات الأساسية الثابتة للشركة كل شهر' : 'Company Monthly Core Expenses Statement',
                                 `${isAr ? 'التاريخ:' : 'Date:'} ${getFormattedTodayDate(isAr)}`
