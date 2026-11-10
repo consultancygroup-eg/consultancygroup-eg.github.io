@@ -2698,3 +2698,50 @@ header.app-header {
 .po-view-meta { color: var(--text-muted); font-size: 0.75rem; margin-top: 0.9rem; }
 #supplier-pos-tbody tr { cursor: pointer; }
 body.dark .btn-danger-outline { background: transparent; }
+
+/* Asset inventory sheet: same look as the CG reference table
+   (solid brand-gold header row, light alternating rows, plain values; click a row to edit) */
+table.cg-sheet thead th {
+    background: var(--primary-fill) !important;
+    color: var(--on-primary) !important;
+    font-weight: 700;
+    border-color: transparent !important;
+}
+table.cg-sheet tbody tr.cg-sheet-row td { background: var(--bg-card); color: var(--text-primary); vertical-align: middle; }
+table.cg-sheet tbody tr.cg-sheet-row:nth-of-type(even) td { background: var(--bg-card-hover); }
+table.cg-sheet tbody tr.cg-sheet-row:hover td { background: var(--primary-light); cursor: pointer; }
+table.cg-sheet .cg-start,
+table.cg-sheet thead th:nth-child(2),
+table.cg-sheet thead th:nth-child(3),
+table.cg-sheet thead th:nth-child(8) { text-align: start !important; }
+tr.wbs-main-group-row td,
+tr.wbs-sub-group-row td { text-align: start !important; }
+body.dark table.cg-sheet tbody tr.cg-sheet-row:nth-of-type(even) td { background: rgba(255, 255, 255, 0.025); }
+
+/* Edit window (CG reference: small gold eyebrow, title, gold rule, paper inputs) */
+.cg-edit-modal .modal-header { border-bottom: 2px solid var(--brand-gold); align-items: flex-start; }
+.cg-edit-eyebrow { color: var(--primary); font-size: 0.78rem; font-weight: 600; margin-bottom: 0.15rem; }
+.cg-edit-modal .modal-header h3 { margin: 0; }
+.cg-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem 1rem; }
+.cg-edit-grid > label, .cg-edit-floors > label { display: flex; flex-direction: column; gap: 0.35rem; font-weight: 700; font-size: 0.85rem; color: var(--text-primary); }
+.cg-edit-grid .cg-full { grid-column: 1 / -1; }
+.cg-edit-modal .form-control { background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+.cg-edit-modal .form-control:focus { border-color: var(--brand-gold); box-shadow: var(--shadow-glow); }
+.cg-edit-modal .form-control:disabled { opacity: 0.55; }
+.cg-edit-section { margin: 1rem 0 0.5rem; font-weight: 700; font-size: 0.85rem; color: var(--text-primary); }
+.cg-edit-floors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem 0.75rem; }
+.cg-edit-floors > label { font-weight: 500; color: var(--text-secondary); font-size: 0.8rem; }
+.cg-edit-floors > label.is-current { color: var(--primary); font-weight: 700; }
+.cg-edit-floors > label.is-current .form-control { border-color: var(--brand-gold); }
+.cg-edit-hint { margin-top: 0.55rem; font-size: 0.8rem; color: var(--text-muted); }
+.cg-edit-hint strong { color: var(--text-primary); font-size: 0.95rem; }
+body.dark .cg-edit-modal .form-control { background: var(--bg-input); }
+@media (max-width: 560px) {
+    .cg-edit-grid { grid-template-columns: 1fr; }
+    .cg-edit-floors { grid-template-columns: repeat(2, 1fr); }
+}
+table.cg-sheet tr.wbs-main-group-row td { background: var(--brand-gold-soft) !important; color: var(--text-primary) !important; border-top: 1px solid var(--brand-gold) !important; }
+table.cg-sheet tr.wbs-sub-group-row td { background: var(--bg-subtle) !important; color: var(--text-secondary) !important; }
+body.dark table.cg-sheet tr.wbs-main-group-row td { background: rgba(217, 170, 40, 0.16) !important; color: var(--primary) !important; }
+body.dark table.cg-sheet tr.wbs-sub-group-row td { background: rgba(255, 255, 255, 0.04) !important; }
+.cg-edit-modal, .cg-edit-modal .modal-content-area, .cg-edit-modal .modal-footer { background: var(--bg-card) !important; }

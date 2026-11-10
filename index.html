@@ -1038,7 +1038,7 @@
                             </div>
 
                             <div class="table-responsive">
-                                <table class="data-table">
+                                <table class="data-table cg-sheet">
                                     <thead>
                                         <tr>
                                             <th style="text-align: center; width: 75px;">كود الحصر</th>
@@ -1047,7 +1047,7 @@
                                             <th style="text-align: center; width: 155px;">العدد المتواجد بالفعل</th>
                                             <th style="text-align: center; width: 120px;">تاريخ الشراء</th>
                                             <th style="text-align: center; width: 145px;">السعر / الدفعات</th>
-                                            <th style="text-align: center; width: 125px; background: var(--primary-light); color: var(--primary);">الإجمالي</th>
+                                            <th style="text-align: center; width: 125px;">الإجمالي</th>
                                             <th style="min-width: 210px; width: 100%;">ملاحظات / حالة الصنف بالطابق</th>
                                             <th style="text-align: center; white-space: nowrap;">إجمالي الشركة (4-9)</th>
                                             <th style="text-align: center;" class="no-print admin-only">إجراءات</th>
@@ -2143,6 +2143,54 @@
             <div class="modal-footer">
                 <button onclick="closeModal('modal-supplier-po-add')" class="btn btn-secondary">إلغاء</button>
                 <button onclick="saveSupplierPOItem()" class="btn btn-primary">حفظ أمر الشراء والتحويل</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset inventory: edit item (opens on row click) -->
+    <div id="modal-edit-furniture" class="modal-overlay">
+        <div class="modal-box cg-edit-modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <div>
+                    <div class="cg-edit-eyebrow">تعديل صنف</div>
+                    <h3 id="ef-title">تعديل صنف</h3>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('modal-edit-furniture')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <input type="hidden" id="ef-id" value="">
+                <div class="cg-edit-grid">
+                    <label class="cg-full">اسم الصنف / البيان
+                        <input type="text" id="ef-name" class="form-control">
+                    </label>
+                    <label>المجموعة
+                        <select id="ef-cat" class="form-control"></select>
+                    </label>
+                    <label>المقاس / الأبعاد
+                        <input type="text" id="ef-size" class="form-control" placeholder="مثال: 160×80 سم">
+                    </label>
+                </div>
+                <div class="cg-edit-section">العدد المتواجد بالفعل في كل دور</div>
+                <div class="cg-edit-floors" id="ef-floors"></div>
+                <div class="cg-edit-grid" style="margin-top: 0.9rem;">
+                    <label>تاريخ الشراء
+                        <input type="date" id="ef-date" class="form-control">
+                    </label>
+                    <label>سعر الوحدة (ج.م)
+                        <input type="number" id="ef-price" class="form-control" min="0" step="0.01" placeholder="0.00" oninput="updateEditFurniturePreview()">
+                    </label>
+                </div>
+                <div id="ef-batches-note" class="cg-edit-hint" style="display:none;"></div>
+                <div class="cg-edit-hint">إجمالي قيمة <span id="ef-floor-label"></span>: <strong id="ef-total-preview">—</strong></div>
+                <div class="cg-edit-grid" style="margin-top: 0.9rem;">
+                    <label class="cg-full">ملاحظات / حالة الصنف في <span id="ef-note-floor"></span>
+                        <input type="text" id="ef-note" class="form-control" placeholder="ملاحظات أو حالة الصنف بالطابق...">
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-edit-furniture')" class="btn btn-secondary">إلغاء</button>
+                <button onclick="saveEditFurnitureItem()" class="btn btn-primary">حفظ</button>
             </div>
         </div>
     </div>

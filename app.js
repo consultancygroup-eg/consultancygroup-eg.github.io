@@ -3121,6 +3121,104 @@ function deleteFurniturePurchaseBatch(itemId, batchId) {
     renderFurniturePurchasesModalTable(item);
 }
 
+// --- Asset item edit window (opens when a row is clicked) ---
+const FURN_FLOORS = ['الدور الرابع', 'الدور الخامس', 'الدور السادس', 'الدور السابع', 'الدور الثامن', 'الدور التاسع'];
+
+function openEditFurnitureModal(itemId) {
+    if (currentUserRole === 'viewer') return;
+    const item = furnitureInventory.find(i => i.id === itemId);
+    if (!item) return;
+    if (!item.floors) item.floors = {};
+    if (!item.notes) item.notes = {};
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const cat = normalizeFurnitureCategory(item.cat, item.name);
+
+    document.getElementById('ef-id').value = String(itemId);
+    document.getElementById('ef-title').textContent = `${item.code ? item.code + ' — ' : ''}${item.name}`;
+    document.getElementById('ef-name').value = item.name || '';
+    document.getElementById('ef-size').value = item.size || '';
+    const catSel = document.getElementById('ef-cat');
+    const groups = CANONICAL_FURNITURE_GROUPS.includes(cat) ? CANONICAL_FURNITURE_GROUPS : [...CANONICAL_FURNITURE_GROUPS, cat];
+    catSel.innerHTML = groups.map(g => `<option value="${esc(g)}"${g === cat ? ' selected' : ''}>${esc(g)}</option>`).join('');
+
+    document.getElementById('ef-floors').innerHTML = FURN_FLOORS.map(fl => `
+        <label class="${fl === selectedFurnitureFloor ? 'is-current' : ''}">${esc(fl)}
+            <input type="number" min="0" class="form-control ef-floor-qty" data-floor="${esc(fl)}" value="${Number(item.floors[fl]) || 0}" oninput="updateEditFurniturePreview()">
+        </label>`).join('');
+
+    const hasBatches = Array.isArray(item.purchases) && item.purchases.length > 0;
+    const dateInp = document.getElementById('ef-date');
+    const priceInp = document.getElementById('ef-price');
+    dateInp.value = item.purchaseDate || '';
+    priceInp.value = Number(item.unitPrice) > 0 ? item.unitPrice : '';
+    dateInp.disabled = priceInp.disabled = hasBatches;
+    const bNote = document.getElementById('ef-batches-note');
+    bNote.style.display = hasBatches ? '' : 'none';
+    bNote.innerHTML = hasBatches
+        ? `الصنف ده متسجل له ${item.purchases.length} دفعات شراء بأسعار وتواريخ مختلفة. <button type="button" class="btn btn-sm btn-secondary" onclick="closeModal('modal-edit-furniture'); openFurniturePurchasesModal(${itemId});">إدارة دفعات الشراء</button>`
+        : '';
+
+    document.getElementById('ef-floor-label').textContent = selectedFurnitureFloor;
+    document.getElementById('ef-note-floor').textContent = selectedFurnitureFloor;
+    document.getElementById('ef-note').value = item.notes[selectedFurnitureFloor] || '';
+    updateEditFurniturePreview();
+    openModal('modal-edit-furniture');
+    setTimeout(() => document.getElementById('ef-name')?.focus(), 80);
+}
+
+function updateEditFurniturePreview() {
+    const item = furnitureInventory.find(i => i.id === Number(document.getElementById('ef-id').value));
+    if (!item) return;
+    const qtyInp = document.querySelector(`.ef-floor-qty[data-floor="${selectedFurnitureFloor}"]`);
+    const qty = Math.max(0, Number(qtyInp?.value) || 0);
+    let total;
+    if (Array.isArray(item.purchases) && item.purchases.length > 0) {
+        total = getFurnitureItemFinancials(item, qty).totalCost;
+    } else {
+        total = +(qty * (Number(document.getElementById('ef-price').value) || 0)).toFixed(2);
+    }
+    document.getElementById('ef-total-preview').textContent = total > 0
+        ? total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
+        : '—';
+}
+
+function saveEditFurnitureItem() {
+    if (currentUserRole === 'viewer') return;
+    const item = furnitureInventory.find(i => i.id === Number(document.getElementById('ef-id').value));
+    if (!item) return;
+    const name = document.getElementById('ef-name').value.trim();
+    if (!name) {
+        showToast(currentLang === 'ar' ? 'اسم الصنف لا يمكن أن يكون فارغاً' : 'Item name cannot be empty', 'warning');
+        return;
+    }
+    const newCat = document.getElementById('ef-cat').value;
+    const catChanged = normalizeFurnitureCategory(item.cat, item.name) !== newCat;
+    item.name = name;
+    item.size = document.getElementById('ef-size').value.trim();
+    if (catChanged) {
+        item.cat = newCat;
+        item.mainGroup = getMainGroupForSubcat(newCat);
+    }
+    if (!item.floors) item.floors = {};
+    document.querySelectorAll('.ef-floor-qty').forEach(inp => {
+        item.floors[inp.dataset.floor] = Math.max(0, Number(inp.value) || 0);
+    });
+    if (!(Array.isArray(item.purchases) && item.purchases.length > 0)) {
+        item.purchaseDate = document.getElementById('ef-date').value || '';
+        item.unitPrice = Math.max(0, Number(document.getElementById('ef-price').value) || 0);
+    }
+    if (!item.notes) item.notes = {};
+    item.notes[selectedFurnitureFloor] = document.getElementById('ef-note').value.trim();
+    item.updatedAt = new Date().toISOString();
+
+    if (catChanged) recalculateAllFurnitureCodes(true);
+    persistState();
+    closeModal('modal-edit-furniture');
+    renderFurnitureView();
+    renderFurnitureMatrix();
+    showToast(currentLang === 'ar' ? 'تم حفظ تعديلات الصنف بنجاح' : 'Item updated', 'success');
+}
+
 // --- COMPANY FURNITURE INVENTORY (FLOORS 4 TO 9) ---
 function selectFurnitureFloor(floorName) {
     selectedFurnitureFloor = floorName;
@@ -3271,55 +3369,31 @@ function renderFurnitureView() {
         floorGrandTotalCost += fin.totalCost;
 
         const tr = document.createElement('tr');
+        tr.className = 'cg-sheet-row';
+        if (!isViewer) {
+            tr.title = currentLang === 'ar' ? 'اضغط على الصنف للتعديل' : 'Click to edit';
+            tr.onclick = (e) => { if (!e.target.closest('button, a, input')) openEditFurnitureModal(item.id); };
+        }
         tr.innerHTML = `
+            <td style="text-align: center; white-space: nowrap;">${wbsCode}</td>
+            <td class="cg-start" style="white-space: nowrap; font-weight: 600;">${trText(item.name)}</td>
+            <td class="cg-start" style="white-space: nowrap;">${trText(itemSize) || "—"}</td>
+            <td style="text-align: center; font-weight: 700;">${qty}</td>
             <td style="text-align: center; white-space: nowrap;">
-                <span class="wbs-code-badge" title="الترقيم التلقائي">${wbsCode}</span>
-            </td>
-            <td style="width: 1%; white-space: nowrap;">
-                ${isViewer 
-                    ? `<span style="font-weight: 800; color: var(--text-main); font-size: 0.94rem; white-space: nowrap;">${trText(item.name)}</span>` 
-                    : `<input type="text" class="table-input" value="${trText(item.name)}" size="${Math.max((trText(item.name) || '').length + 2, 14)}" onchange="updateFurnitureItemField(${item.id}, 'name', this.value)" style="font-weight: 800; font-size: 0.94rem; width: auto; min-width: 135px;">`}
-            </td>
-            <td style="white-space: nowrap;">
-                ${isViewer 
-                    ? `<span class="wbs-size-pill" style="font-size: 0.88rem; font-weight: 800;">${trText(itemSize) || '—'}</span>` 
-                    : `<input type="text" class="table-input" value="${trText(itemSize)}" placeholder="${currentLang === 'ar' ? 'اكتب المقاس...' : 'Size...'}" onchange="updateFurnitureItemField(${item.id}, 'size', this.value)" style="font-size: 0.9rem; font-weight: 700; width: 100%; min-width: 115px;">`}
-            </td>
-            <td style="text-align: center; white-space: nowrap;">
-                ${isViewer 
-                    ? `<span style="display:inline-block; min-width:44px; padding:0.3rem 0.65rem; border-radius:8px; font-weight:900; font-size:1.05rem; background:rgba(217, 170, 40, 0.12); color:var(--primary);">${qty}</span>` 
-                    : `<div class="stepper-control">
-                        <button type="button" class="stepper-btn" onclick="stepFurnitureQty(${item.id}, -1)">−</button>
-                        <input type="number" min="0" value="${qty}" class="stepper-input" onchange="updateFurnitureQty(${item.id}, this.value)" style="font-weight: 900; color: var(--primary);">
-                        <button type="button" class="stepper-btn" onclick="stepFurnitureQty(${item.id}, 1)">+</button>
-                    </div>`}
+                ${fin.hasBatches
+                    ? `<button type="button" class="furn-batches-btn" onclick="openFurniturePurchasesModal(${item.id})">${fin.dateDisplay}</button>`
+                    : (fin.dateDisplay || '—')}
             </td>
             <td style="text-align: center; white-space: nowrap;">
                 ${fin.hasBatches
-                    ? `<button type="button" class="furn-batches-btn" onclick="openFurniturePurchasesModal(${item.id})">📅 ${fin.dateDisplay}</button>`
-                    : (isViewer
-                        ? `<span style="font-size: 0.84rem;">${fin.dateDisplay || '—'}</span>`
-                        : `<input type="date" class="table-input" value="${fin.dateDisplay}" onchange="updateFurnitureDirectFinancial(${item.id}, 'purchaseDate', this.value)" style="width: 122px; font-size: 0.8rem;">`)}
+                    ? `<button type="button" class="furn-batches-btn" onclick="openFurniturePurchasesModal(${item.id})">${fin.priceDisplay}</button>`
+                    : (fin.unitPrice > 0 ? fin.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—')}
             </td>
-            <td style="text-align: center; white-space: nowrap;">
-                <div style="display: inline-flex; align-items: center; gap: 0.25rem;">
-                    ${fin.hasBatches
-                        ? `<button type="button" class="furn-batches-btn" onclick="openFurniturePurchasesModal(${item.id})">🧾 ${fin.priceDisplay}</button>`
-                        : (isViewer
-                            ? `<span style="font-weight: 800;">${fin.unitPrice > 0 ? fin.unitPrice.toLocaleString() : '—'}</span>`
-                            : `<input type="number" min="0" step="0.01" class="table-input" value="${fin.unitPrice > 0 ? fin.unitPrice : ''}" placeholder="${currentLang === 'ar' ? 'السعر...' : 'Price...'}" onchange="updateFurnitureDirectFinancial(${item.id}, 'unitPrice', this.value)" style="width: 90px; text-align: center; font-weight: 800;">`)}
-                    ${!isViewer ? `<button type="button" class="furn-batches-btn" onclick="openFurniturePurchasesModal(${item.id})" title="${currentLang === 'ar' ? 'إدارة دفعات الشراء والتواريخ والأسعار المتعددة لهذا الصنف' : 'Manage multiple purchase batches/dates'}">📑</button>` : ''}
-                </div>
+            <td style="text-align: center; white-space: nowrap; font-weight: 700;">
+                ${fin.totalCost > 0 ? fin.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
             </td>
-            <td style="text-align: center; font-weight: 900; background: var(--primary-light); color: var(--primary); white-space: nowrap;">
-                ${fin.totalCost > 0 ? fin.totalCost.toLocaleString() : '—'}
-            </td>
-            <td style="min-width: 210px; width: 100%;">
-                ${isViewer 
-                    ? `<span style="font-size: 0.86rem; color: ${note ? 'var(--text-main)' : 'var(--text-muted)'}; display: block; line-height: 1.45;">${note || '—'}</span>` 
-                    : `<input type="text" class="table-input" value="${note}" placeholder="${currentLang === 'ar' ? 'ملاحظات أو حالة الصنف بالطابق...' : 'Notes or condition...'}" onchange="updateFurnitureNote(${item.id}, this.value)" style="width: 100%; min-width: 195px; font-size: 0.86rem; padding: 0.45rem 0.75rem;">`}
-            </td>
-            <td style="text-align: center; font-weight: 900; color: var(--success); font-size: 1.05rem; white-space: nowrap;">${companySum}</td>
+            <td class="cg-start" style="min-width: 210px; color: ${note ? 'var(--text-primary)' : 'var(--text-muted)'};">${note || '—'}</td>
+            <td style="text-align: center; white-space: nowrap;">${companySum}</td>
             <td style="text-align: center; white-space: nowrap;" class="no-print admin-only">
                 <div style="display: inline-flex; align-items: center; gap: 0.22rem;">
                     <button onclick="promptMoveFurniturePosition(${item.id})" class="btn btn-sm btn-secondary" style="padding: 0.22rem 0.45rem; font-size: 0.72rem;" title="${currentLang === 'ar' ? 'نقل سريع إلى أي رقم ترتيب تريده مباشرة' : 'Move to Position'}">🔢</button>
