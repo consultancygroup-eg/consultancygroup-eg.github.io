@@ -2896,6 +2896,13 @@ select.cg-f:focus { outline: 2px solid var(--brand-gold); outline-offset: 0; }
 .hq-row-click:hover td { background: var(--primary-light); }
 .dept-edit-btn { margin-top: 6px; padding: 0.15rem 0.55rem !important; font-size: 0.72rem !important; }
 
+/* Custody statement PDF: totals under each page (page total, running total, final total) */
+table.print-table tr.custody-page-total th { background: #fef2ce !important; color: #55524b !important; font-weight: 700 !important; border-top: 1px solid #d9aa28 !important; page-break-inside: avoid; break-inside: avoid; }
+table.print-table tr.custody-page-total.is-final th { background: #f6e7bc !important; }
+table.print-table.custody-print-page + table.print-table.custody-print-page { margin-top: 0; }
+.dept-move { display: inline-flex; gap: 4px; margin-inline-start: 6px; vertical-align: middle; margin-top: 6px; }
+.dept-move .btn { padding: 0.12rem 0.45rem !important; font-size: 0.68rem !important; }
+
 </style>
 
     <!-- Local Offline Chart.js & Lucide Icons -->
@@ -13222,14 +13229,17 @@ function printCustodyReport() {
 
     let totalIn = 0;
     let totalOut = 0;
-    let rowsHtml = '';
+    const rowParts = [];
     let attachedGalleryHtml = '';
 
     rows.forEach(r => {
         totalIn += r.inflow;
         totalOut += r.outflow;
         const negNote = r.isNegative ? (r.notes ? `${r.notes} (بالسالب - تغطية شخصية مؤقتة)` : 'بالسالب (تغطية شخصية مؤقتة لحين تحويل الشركة)') : (r.notes || '—');
-        rowsHtml += `
+        // Rows whose text wraps take about twice the height on paper
+        const longest = Math.max(String(trText(r.desc)).length / 38, String(negNote).length / 42);
+        const weight = longest > 2 ? 3 : (longest > 1 ? 2 : 1);
+        rowParts.push({ r, weight, html: `
             <tr>
                 <td style="width: 34px; text-align: center !important; font-weight: 800;">${r.serialNum}</td>
                 <td style="width: 10%; text-align: center !important; font-weight: 700; white-space: nowrap !important;">${r.date}</td>
@@ -13239,7 +13249,7 @@ function printCustodyReport() {
                 <td style="width: 11%; text-align: center !important; font-weight: 900; font-size: 0.78rem !important; direction: ltr; color: ${r.isNegative ? '#b3261e' : '#1f1d19'};">${r.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 <td class="print-notes-col" style="width: 23% !important; min-width: 155px !important; max-width: 215px !important; font-size: 0.76rem !important; line-height: 1.32 !important; white-space: normal !important;">${negNote}</td>
             </tr>
-        `;
+        ` });
 
         const inv = custodyInvoicesMap[r.id];
         if (includeInvoices && inv && inv.dataUrl && !inv.mimeType.includes('pdf')) {
@@ -13257,10 +13267,20 @@ function printCustodyReport() {
         ? `جرد العهدة من تاريخ ${firstDate} إلى تاريخ ${lastDate}${rawSearch ? ` — (صنف: ${rawSearch})` : ''}`
         : `Custody Statement from ${firstDate} to ${lastDate}`;
 
-    printArea.innerHTML = `
-        <div class="voucher-print-container" dir="${isAr ? 'rtl' : 'ltr'}">
-            <table class="print-table">
-                <thead>
+    // Split the rows into paper pages ourselves, so each page carries its own totals:
+    // "إجمالي الصفحة" and "الإجمالي حتى هذه الصفحة" (running), and the last page ends with the final total.
+    const PAGE_CAPACITY = 34; // row units per A4 page under the header (a row wrapping to 2 or 3 lines counts 2 or 3)
+    const pages = [];
+    let cur = [], used = 0;
+    rowParts.forEach(p => {
+        if (cur.length && used + p.weight > PAGE_CAPACITY) { pages.push(cur); cur = []; used = 0; }
+        cur.push(p); used += p.weight;
+    });
+    if (cur.length || !pages.length) pages.push(cur);
+
+    const money = n => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    const money2 = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const headHtml = `
                     <tr>
                         <th colspan="7" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                             ${buildCenteredPrintHeader(
@@ -13277,22 +13297,39 @@ function printCustodyReport() {
                         <th style="width: 11%; text-align: center !important;">${isAr ? 'منصرف' : 'Outflow'}</th>
                         <th style="width: 11%; text-align: center !important;">${isAr ? 'المتبقي' : 'Balance'}</th>
                         <th class="print-notes-col" style="width: 23% !important; min-width: 155px !important;">${isAr ? 'ملاحظات' : 'Notes'}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rowsHtml}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <th colspan="3" style="text-align: inherit; font-weight: 900;">${isAr ? 'الإجمالي والرصيد المتبقي النهائي' : 'Totals & Ending Balance'}</th>
-                        <th style="text-align: center !important; font-weight: 900;">${totalIn.toLocaleString('en-US', { maximumFractionDigits: 2 })}</th>
-                        <th style="text-align: center !important; font-weight: 900;">${totalOut.toLocaleString('en-US', { maximumFractionDigits: 2 })}</th>
-                        <th style="text-align: center !important; font-weight: 900; direction: ltr;">${lastBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isAr ? 'ج.م' : 'EGP'}</th>
+                    </tr>`;
+    const totalRow = (label, inV, outV, bal, strong) => `
+                    <tr class="custody-page-total${strong ? ' is-final' : ''}">
+                        <th colspan="3" style="text-align: inherit;">${label}</th>
+                        <th style="text-align: center !important;">${money(inV)}</th>
+                        <th style="text-align: center !important;">${money(outV)}</th>
+                        <th style="text-align: center !important; direction: ltr;">${bal === null ? '' : `${money2(bal)} ${isAr ? 'ج.م' : 'EGP'}`}</th>
                         <th></th>
-                    </tr>
-                </tfoot>
-            </table>
+                    </tr>`;
 
+    let runIn = 0, runOut = 0;
+    const pagesHtml = pages.map((pg, i) => {
+        const pIn = pg.reduce((s, p) => s + p.r.inflow, 0);
+        const pOut = pg.reduce((s, p) => s + p.r.outflow, 0);
+        runIn += pIn; runOut += pOut;
+        const isLast = i === pages.length - 1;
+        const endBal = pg.length ? pg[pg.length - 1].r.balance : lastBal;
+        const pageLabel = pages.length > 1 ? ` — ${isAr ? `صفحة ${i + 1} من ${pages.length}` : `page ${i + 1} of ${pages.length}`}` : '';
+        let foot = '';
+        if (pages.length > 1) foot += totalRow(`${isAr ? 'إجمالي الصفحة' : 'Page total'}${pageLabel}`, pIn, pOut, null, false);
+        foot += isLast
+            ? totalRow(isAr ? 'الإجمالي النهائي والرصيد المتبقي' : 'Grand total & ending balance', runIn, runOut, endBal, true)
+            : totalRow(isAr ? 'الإجمالي حتى هذه الصفحة (والرصيد في آخرها)' : 'Running total to this page', runIn, runOut, endBal, false);
+        return `
+            <table class="print-table custody-print-page" style="${isLast ? '' : 'page-break-after: always; break-after: page;'}">
+                <thead>${headHtml}</thead>
+                <tbody>${pg.map(p => p.html).join('')}${foot}</tbody>
+            </table>`;
+    }).join('');
+
+    printArea.innerHTML = `
+        <div class="voucher-print-container" dir="${isAr ? 'rtl' : 'ltr'}">
+            ${pagesHtml}
             ${attachedGalleryHtml ? `
                 <div style="margin-top: 1rem;">
                     <h4 style="text-align: center; margin-bottom: 0.6rem; font-weight: 900;">مرفقات وصور الفواتير المعتمدة</h4>
@@ -14093,7 +14130,7 @@ function renderDeptsView() {
             }).join('<br>') : '<span style="color: var(--text-muted);">—</span>';
             const shortAll = (d.items || []).reduce((s, it) => s + (deptItemShort(d, it) || 0), 0);
             return `<tr class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}>
-                <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button>`}</td>
+                <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button><span class="dept-move no-print"><button type="button" class="btn btn-sm btn-secondary" title="لأعلى" onclick="event.stopPropagation(); moveDept(${d.id}, -1)">▲</button><button type="button" class="btn btn-sm btn-secondary" title="لأسفل" onclick="event.stopPropagation(); moveDept(${d.id}, 1)">▼</button></span>`}</td>
                 <td style="text-align:center; font-weight:800;">${Number(d.offices) || '<span style="color: var(--text-muted);" title="العدد لسه ماتحددش">—</span>'}</td>
                 <td style="text-align:center;">${deptVacantHtml(d)}</td>
                 <td style="text-align:center;">${deptCell(deptFamilyTotals(d, 'desk'))}</td>
@@ -14285,6 +14322,20 @@ function shareDeptsWhatsApp() {
     lines.push(`*محتاج يتشترى:* ${buy.length ? buy.map(([n, q]) => `${n} ${q}`).join('، ') : 'لا يوجد'}`);
     lines.push(`رابط للاطلاع فقط (بدون تعديل): ${getShareableUrl('viewer')}`);
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+}
+
+// Move a department up/down among the departments of the same floor
+function moveDept(id, dir) {
+    if (currentUserRole === 'viewer') return;
+    const d = deptLayout.find(x => x.id === id);
+    if (!d) return;
+    const sameFloor = deptLayout.map((x, i) => ({ x, i })).filter(o => o.x.floor === d.floor);
+    const pos = sameFloor.findIndex(o => o.x.id === id);
+    const target = sameFloor[pos + dir];
+    if (!target) return;
+    const a = sameFloor[pos].i, b = target.i;
+    [deptLayout[a], deptLayout[b]] = [deptLayout[b], deptLayout[a]];
+    persistState();
 }
 
 </script>

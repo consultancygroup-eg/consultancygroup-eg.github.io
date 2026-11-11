@@ -2876,3 +2876,10 @@ select.cg-f:focus { outline: 2px solid var(--brand-gold); outline-offset: 0; }
 .hq-row-click { cursor: pointer; }
 .hq-row-click:hover td { background: var(--primary-light); }
 .dept-edit-btn { margin-top: 6px; padding: 0.15rem 0.55rem !important; font-size: 0.72rem !important; }
+
+/* Custody statement PDF: totals under each page (page total, running total, final total) */
+table.print-table tr.custody-page-total th { background: #fef2ce !important; color: #55524b !important; font-weight: 700 !important; border-top: 1px solid #d9aa28 !important; page-break-inside: avoid; break-inside: avoid; }
+table.print-table tr.custody-page-total.is-final th { background: #f6e7bc !important; }
+table.print-table.custody-print-page + table.print-table.custody-print-page { margin-top: 0; }
+.dept-move { display: inline-flex; gap: 4px; margin-inline-start: 6px; vertical-align: middle; margin-top: 6px; }
+.dept-move .btn { padding: 0.12rem 0.45rem !important; font-size: 0.68rem !important; }
