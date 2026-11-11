@@ -2934,3 +2934,8 @@ tr.elec-active td { background: var(--primary-light) !important; }
 .dept-buy-line b { color: var(--danger); }
 .dept-pdf-btn { margin-top: 6px; margin-inline-start: 6px; padding: 0.12rem 0.5rem !important; font-size: 0.7rem !important; }
 .dept-table thead th small { font-weight: 400; opacity: 0.75; }
+/* Floor sections: offices table on top, buffet table below */
+.dept-sub-head { padding: 10px 14px 4px; }
+.dept-sub-title { display: inline-block; font-weight: 800; font-size: 0.88rem; color: var(--primary); border-bottom: 2px solid var(--brand-gold); padding-bottom: 2px; }
+.dept-buffet-table { margin-bottom: 4px; }
+.cg-print-section-title { margin: 14px 0 0; font-weight: 700; font-size: 0.95rem; color: #3d3a34; border-bottom: 1.5px solid #d9aa28; padding-bottom: 3px; page-break-after: avoid; break-after: avoid; }

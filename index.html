@@ -2485,8 +2485,14 @@
             <div class="modal-content-area">
                 <input type="hidden" id="dept-id" value="">
                 <div class="cg-edit-grid">
-                    <label class="cg-full">اسم القسم / المكتب
-                        <input type="text" id="dept-name" class="form-control" placeholder="مثال: قسم العروض، مكتب Technical Manager">
+                    <label class="cg-full">اسم القسم / المكتب / البوفيه
+                        <input type="text" id="dept-name" class="form-control" placeholder="مثال: قسم العروض، مكتب Technical Manager، بوفيه الدور التاسع">
+                    </label>
+                    <label>النوع
+                        <select id="dept-kind" class="form-control" onchange="onDeptKindChange()">
+                            <option value="office">مكاتب / قسم</option>
+                            <option value="buffet">بوفيه</option>
+                        </select>
                     </label>
                     <label>الدور
                         <select id="dept-floor" class="form-control">
@@ -2497,7 +2503,7 @@
                     <label>تابع لقسم (لو فرع)
                         <input type="text" id="dept-group" class="form-control" placeholder="مثال: التصميم">
                     </label>
-                    <label>إجمالي مكاتب القسم (المتفق عليه مع الشركة)
+                    <label id="dept-offices-wrap">إجمالي مكاتب القسم (المتفق عليه مع الشركة)
                         <input type="number" id="dept-offices" class="form-control" min="0" oninput="renderDeptItemsDraft()">
                     </label>
                     <input type="hidden" id="dept-staff" value="">
@@ -2506,10 +2512,11 @@
                     </label>
                 </div>
                 <div class="cg-edit-section" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <span>محتويات المكاتب (لكل مكتب) والموجود فعلاً</span>
+                    <span>المحتويات: العدد المطلوب والموجود فعلاً</span>
                     <span style="display:flex; gap:6px; flex-wrap:wrap;">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="applyDeptKit('staff')">مكتب موظف</button>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="applyDeptKit('manager')">مكتب مدير</button>
+                        <button type="button" id="dept-kit-staff" class="btn btn-secondary btn-sm" onclick="applyDeptKit('staff')">مكتب موظف</button>
+                        <button type="button" id="dept-kit-manager" class="btn btn-secondary btn-sm" onclick="applyDeptKit('manager')">مكتب مدير</button>
+                        <button type="button" id="dept-kit-buffet" class="btn btn-secondary btn-sm" onclick="applyDeptKit('buffet')" style="display:none;">محتويات بوفيه</button>
                         <button type="button" class="btn btn-secondary btn-sm" onclick="addDeptItemDraft()">+ غرض جديد (اكتب أي اسم)</button>
                     </span>
                 </div>

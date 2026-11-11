@@ -883,7 +883,9 @@ let monthlyCoreExpenses = JSON.parse(localStorage.getItem('buffet_v9_monthly_cor
 // item.per = how many per office; item.have = counted on site (null = not counted yet)
 const DEPT_KITS = {
     staff: [{ name: 'مكتب', per: 1 }, { name: 'كرسي', per: 1 }, { name: 'لوكر', per: 1 }],
-    manager: [{ name: 'مكتب مدير', per: 1 }, { name: 'كرسي مدير', per: 1 }, { name: 'كرسي ضيوف', per: 2 }, { name: 'ترابيزة اجتماعات', per: 1 }, { name: 'دولاب مكتب', per: 1 }]
+    manager: [{ name: 'مكتب مدير', per: 1 }, { name: 'كرسي مدير', per: 1 }, { name: 'كرسي ضيوف', per: 2 }, { name: 'ترابيزة اجتماعات', per: 1 }, { name: 'دولاب مكتب', per: 1 }],
+    // Buffet: counts are typed directly (not per office)
+    buffet: [{ name: 'ثلاجة', need: 1 }, { name: 'كاتل', need: 1 }, { name: 'ميكروويف', need: 1 }, { name: 'ماكينة قهوة', need: 1 }, { name: 'كولدير مياه', need: 1 }, { name: 'ترابيزة بوفيه', need: 1 }, { name: 'كرسي بوفيه', need: 2 }, { name: 'دولاب بوفيه', need: 1 }]
 };
 function seedDept(id, floor, name, offices, kit, extra) {
     return Object.assign({ id, floor, name, group: '', offices, notes: '', items: DEPT_KITS[kit].map(k => ({ name: k.name, per: k.per, have: null })) }, extra || {});
@@ -2554,7 +2556,7 @@ function exportFloorsCompareToCSVLegacy() {
     downloadCSV(csv, `مقارنة_الشهور_${new Date().toISOString().split('T')[0]}.csv`);
 }
 // Shared PDF layout: brand header (logo + title) repeated on each page, then the given table parts
-function printCgTable(title, sub, colCount, theadRows, tbodyRows, tfootRows) {
+function printCgTable(title, sub, colCount, theadRows, tbodyRows, tfootRows, extraHtml) {
     const printArea = document.getElementById('official-print-viewport');
     if (!printArea) return;
     const isAr = currentLang === 'ar';
@@ -2581,6 +2583,7 @@ function printCgTable(title, sub, colCount, theadRows, tbodyRows, tfootRows) {
                 <tbody>${tbodyRows}</tbody>
                 ${tfootRows ? `<tfoot>${tfootRows}</tfoot>` : ''}
             </table>
+            ${extraHtml || ''}
             <div class="voucher-signatures"><div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div></div>
         </div>`;
     safeWindowPrint();
@@ -8784,7 +8787,8 @@ function renderDeptsView() {
     const desks = fam('desk'), chairs = fam('chair'), lockers = fam('locker');
     const notCounted = deptLayout.filter(d => (d.items || []).some(it => isUncounted(it.have))).length;
     document.getElementById('depts-summary').innerHTML = `
-        <div><span>الأقسام</span><b>${deptLayout.length}</b></div>
+        <div><span>الأقسام</span><b>${deptLayout.filter(d => !isBuffetArea(d)).length}</b></div>
+        <div><span>البوفيهات</span><b>${deptLayout.filter(isBuffetArea).length}</b></div>
         <div><span>المكاتب</span><b>${totalOffices}</b></div>
         <div><span>المكاتب الحالية</span><b>${desks.have} <small>من ${desks.need}</small></b></div>
         <div><span>الكراسي الحالية</span><b>${chairs.have} <small>من ${chairs.need}</small></b></div>
@@ -8799,10 +8803,24 @@ function renderDeptsView() {
 
     // One block per floor
     wrap.innerHTML = DEPT_FLOORS.map(fl => {
-        const depts = deptLayout.filter(d => d.floor === fl);
+        const all = deptLayout.filter(d => d.floor === fl);
+        const depts = all.filter(d => !isBuffetArea(d));   // offices / departments (top table)
+        const buffets = all.filter(isBuffetArea);           // buffet (its own table under the offices)
         const flOffices = depts.reduce((s, d) => s + (Number(d.offices) || 0), 0);
         // Every office item used on this floor gets its own column
         const itemCols = deptItemColumns(depts);
+        const buffetCols = deptItemColumns(buffets);
+        const nameCell = d => `<td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button><span class="dept-move no-print"><button type="button" class="btn btn-sm btn-secondary" title="لأعلى" onclick="event.stopPropagation(); moveDept(${d.id}, -1)">▲</button><button type="button" class="btn btn-sm btn-secondary" title="لأسفل" onclick="event.stopPropagation(); moveDept(${d.id}, 1)">▼</button></span>`}<button type="button" class="btn btn-sm cg-dl dept-pdf-btn no-print" onclick="event.stopPropagation(); printDeptsReport({ deptId: ${d.id} })" title="PDF للجزء ده بس"><b class="cg-dl-arrow">⬇</b> PDF</button></td>`;
+        const rowAttrs = d => `class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}`;
+        const buffetRows = buffets.map(d => `<tr ${rowAttrs(d)}>${nameCell(d)}${buffetCols.map(n => `<td style="text-align:center;">${deptItemCellHtml(d, n)}</td>`).join('')}<td style="text-align:center;">${deptShortListHtml(d)}</td></tr>`).join('');
+        const buffetSection = buffets.length ? `
+            <div class="dept-sub-head"><span class="dept-sub-title">البوفيه</span></div>
+            <div class="table-responsive">
+                <table class="data-table dept-table dept-buffet-table">
+                    <thead><tr><th>البوفيه</th>${buffetCols.map(n => `<th style="text-align:center;">${escHtml(n)}<br><small>الحالي</small></th>`).join('')}<th style="text-align:center;">محتاج شراء</th></tr></thead>
+                    <tbody>${buffetRows}</tbody>
+                </table>
+            </div>` : '';
         const rows = depts.map(d => {
             const itemCells = itemCols.map(n => `<td style="text-align:center;">${deptItemCellHtml(d, n)}</td>`).join('');
             return `<tr class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}>
@@ -8816,9 +8834,10 @@ function renderDeptsView() {
             <div class="dept-floor-head">
                 <h3>${fl}</h3>
                 <span>${depts.length} قسم · ${flOffices} مكتب</span>
-                ${depts.length ? `<button type="button" class="btn cg-dl btn-sm" onclick="printDeptsReport({ floor: '${fl}' })" title="PDF للدور ده بس"><span><b class="cg-dl-arrow">⬇</b> PDF ${fl}</span></button>` : ''}
-                ${isViewer ? '' : `<button type="button" class="btn btn-secondary btn-sm" onclick="openDeptModal(null, '${fl}')">+ قسم في ${fl}</button>`}
+                ${all.length ? `<button type="button" class="btn cg-dl btn-sm" onclick="printDeptsReport({ floor: '${fl}' })" title="PDF للدور ده بس"><span><b class="cg-dl-arrow">⬇</b> PDF ${fl}</span></button>` : ''}
+                ${isViewer ? '' : `<button type="button" class="btn btn-secondary btn-sm" onclick="openDeptModal(null, '${fl}')">+ قسم</button><button type="button" class="btn btn-secondary btn-sm" onclick="openDeptModal(null, '${fl}', 'buffet')">+ بوفيه</button>`}
             </div>
+            ${buffets.length ? '<div class="dept-sub-head"><span class="dept-sub-title">المكاتب والأقسام</span></div>' : ''}
             <div class="table-responsive">
                 <table class="data-table dept-table">
                     <thead><tr><th>القسم / المكتب</th><th style="text-align:center;">إجمالي المكاتب<br><small>المتفق عليه</small></th>${itemCols.map(n => `<th style="text-align:center;">${escHtml(n)}<br><small>الحالي</small></th>`).join('')}<th style="text-align:center;">محتاج شراء</th></tr></thead>
@@ -8826,6 +8845,7 @@ function renderDeptsView() {
                     ${depts.length ? `<tfoot><tr><th>إجمالي ${fl}</th><th style="text-align:center;">${flOffices}</th>${itemCols.map(n => `<th style="text-align:center;">${deptItemFloorTotalHtml(depts, n)}</th>`).join('')}<th style="text-align:center;">${deptShortListHtml(null, depts)}</th></tr></tfoot>` : ''}
                 </table>
             </div>
+            ${buffetSection}
         </div>`;
     }).join('');
 }
@@ -8865,7 +8885,8 @@ function deptItemFloorTotalHtml(depts, name) {
 }
 
 // Suggestions = the basic list + every item name already typed in any department (so new names are remembered)
-const DEPT_ITEM_SUGGESTIONS = ['مكتب', 'مكتب مدير', 'كرسي', 'كرسي مدير', 'كرسي ضيوف', 'لوكر', 'ترابيزة أمام المكتب', 'ترابيزة اجتماعات', 'ترابيزة اجتماعات مدورة', 'ترابيزة مدورة', 'دولاب مكتب', 'وحدة أدراج', 'دولاب ملفات', 'مكتبة', 'كنبة'];
+const DEPT_ITEM_SUGGESTIONS = ['مكتب', 'مكتب مدير', 'كرسي', 'كرسي مدير', 'كرسي ضيوف', 'لوكر', 'ترابيزة أمام المكتب', 'ترابيزة اجتماعات', 'ترابيزة اجتماعات مدورة', 'ترابيزة مدورة', 'دولاب مكتب', 'وحدة أدراج', 'دولاب ملفات', 'مكتبة', 'كنبة',
+    'ثلاجة', 'كاتل', 'ميكروويف', 'ماكينة قهوة', 'كولدير مياه', 'ترابيزة بوفيه', 'كرسي بوفيه', 'دولاب بوفيه'];
 function refreshDeptItemSuggestions() {
     const dl = document.getElementById('dept-item-names');
     if (!dl) return;
@@ -8873,11 +8894,23 @@ function refreshDeptItemSuggestions() {
     deptLayout.forEach(d => (d.items || []).forEach(it => { if (it.name) names.add(it.name); }));
     dl.innerHTML = [...names].map(n => `<option value="${escHtml(n)}"></option>`).join('');
 }
-function openDeptModal(id, floor) {
+// Area type: an office/department (counted against its agreed offices) or the floor's buffet (its own table)
+function isBuffetArea(d) { return d && d.kind === 'buffet'; }
+function onDeptKindChange() {
+    const buffet = document.getElementById('dept-kind').value === 'buffet';
+    document.getElementById('dept-offices-wrap').style.display = buffet ? 'none' : '';
+    document.getElementById('dept-kit-staff').style.display = buffet ? 'none' : '';
+    document.getElementById('dept-kit-manager').style.display = buffet ? 'none' : '';
+    document.getElementById('dept-kit-buffet').style.display = buffet ? '' : 'none';
+    if (buffet) document.getElementById('dept-offices').value = 0;
+}
+function openDeptModal(id, floor, kind) {
     if (currentUserRole === 'viewer') return;
     refreshDeptItemSuggestions();
     const d = id ? deptLayout.find(x => x.id === id) : null;
-    document.getElementById('dept-modal-title').textContent = d ? `تعديل: ${d.name}` : 'إضافة قسم / مكتب';
+    const k = d ? (d.kind || 'office') : (kind || 'office');
+    document.getElementById('dept-kind').value = k;
+    document.getElementById('dept-modal-title').textContent = d ? `تعديل: ${d.name}` : (k === 'buffet' ? 'إضافة بوفيه' : 'إضافة قسم / مكتب');
     document.getElementById('dept-id').value = d ? d.id : '';
     document.getElementById('dept-name').value = d ? d.name : '';
     document.getElementById('dept-floor').value = d ? d.floor : (floor || 'الدور التاسع');
@@ -8886,7 +8919,12 @@ function openDeptModal(id, floor) {
     document.getElementById('dept-notes').value = d ? (d.notes || '') : '';
     document.getElementById('dept-staff').value = d && !isUncounted(d.staff) ? d.staff : '';
     document.getElementById('dept-delete-btn').style.display = d ? '' : 'none';
-    deptItemsDraft = d ? JSON.parse(JSON.stringify(d.items || [])) : DEPT_KITS.staff.map(k => ({ name: k.name, per: k.per, have: null }));
+    if (!d && k === 'buffet') document.getElementById('dept-name').value = `بوفيه ${(floor || '').replace('الدور ', 'الدور ')}`.trim();
+    deptItemsDraft = d ? JSON.parse(JSON.stringify(d.items || []))
+        : (k === 'buffet' ? DEPT_KITS.buffet.map(x => ({ name: x.name, per: 0, need: x.need, have: null }))
+            : DEPT_KITS.staff.map(x => ({ name: x.name, per: x.per, have: null })));
+    onDeptKindChange();
+    if (d && k !== 'buffet') document.getElementById('dept-offices').value = Number(d.offices) || 0;
     drawDeptItemsDraft();
     openModal('modal-dept');
 }
@@ -8961,7 +8999,7 @@ function removeDeptItemDraft(i) {
 function applyDeptKit(kit) {
     readDeptItemsDraft();
     DEPT_KITS[kit].forEach(k => {
-        if (!deptItemsDraft.some(it => it.name === k.name)) deptItemsDraft.push({ name: k.name, per: k.per, have: null });
+        if (!deptItemsDraft.some(it => it.name === k.name)) deptItemsDraft.push({ name: k.name, per: k.per || 0, need: k.need !== undefined ? k.need : null, have: null });
     });
     drawDeptItemsDraft();
 }
@@ -8974,8 +9012,9 @@ function saveDept() {
     const data = {
         name,
         floor: document.getElementById('dept-floor').value,
+        kind: document.getElementById('dept-kind').value === 'buffet' ? 'buffet' : 'office',
         group: document.getElementById('dept-group').value.trim(),
-        offices: Math.max(0, Number(document.getElementById('dept-offices').value) || 0),
+        offices: document.getElementById('dept-kind').value === 'buffet' ? 0 : Math.max(0, Number(document.getElementById('dept-offices').value) || 0),
         notes: document.getElementById('dept-notes').value.trim(),
         staff: document.getElementById('dept-staff').value === '' ? null : Math.max(0, Number(document.getElementById('dept-staff').value) || 0),
         items: deptItemsDraft.filter(it => it.name),
@@ -9878,8 +9917,8 @@ function exportDeptsToCSV() {
                 const r = sh.row();
                 const counted = !isUncounted(it.have);
                 sh.add([
-                    { v: k === 0 ? fl : '', s: 'text' }, { v: k === 0 ? d.name : '', s: k === 0 ? 'textBold' : 'text' },
-                    k === 0 ? { v: Number(d.offices) || 0, s: 'inputInt' } : { v: '', s: 'text' },
+                    { v: k === 0 ? fl : '', s: 'text' }, { v: k === 0 ? (isBuffetArea(d) ? `${d.name} (بوفيه)` : d.name) : '', s: k === 0 ? 'textBold' : 'text' },
+                    k === 0 && !isBuffetArea(d) ? { v: Number(d.offices) || 0, s: 'inputInt' } : { v: '', s: 'text' },
                     { v: it.name || '', s: 'text' },
                     it.name ? { v: deptItemNeed(d, it), s: 'inputInt' } : { v: '', s: 'text' },
                     counted ? { v: Number(it.have), s: 'inputInt' } : { v: '', s: 'inputInt' },
@@ -9963,7 +10002,7 @@ function printDeptsReport(opts) {
             const need = deptItemNeed(d, it), s = deptItemShort(d, it);
             return `<tr><td style="text-align:center;">${i + 1}</td><td style="text-align:right !important; font-weight:600;">${escHtml(it.name)}</td><td style="text-align:center; font-size:1rem !important;">${need}</td><td style="text-align:center; font-size:1rem !important;">${isUncounted(it.have) ? 'لم يُعد' : it.have}</td><td style="text-align:center; font-size:1rem !important;">${s ? s : (s === 0 ? '✓' : '—')}</td></tr>`;
         }).join('');
-        const info = `<tr><td colspan="5" style="text-align:right !important; background:#fef2ce; font-weight:600;">إجمالي المكاتب (المتفق عليه): ${Number(d.offices) || '—'}${d.group ? `   ·   تابع: ${escHtml(d.group)}` : ''}${d.notes ? `   ·   ${escHtml(d.notes)}` : ''}</td></tr>`;
+        const info = `<tr><td colspan="5" style="text-align:right !important; background:#fef2ce; font-weight:600;">${isBuffetArea(d) ? 'بوفيه' : `إجمالي المكاتب (المتفق عليه): ${Number(d.offices) || '—'}`}${d.group ? `   ·   تابع: ${escHtml(d.group)}` : ''}${d.notes ? `   ·   ${escHtml(d.notes)}` : ''}</td></tr>`;
         const buy = deptShortMap(d);
         const foot = `<tr><th colspan="5" style="text-align:right !important;">محتاج يتشترى: ${buy.length ? buy.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr>`;
         const head = `<tr><th style="text-align:center; width:40px;">م</th><th>الغرض</th><th style="text-align:center;">العدد المطلوب</th><th style="text-align:center;">الموجود حالياً</th><th style="text-align:center;">محتاج شراء</th></tr>`;
@@ -9971,7 +10010,9 @@ function printDeptsReport(opts) {
         return;
     }
 
-    // Floor(s): same item columns on every row so the page lines up
+    // Floor(s): offices in the main table (same item columns on every row), the buffet in its own table below
+    const buffetList = list.filter(isBuffetArea);
+    list = list.filter(d => !isBuffetArea(d));
     const cols = deptItemColumns(list);
     const N = 3 + cols.length;
     const cs = 'text-align:center; font-size:0.74rem !important; white-space:nowrap;';
@@ -9984,6 +10025,7 @@ function printDeptsReport(opts) {
     let body = '';
     floors.forEach(fl => {
         const depts = list.filter(d => d.floor === fl);
+        if (!depts.length) return;
         const flOffices = depts.reduce((s, d) => s + (Number(d.offices) || 0), 0);
         body += `<tr><td colspan="${N}" style="text-align:right !important; font-weight:700; background:#fef2ce;">${fl} — ${depts.length} قسم · ${flOffices} مكتب</td></tr>`;
         depts.forEach(d => {
@@ -9995,5 +10037,34 @@ function printDeptsReport(opts) {
     const foot = `<tr><th colspan="${N}" style="text-align:right !important;">محتاج يتشترى: ${buyAll.length ? buyAll.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr>`;
     const hs = 'text-align:center; font-size:0.72rem !important;';
     const head = `<tr><th style="font-size:0.74rem !important;">القسم / المكتب</th><th style="${hs}">إجمالي المكاتب<br><small>المتفق عليه</small></th>${cols.map(n => `<th style="${hs}">${escHtml(n)}<br><small>الحالي</small></th>`).join('')}<th style="${hs}">محتاج شراء</th></tr>`;
-    printCgTable(title, `${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`, N, head, body, foot);
+
+    // Buffet table (own columns), printed under the offices with its own heading
+    let extra = '';
+    if (buffetList.length) {
+        const bcols = deptItemColumns(buffetList);
+        const BN = 2 + bcols.length;
+        let bbody = '';
+        DEPT_FLOORS.forEach(fl => {
+            buffetList.filter(d => d.floor === fl).forEach(d => {
+                const buy = deptShortMap(d);
+                bbody += `<tr><td style="text-align:right !important; font-size:0.78rem !important;">${escHtml(d.name)}${opts.floor || String(d.name).includes(fl) ? '' : ` <small>(${fl})</small>`}</td>${bcols.map(n => `<td style="${cs}">${cellTxt(deptItemCellData(d, n))}</td>`).join('')}<td style="${cs}">${buy.length ? buy.map(([n, q]) => `${escHtml(n)} ${q}`).join('<br>') : '—'}</td></tr>`;
+            });
+        });
+        const bbuy = deptShortMap(null, buffetList);
+        extra = `
+            <div class="cg-print-section-title">البوفيه</div>
+            <table class="print-table cg-fit-table" style="margin-top:4px;">
+                <colgroup><col style="width:${BN > 6 ? 16 : 24}%">${'<col>'.repeat(BN - 1)}</colgroup>
+                <thead><tr><th style="font-size:0.74rem !important;">البوفيه</th>${bcols.map(n => `<th style="${hs}">${escHtml(n)}<br><small>الحالي</small></th>`).join('')}<th style="${hs}">محتاج شراء</th></tr></thead>
+                <tbody>${bbody}</tbody>
+                <tfoot><tr><th colspan="${BN}" style="text-align:right !important;">محتاج يتشترى للبوفيه: ${bbuy.length ? bbuy.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr></tfoot>
+            </table>`;
+    }
+    const subtitle = `${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`;
+    if (!list.length && buffetList.length) {
+        // only a buffet on this floor
+        printCgTable(title, subtitle, 2, `<tr><th colspan="2" style="text-align:right !important;">لا توجد مكاتب مسجلة</th></tr>`, '', '', extra);
+        return;
+    }
+    printCgTable(title, subtitle, N, buffetList.length ? `<tr><th colspan="${N}" style="text-align:right !important; background:#fff !important; font-size:0.9rem !important;">المكاتب والأقسام</th></tr>` + head : head, body, foot, extra);
 }
