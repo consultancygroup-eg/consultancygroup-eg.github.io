@@ -2926,3 +2926,11 @@ tr.elec-active td { background: var(--primary-light) !important; }
 .elec-meta span { display: block; font-size: 12px; color: #8a8b8c; }
 .elec-meta b { font-size: 16px; font-weight: 600; color: #3d3a34; }
 .di-need-in.is-manual { font-style: italic; border-color: var(--brand-gold); }
+/* Departments table: current count big, "of N / missing" small underneath */
+.dept-cell-num { display: block; font-size: 1.1rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.dept-cell-sub { display: block; font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; margin-top: 2px; }
+.dept-short-inline { color: var(--danger); font-weight: 800; }
+.dept-buy-line { display: block; font-size: 0.8rem; white-space: nowrap; }
+.dept-buy-line b { color: var(--danger); }
+.dept-pdf-btn { margin-top: 6px; margin-inline-start: 6px; padding: 0.12rem 0.5rem !important; font-size: 0.7rem !important; }
+.dept-table thead th small { font-weight: 400; opacity: 0.75; }

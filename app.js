@@ -883,7 +883,7 @@ let monthlyCoreExpenses = JSON.parse(localStorage.getItem('buffet_v9_monthly_cor
 // item.per = how many per office; item.have = counted on site (null = not counted yet)
 const DEPT_KITS = {
     staff: [{ name: 'مكتب', per: 1 }, { name: 'كرسي', per: 1 }, { name: 'لوكر', per: 1 }],
-    manager: [{ name: 'مكتب مدير', per: 1 }, { name: 'كرسي مدير', per: 1 }, { name: 'ترابيزة أمام المكتب', per: 1 }, { name: 'كرسي ضيوف', per: 2 }, { name: 'لوكر', per: 1 }]
+    manager: [{ name: 'مكتب مدير', per: 1 }, { name: 'كرسي مدير', per: 1 }, { name: 'كرسي ضيوف', per: 2 }, { name: 'ترابيزة اجتماعات', per: 1 }, { name: 'دولاب مكتب', per: 1 }]
 };
 function seedDept(id, floor, name, offices, kit, extra) {
     return Object.assign({ id, floor, name, group: '', offices, notes: '', items: DEPT_KITS[kit].map(k => ({ name: k.name, per: k.per, have: null })) }, extra || {});
@@ -8718,10 +8718,24 @@ function deptFamilyTotals(dept, fam) {
     });
     return { need, have, counted, short };
 }
+// Count first (what the office should have), then what is there and what is missing underneath
+// Current (actual) count first, then "of N" (what should be there) and what is missing
 function deptCell(t) {
     if (!t.need && !t.counted) return `<span style="color: var(--text-muted);">—</span>`;
-    const haveTxt = t.counted ? t.have : '<span style="color: var(--text-muted);" title="لسه ماتعدّش">؟</span>';
-    return `<span class="dept-hn">${haveTxt} / ${t.need}</span>${t.short ? `<span class="dept-short">ناقص ${t.short}</span>` : ''}`;
+    const num = t.counted ? t.have : '<span style="color: var(--text-muted);" title="لسه ماتعدّش">؟</span>';
+    const sub = t.short ? `من ${t.need} · <b class="dept-short-inline">ناقص ${t.short}</b>` : (t.counted ? `من ${t.need} ✓` : `المفروض ${t.need}`);
+    return `<span class="dept-cell-num">${num}</span><span class="dept-cell-sub">${sub}</span>`;
+}
+// "محتاج شراء" spelled out per item, e.g. "كرسي 2 · لوكر 3" (one department, or a whole floor)
+function deptShortMap(d, depts) {
+    const map = {};
+    (d ? [d] : (depts || [])).forEach(x => (x.items || []).forEach(it => { const s = deptItemShort(x, it); if (s) map[it.name] = (map[it.name] || 0) + s; }));
+    return Object.entries(map);
+}
+function deptShortListHtml(d, depts) {
+    const list = deptShortMap(d, depts);
+    if (!list.length) return '<span style="color: var(--text-muted);">—</span>';
+    return list.map(([n, q]) => `<span class="dept-buy-line">${escHtml(n)} <b>${q}</b></span>`).join('');
 }
 // A department's total offices = how many staff it can have
 function deptContract(d) { return Number(d.offices) || 0; }
@@ -8759,10 +8773,9 @@ function renderDeptsView() {
     document.getElementById('depts-summary').innerHTML = `
         <div><span>الأقسام</span><b>${deptLayout.length}</b></div>
         <div><span>المكاتب</span><b>${totalOffices}</b></div>
-        <div><span>مكاتب فاضية للتعاقد</span><b>${deptLayout.some(d => !isUncounted(d.staff)) ? deptLayout.reduce((s, d) => s + (deptVacant(d) || 0), 0) : '—'}</b></div>
-        <div><span>مكاتب (موجود / مطلوب)</span><b>${desks.have} / ${desks.need}</b></div>
-        <div><span>كراسي (موجود / مطلوب)</span><b>${chairs.have} / ${chairs.need}</b></div>
-        <div><span>لوكرات (موجود / مطلوب)</span><b>${lockers.have} / ${lockers.need}</b></div>
+        <div><span>المكاتب الحالية</span><b>${desks.have} <small>من ${desks.need}</small></b></div>
+        <div><span>الكراسي الحالية</span><b>${chairs.have} <small>من ${chairs.need}</small></b></div>
+        <div><span>اللوكرات الحالية</span><b>${lockers.have} <small>من ${lockers.need}</small></b></div>
         <div><span>أقسام لسه ماتعدّتش</span><b>${notCounted}</b></div>`;
 
     // What to buy
@@ -8779,26 +8792,25 @@ function renderDeptsView() {
         const itemCols = deptItemColumns(depts);
         const rows = depts.map(d => {
             const itemCells = itemCols.map(n => `<td style="text-align:center;">${deptItemCellHtml(d, n)}</td>`).join('');
-            const shortAll = (d.items || []).reduce((s, it) => s + (deptItemShort(d, it) || 0), 0);
             return `<tr class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}>
-                <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button><span class="dept-move no-print"><button type="button" class="btn btn-sm btn-secondary" title="لأعلى" onclick="event.stopPropagation(); moveDept(${d.id}, -1)">▲</button><button type="button" class="btn btn-sm btn-secondary" title="لأسفل" onclick="event.stopPropagation(); moveDept(${d.id}, 1)">▼</button></span>`}</td>
-                <td style="text-align:center; font-weight:800;">${Number(d.offices) || '<span style="color: var(--text-muted);" title="العدد لسه ماتحددش">—</span>'}</td>
-                <td style="text-align:center;">${deptVacantHtml(d)}</td>
+                <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button><span class="dept-move no-print"><button type="button" class="btn btn-sm btn-secondary" title="لأعلى" onclick="event.stopPropagation(); moveDept(${d.id}, -1)">▲</button><button type="button" class="btn btn-sm btn-secondary" title="لأسفل" onclick="event.stopPropagation(); moveDept(${d.id}, 1)">▼</button></span>`}<button type="button" class="btn btn-sm cg-dl dept-pdf-btn no-print" onclick="event.stopPropagation(); printDeptsReport({ deptId: ${d.id} })" title="PDF للقسم ده بس"><b class="cg-dl-arrow">⬇</b> PDF</button></td>
+                <td style="text-align:center; font-weight:800; font-size:1.05rem;">${Number(d.offices) || '<span style="color: var(--text-muted);" title="العدد لسه ماتحددش">—</span>'}</td>
                 ${itemCells}
-                <td style="text-align:center; font-weight:800;">${shortAll ? `<span class="dept-short">${shortAll}</span>` : '<span style="color: var(--text-muted);">—</span>'}</td>
+                <td style="text-align:center;">${deptShortListHtml(d)}</td>
             </tr>`;
         }).join('');
         return `<div class="dept-floor">
             <div class="dept-floor-head">
                 <h3>${fl}</h3>
                 <span>${depts.length} قسم · ${flOffices} مكتب</span>
+                ${depts.length ? `<button type="button" class="btn cg-dl btn-sm" onclick="printDeptsReport({ floor: '${fl}' })" title="PDF للدور ده بس"><span><b class="cg-dl-arrow">⬇</b> PDF ${fl}</span></button>` : ''}
                 ${isViewer ? '' : `<button type="button" class="btn btn-secondary btn-sm" onclick="openDeptModal(null, '${fl}')">+ قسم في ${fl}</button>`}
             </div>
             <div class="table-responsive">
                 <table class="data-table dept-table">
-                    <thead><tr><th>القسم / المكتب</th><th style="text-align:center;">إجمالي المكاتب</th><th style="text-align:center;">الموظفين<br><small>موجود / إجمالي المكاتب</small></th>${itemCols.map(n => `<th style="text-align:center;">${escHtml(n)}<br><small>موجود / مطلوب</small></th>`).join('')}<th style="text-align:center;">محتاج شراء</th></tr></thead>
-                    <tbody>${rows || `<tr><td colspan="${4 + itemCols.length}" style="text-align:center; color: var(--text-muted); padding: 1rem;">مفيش أقسام في الدور ده</td></tr>`}</tbody>
-                    ${depts.length ? `<tfoot><tr><th>إجمالي ${fl}</th><th style="text-align:center;">${flOffices}</th><th></th>${itemCols.map(n => `<th style="text-align:center;">${deptItemFloorTotalHtml(depts, n)}</th>`).join('')}<th></th></tr></tfoot>` : ''}
+                    <thead><tr><th>القسم / المكتب</th><th style="text-align:center;">إجمالي المكاتب<br><small>المتفق عليه</small></th>${itemCols.map(n => `<th style="text-align:center;">${escHtml(n)}<br><small>الحالي</small></th>`).join('')}<th style="text-align:center;">محتاج شراء</th></tr></thead>
+                    <tbody>${rows || `<tr><td colspan="${3 + itemCols.length}" style="text-align:center; color: var(--text-muted); padding: 1rem;">مفيش أقسام في الدور ده</td></tr>`}</tbody>
+                    ${depts.length ? `<tfoot><tr><th>إجمالي ${fl}</th><th style="text-align:center;">${flOffices}</th>${itemCols.map(n => `<th style="text-align:center;">${deptItemFloorTotalHtml(depts, n)}</th>`).join('')}<th style="text-align:center;">${deptShortListHtml(null, depts)}</th></tr></tfoot>` : ''}
                 </table>
             </div>
         </div>`;
@@ -8829,7 +8841,9 @@ function deptItemCellHtml(d, name) {
 function deptItemCellText(d, name) {
     const c = deptItemCellData(d, name);
     if (!c || (!c.need && !c.counted)) return '—';
-    return `${c.counted ? c.have : '؟'} / ${c.need}${c.short ? ` (ناقص ${c.short})` : ''}`;
+    // count first; present / missing underneath
+    const sub = !c.counted ? 'لم يُعد' : (c.short ? `موجود ${c.have} · ناقص ${c.short}` : `موجود ${c.have} ✓`);
+    return `<b style="font-size:0.86rem;">${c.need}</b><br><span style="font-size:0.66rem; color:#8a8b8c;">${sub}</span>`;
 }
 function deptItemFloorTotalHtml(depts, name) {
     let need = 0, have = 0, counted = false, short = 0;
@@ -8838,7 +8852,7 @@ function deptItemFloorTotalHtml(depts, name) {
 }
 
 // Suggestions = the basic list + every item name already typed in any department (so new names are remembered)
-const DEPT_ITEM_SUGGESTIONS = ['مكتب', 'مكتب مدير', 'كرسي', 'كرسي مدير', 'كرسي ضيوف', 'لوكر', 'ترابيزة أمام المكتب', 'ترابيزة اجتماعات', 'ترابيزة اجتماعات مدورة', 'ترابيزة مدورة', 'وحدة أدراج', 'دولاب ملفات', 'مكتبة', 'كنبة'];
+const DEPT_ITEM_SUGGESTIONS = ['مكتب', 'مكتب مدير', 'كرسي', 'كرسي مدير', 'كرسي ضيوف', 'لوكر', 'ترابيزة أمام المكتب', 'ترابيزة اجتماعات', 'ترابيزة اجتماعات مدورة', 'ترابيزة مدورة', 'دولاب مكتب', 'وحدة أدراج', 'دولاب ملفات', 'مكتبة', 'كنبة'];
 function refreshDeptItemSuggestions() {
     const dl = document.getElementById('dept-item-names');
     if (!dl) return;
@@ -8896,8 +8910,7 @@ function drawDeptItemsDraft() {
     const body = document.getElementById('dept-items-body');
     if (!body) return;
     body.innerHTML = deptItemsDraft.map((it, i) => `<tr>
-            <td><input type="text" class="form-control di-name" list="dept-item-names" value="${escHtml(it.name)}" placeholder="اكتب اسم أي غرض أو اختار" title="اكتب أي اسم (مثلاً ترابيزة مدورة) أو اختار من القايمة" style="min-width:170px;"></td>
-            <td><input type="number" class="form-control di-per" min="0" step="1" value="${it.per}" oninput="renderDeptItemsDraft()" style="width:80px; text-align:center;"></td>
+            <td><input type="text" class="form-control di-name" list="dept-item-names" value="${escHtml(it.name)}" placeholder="اكتب اسم أي غرض أو اختار" title="اكتب أي اسم (مثلاً ترابيزة مدورة) أو اختار من القايمة" style="min-width:190px;"><input type="hidden" class="di-per" value="${it.per}"></td>
             <td class="di-need" style="text-align:center;"><div class="elec-new"><input type="number" class="form-control di-need-in ${deptItemNeedIsManual(it) ? 'is-manual' : ''}" min="0" step="1" data-manual="${deptItemNeedIsManual(it) ? '1' : ''}" value="${deptItemNeedIsManual(it) ? it.need : ''}" oninput="onDeptNeedInput(this)" style="width:80px; text-align:center; font-weight:800;" title="اكتب العدد المطلوب بنفسك، أو سيبه للحساب"><button type="button" class="cg-x di-need-reset" title="رجّعه للحساب (المكاتب × لكل مكتب)" onclick="resetDeptNeed(${i})">↺</button></div></td>
             <td><input type="number" class="form-control di-have" min="0" value="${isUncounted(it.have) ? '' : it.have}" placeholder="؟" oninput="renderDeptItemsDraft()" style="width:90px; text-align:center;"></td>
             <td class="di-short" style="text-align:center;"></td>
@@ -8991,7 +9004,7 @@ function exportDeptsToCSVLegacy() {
     getDeptBuyList().forEach(([n, c]) => { csv += [n, c].map(q).join(',') + '\n'; });
     downloadCSV(csv, `تحليل_الطوابق_بالأقسام_${new Date().toISOString().split('T')[0]}.csv`);
 }
-function printDeptsReport() {
+function printDeptsReportLegacy() {
     const isAr = currentLang === 'ar';
     let body = '';
     // Same item columns for every floor in the PDF so the pages line up
@@ -9029,7 +9042,7 @@ function shareDeptsWhatsApp() {
                 const s = deptItemShort(d, it);
                 return `${it.name} ${isUncounted(it.have) ? '؟' : it.have}/${deptItemNeed(d, it)}${s ? ` (ناقص ${s})` : ''}`;
             });
-            lines.push(`• ${d.name}: ${Number(d.offices) || '—'} مكتب، موجود ${isUncounted(d.staff) ? '؟' : d.staff} موظف${deptVacant(d) > 0 ? ` (فاضي ${deptVacant(d)})` : ''}${parts.length ? ' — ' + parts.join('، ') : ''}${d.notes ? ` (${d.notes})` : ''}`);
+            lines.push(`• ${d.name}: إجمالي المكاتب ${Number(d.offices) || '—'}${parts.length ? ' — ' + parts.join('، ') : ''}${d.notes ? ` (${d.notes})` : ''}`);
         });
     });
     const buy = getDeptBuyList();
@@ -9837,29 +9850,27 @@ function exportDeptsToCSV() {
     const sh = CGX.report({
         name: 'الأقسام', title: 'تحليل الطوابق بالأقسام',
         subtitle: `تاريخ التقرير: ${cgxToday()}`,
-        columns: [{ h: 'الدور', w: 14 }, { h: 'القسم / المكتب', w: 26 }, { h: 'إجمالي المكاتب', w: 13 }, { h: 'الموظفين الموجودين', w: 14 }, { h: 'مكاتب فاضية للتعاقد', w: 15 }, { h: 'الغرض', w: 20 }, { h: 'لكل مكتب', w: 10 }, { h: 'المطلوب', w: 11 }, { h: 'الموجود فعلاً', w: 13 }, { h: 'محتاج شراء', w: 12 }, { h: 'ملاحظات', w: 22 }],
+        columns: [{ h: 'الدور', w: 14 }, { h: 'القسم / المكتب', w: 26 }, { h: 'إجمالي المكاتب (المتفق عليه)', w: 16 }, { h: 'الغرض', w: 22 }, { h: 'العدد المطلوب', w: 13 }, { h: 'الموجود حالياً', w: 13 }, { h: 'محتاج شراء', w: 12 }, { h: 'ملاحظات', w: 24 }],
         landscape: true
     });
     DEPT_FLOORS.forEach(fl => {
         const depts = deptLayout.filter(d => d.floor === fl);
         if (!depts.length) return;
-        const gr = sh.add([{ v: fl, s: 'group' }, ...Array(10).fill({ v: '', s: 'group' })]);
-        sh.merge(`A${gr}:K${gr}`);
+        const gr = sh.add([{ v: fl, s: 'group' }, ...Array(7).fill({ v: '', s: 'group' })]);
+        sh.merge(`A${gr}:H${gr}`);
         depts.forEach(d => {
-            const items = (d.items || []).length ? d.items : [{ name: '', per: 0, have: null }];
-            const top = sh.row();
-            items.forEach((it, k) => {
+            const items = (d.items || []).filter(it => it.name);
+            const rowsOf = items.length ? items : [{ name: '', per: 0, have: null }];
+            rowsOf.forEach((it, k) => {
                 const r = sh.row();
                 const counted = !isUncounted(it.have);
                 sh.add([
                     { v: k === 0 ? fl : '', s: 'text' }, { v: k === 0 ? d.name : '', s: k === 0 ? 'textBold' : 'text' },
                     k === 0 ? { v: Number(d.offices) || 0, s: 'inputInt' } : { v: '', s: 'text' },
-                    k === 0 ? (isUncounted(d.staff) ? { v: '', s: 'inputInt' } : { v: Number(d.staff), s: 'inputInt' }) : { v: '', s: 'text' },
-                    k === 0 ? { f: `IF(D${r}="","",C${r}-D${r})`, s: 'totInt' } : { v: '', s: 'text' },
-                    { v: it.name || '', s: 'text' }, { v: Number(it.per) || 0, s: 'inputInt' },
-                    deptItemNeedIsManual(it) ? { v: deptItemNeed(d, it), s: 'inputInt' } : { f: `$C$${top}*G${r}`, v: deptItemNeed(d, it), s: 'int' },
+                    { v: it.name || '', s: 'text' },
+                    it.name ? { v: deptItemNeed(d, it), s: 'inputInt' } : { v: '', s: 'text' },
                     counted ? { v: Number(it.have), s: 'inputInt' } : { v: '', s: 'inputInt' },
-                    { f: `IF(I${r}="","",MAX(0,H${r}-I${r}))`, s: 'totInt' },
+                    { f: `IF(F${r}="","",MAX(0,E${r}-F${r}))`, s: 'totInt' },
                     { v: k === 0 ? (d.notes || '') : '', s: 'text' }
                 ]);
             });
@@ -9867,7 +9878,7 @@ function exportDeptsToCSV() {
     });
     const L = sh.rows.length;
     sh.add([]);
-    cgxTotalRow(sh, 2, [{ f: `SUM(C${F}:C${L})`, s: 'totInt' }, { f: `SUM(D${F}:D${L})`, s: 'totInt' }, { f: `SUM(E${F}:E${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }, { v: '', s: 'totLabel' }, { f: `SUM(H${F}:H${L})`, s: 'totInt' }, { f: `SUM(I${F}:I${L})`, s: 'totInt' }, { f: `SUM(J${F}:J${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }]);
+    cgxTotalRow(sh, 2, [{ f: `SUM(C${F}:C${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }, { f: `SUM(E${F}:E${L})`, s: 'totInt' }, { f: `SUM(F${F}:F${L})`, s: 'totInt' }, { f: `SUM(G${F}:G${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }]);
     CGX.download(sh, `تحليل_الطوابق_بالأقسام_${cgxToday()}`);
 }
 
@@ -9912,4 +9923,64 @@ function exportHqToCSV() {
     const L = F + hqInventory.length - 1;
     cgxTotalRow(sh, 4, [{ f: `SUM(E${F}:E${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }, { v: '', s: 'totLabel' }]);
     CGX.download(sh, `جرد_مقر_الإدارة_العليا_${cgxToday()}`);
+}
+
+// Departments PDF: all floors, one floor ({ floor }) or one department ({ deptId })
+// Columns: department · total offices (agreed) · each office item (current, of required, missing) · what to buy
+function printDeptsReport(opts) {
+    opts = opts || {};
+    const isAr = currentLang === 'ar';
+    let list = deptLayout;
+    let title = 'تحليل الطوابق بالأقسام';
+    if (opts.deptId) {
+        const d = deptLayout.find(x => x.id === opts.deptId);
+        if (!d) return;
+        list = [d];
+        title = `محتويات ${d.name} — ${d.floor}`;
+    } else if (opts.floor) {
+        list = deptLayout.filter(x => x.floor === opts.floor);
+        title = `تحليل ${opts.floor} بالأقسام`;
+    }
+    const floors = DEPT_FLOORS.filter(fl => list.some(d => d.floor === fl));
+
+    // One department: a clear item list (item · required · current · to buy)
+    if (opts.deptId) {
+        const d = list[0];
+        const body = (d.items || []).filter(it => it.name).map((it, i) => {
+            const need = deptItemNeed(d, it), s = deptItemShort(d, it);
+            return `<tr><td style="text-align:center;">${i + 1}</td><td style="text-align:right !important; font-weight:600;">${escHtml(it.name)}</td><td style="text-align:center; font-size:1rem !important;">${need}</td><td style="text-align:center; font-size:1rem !important;">${isUncounted(it.have) ? 'لم يُعد' : it.have}</td><td style="text-align:center; font-size:1rem !important;">${s ? s : (s === 0 ? '✓' : '—')}</td></tr>`;
+        }).join('');
+        const info = `<tr><td colspan="5" style="text-align:right !important; background:#fef2ce; font-weight:600;">إجمالي المكاتب (المتفق عليه): ${Number(d.offices) || '—'}${d.group ? `   ·   تابع: ${escHtml(d.group)}` : ''}${d.notes ? `   ·   ${escHtml(d.notes)}` : ''}</td></tr>`;
+        const buy = deptShortMap(d);
+        const foot = `<tr><th colspan="5" style="text-align:right !important;">محتاج يتشترى: ${buy.length ? buy.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr>`;
+        const head = `<tr><th style="text-align:center; width:40px;">م</th><th>الغرض</th><th style="text-align:center;">العدد المطلوب</th><th style="text-align:center;">الموجود حالياً</th><th style="text-align:center;">محتاج شراء</th></tr>`;
+        printCgTable(title, `${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`, 5, head, info + body, foot);
+        return;
+    }
+
+    // Floor(s): same item columns on every row so the page lines up
+    const cols = deptItemColumns(list);
+    const N = 3 + cols.length;
+    const cs = 'text-align:center; font-size:0.74rem !important; white-space:nowrap;';
+    const cellTxt = (c) => {
+        if (!c || (!c.need && !c.counted)) return '—';
+        const num = c.counted ? c.have : '؟';
+        const sub = c.short ? `من ${c.need} · ناقص ${c.short}` : (c.counted ? `من ${c.need} ✓` : `المفروض ${c.need}`);
+        return `<b style="font-size:0.9rem;">${num}</b><br><span style="font-size:0.64rem; color:#8a8b8c;">${sub}</span>`;
+    };
+    let body = '';
+    floors.forEach(fl => {
+        const depts = list.filter(d => d.floor === fl);
+        const flOffices = depts.reduce((s, d) => s + (Number(d.offices) || 0), 0);
+        body += `<tr><td colspan="${N}" style="text-align:right !important; font-weight:700; background:#fef2ce;">${fl} — ${depts.length} قسم · ${flOffices} مكتب</td></tr>`;
+        depts.forEach(d => {
+            const buy = deptShortMap(d);
+            body += `<tr><td style="text-align:right !important; font-size:0.78rem !important;">${escHtml(d.name)}${d.notes ? ` <small>(${escHtml(d.notes)})</small>` : ''}</td><td style="${cs} font-size:0.9rem !important; font-weight:700;">${Number(d.offices) || '—'}</td>${cols.map(n => `<td style="${cs}">${cellTxt(deptItemCellData(d, n))}</td>`).join('')}<td style="${cs}">${buy.length ? buy.map(([n, q]) => `${escHtml(n)} ${q}`).join('<br>') : '—'}</td></tr>`;
+        });
+    });
+    const buyAll = deptShortMap(null, list);
+    const foot = `<tr><th colspan="${N}" style="text-align:right !important;">محتاج يتشترى: ${buyAll.length ? buyAll.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr>`;
+    const hs = 'text-align:center; font-size:0.72rem !important;';
+    const head = `<tr><th style="font-size:0.74rem !important;">القسم / المكتب</th><th style="${hs}">إجمالي المكاتب<br><small>المتفق عليه</small></th>${cols.map(n => `<th style="${hs}">${escHtml(n)}<br><small>الحالي</small></th>`).join('')}<th style="${hs}">محتاج شراء</th></tr>`;
+    printCgTable(title, `${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`, N, head, body, foot);
 }

@@ -2497,13 +2497,11 @@
                     <label>تابع لقسم (لو فرع)
                         <input type="text" id="dept-group" class="form-control" placeholder="مثال: التصميم">
                     </label>
-                    <label>إجمالي مكاتب القسم
+                    <label>إجمالي مكاتب القسم (المتفق عليه مع الشركة)
                         <input type="number" id="dept-offices" class="form-control" min="0" oninput="renderDeptItemsDraft()">
                     </label>
-                    <label>الموظفين الموجودين فعلاً
-                        <input type="number" id="dept-staff" class="form-control" min="0" placeholder="سيبه فاضي لو مش معروف">
-                    </label>
-                    <label class="cg-full">ملاحظات
+                    <input type="hidden" id="dept-staff" value="">
+                    <label>ملاحظات
                         <input type="text" id="dept-notes" class="form-control" placeholder="مثال: باقي مكاتب الدور">
                     </label>
                 </div>
@@ -2517,7 +2515,7 @@
                 </div>
                 <div class="table-responsive">
                     <table class="data-table dept-items-table">
-                        <thead><tr><th>الغرض</th><th style="text-align:center;">لكل مكتب</th><th style="text-align:center;">المطلوب</th><th style="text-align:center;">الموجود فعلاً</th><th style="text-align:center;">محتاج شراء</th><th></th></tr></thead>
+                        <thead><tr><th>الغرض</th><th style="text-align:center;">العدد المطلوب</th><th style="text-align:center;">الموجود فعلاً</th><th style="text-align:center;">محتاج شراء</th><th></th></tr></thead>
                         <tbody id="dept-items-body"></tbody>
                     </table>
                 </div>
@@ -2526,7 +2524,7 @@
                     <option value="كرسي ضيوف"></option><option value="لوكر"></option><option value="ترابيزة أمام المكتب"></option><option value="ترابيزة اجتماعات"></option><option value="ترابيزة اجتماعات مدورة"></option>
                     <option value="وحدة أدراج"></option><option value="دولاب ملفات"></option><option value="مكتبة"></option><option value="كنبة"></option>
                 </datalist>
-                <div class="cg-edit-hint">"المطلوب" بيتحسب لوحده (عدد المكاتب × العدد لكل مكتب)، وتقدر تكتبه بإيدك (بيظهر بخط مائل، وزرار ↺ يرجّعه للحساب). الغرض اللي مش محتاجه (زي كرسي الضيوف) اكتب مطلوبه 0 أو امسحه بـ ✖. "الموجود فعلاً" سيبه فاضي لو لسه ماتعدّش، ولو أقل من المطلوب البرنامج بيحسب كام محتاج يتشترى.</div>
+                <div class="cg-edit-hint">اكتب "العدد المطلوب" لكل غرض في القسم (مثلاً: مكاتب 5، كراسي 3، لوكر 2، ترابيزة اجتماعات مدورة 1). زرارين "مكتب موظف" و"مكتب مدير" بيحطوا عدد مبدئي حسب عدد المكاتب، وتقدر تغيّره، وزرار ↺ يرجّعه. الغرض اللي مش موجود امسحه بـ ✖. "الموجود فعلاً" سيبه فاضي لو لسه ماتعدّش، ولو أقل من المطلوب البرنامج بيحسب كام محتاج يتشترى.</div>
             </div>
             <div class="modal-footer">
                 <button id="dept-delete-btn" onclick="deleteDept()" class="btn btn-danger-outline" style="margin-inline-end:auto;">حذف القسم</button>
