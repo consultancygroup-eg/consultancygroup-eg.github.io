@@ -214,7 +214,7 @@
                 <button onclick="switchTab('terminal')" id="nav-btn-terminal" class="sidebar-nav-item nav-group-buffet">
                     <i data-lucide="clipboard-check"></i>
                     <span data-i18n="navTerminal">تسجيل صرف الطوابق</span>
-                    <span class="sidebar-nav-badge" style="background: var(--primary-fill); color: var(--text-inverse);">⚡ سريع</span>
+                    <span class="sidebar-nav-badge badge-quick"><i data-lucide="zap"></i><span>سريع</span></span>
                 </button>
 
                 <span class="nav-section-label nav-group-buffet" style="margin-top: 0.65rem;">التقارير والمشتريات</span>
@@ -2312,6 +2312,8 @@
                 </div>
                 <div class="cg-edit-section">العدد المتواجد بالفعل في كل دور</div>
                 <div class="cg-edit-floors" id="ef-floors"></div>
+                <div class="cg-edit-section">فين في <span id="ef-alloc-floor"></span>؟ (توزيع العدد على الأقسام والبوفيه)</div>
+                <div id="ef-alloc" class="ef-alloc"></div>
                 <div class="cg-edit-grid" style="margin-top: 0.9rem;">
                     <label>تاريخ الشراء
                         <input type="date" id="ef-date" class="form-control">

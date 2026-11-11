@@ -2972,6 +2972,24 @@ tr.elec-active td { background: var(--primary-light) !important; }
     table.data-table.dept-table .dept-buy-line { white-space: normal; }
     table.data-table.dept-table .dept-edit-btn { font-size: 0.68rem !important; }
 }
+/* Asset edit window: split the floor count over departments */
+.ef-alloc { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 14px; }
+.ef-alloc-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.82rem; font-weight: 700; color: var(--text-primary); }
+.ef-alloc-row .form-control { width: 80px; text-align: center; }
+.ef-alloc-row small { color: var(--text-muted); font-weight: 400; }
+#ef-alloc-sum { grid-column: 1 / -1; }
+/* Departments: numbers read from the asset inventory */
+.dept-from-asset { display: inline-block; margin-top: 2px; font-size: 0.62rem; color: var(--primary); border: 1px solid var(--brand-gold-soft); border-radius: 999px; padding: 0 6px; }
+.dept-asset-line { display: block; margin-top: 3px; font-size: 0.66rem; font-weight: 500; color: var(--text-secondary); white-space: normal; }
+.dept-asset-line .warn { color: var(--warning); }
+.dept-asset-line .bad { color: var(--danger); }
+
+/* Sidebar: badges sit on one line, centred with the button text (icon + word together) */
+.sidebar-nav-item > span:not(.sidebar-nav-badge) { flex: 1 1 auto; min-width: 0; line-height: 1.3; }
+.sidebar-nav-badge { display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex: none; white-space: nowrap; line-height: 1; align-self: center; }
+.sidebar-nav-badge svg { width: 12px; height: 12px; flex: none; }
+.sidebar-nav-badge.badge-quick { background: var(--primary-fill); color: var(--text-inverse); border-color: transparent; }
+.sidebar-nav-badge.badge-quick svg { stroke: var(--text-inverse); }
 
 </style>
 
@@ -3171,7 +3189,7 @@ tr.elec-active td { background: var(--primary-light) !important; }
                 <button onclick="switchTab('terminal')" id="nav-btn-terminal" class="sidebar-nav-item nav-group-buffet">
                     <i data-lucide="clipboard-check"></i>
                     <span data-i18n="navTerminal">تسجيل صرف الطوابق</span>
-                    <span class="sidebar-nav-badge" style="background: var(--primary-fill); color: var(--text-inverse);">⚡ سريع</span>
+                    <span class="sidebar-nav-badge badge-quick"><i data-lucide="zap"></i><span>سريع</span></span>
                 </button>
 
                 <span class="nav-section-label nav-group-buffet" style="margin-top: 0.65rem;">التقارير والمشتريات</span>
@@ -5269,6 +5287,8 @@ tr.elec-active td { background: var(--primary-light) !important; }
                 </div>
                 <div class="cg-edit-section">العدد المتواجد بالفعل في كل دور</div>
                 <div class="cg-edit-floors" id="ef-floors"></div>
+                <div class="cg-edit-section">فين في <span id="ef-alloc-floor"></span>؟ (توزيع العدد على الأقسام والبوفيه)</div>
+                <div id="ef-alloc" class="ef-alloc"></div>
                 <div class="cg-edit-grid" style="margin-top: 0.9rem;">
                     <label>تاريخ الشراء
                         <input type="date" id="ef-date" class="form-control">
@@ -9147,7 +9167,7 @@ function openEditFurnitureModal(itemId) {
 
     document.getElementById('ef-floors').innerHTML = FURN_FLOORS.map(fl => `
         <label class="${fl === selectedFurnitureFloor ? 'is-current' : ''}">${esc(fl)}
-            <input type="number" min="0" class="form-control ef-floor-qty" data-floor="${esc(fl)}" value="${Number(item.floors[fl]) || 0}" oninput="updateEditFurniturePreview()">
+            <input type="number" min="0" class="form-control ef-floor-qty" data-floor="${esc(fl)}" value="${Number(item.floors[fl]) || 0}" oninput="updateEditFurniturePreview(); updateEditFurnitureAllocSum()">
         </label>`).join('');
 
     const hasBatches = Array.isArray(item.purchases) && item.purchases.length > 0;
@@ -9165,6 +9185,7 @@ function openEditFurnitureModal(itemId) {
     document.getElementById('ef-floor-label').textContent = selectedFurnitureFloor;
     document.getElementById('ef-note-floor').textContent = selectedFurnitureFloor;
     document.getElementById('ef-note').value = item.notes[selectedFurnitureFloor] || '';
+    renderEditFurnitureAlloc(item);
     updateEditFurniturePreview();
     openModal('modal-edit-furniture');
     setTimeout(() => document.getElementById('ef-name')?.focus(), 80);
@@ -9213,6 +9234,7 @@ function saveEditFurnitureItem() {
     }
     if (!item.notes) item.notes = {};
     item.notes[selectedFurnitureFloor] = document.getElementById('ef-note').value.trim();
+    saveEditFurnitureAlloc(item);
     item.updatedAt = new Date().toISOString();
 
     if (catChanged) recalculateAllFurnitureCodes(true);
@@ -9221,6 +9243,54 @@ function saveEditFurnitureItem() {
     renderFurnitureView();
     renderFurnitureMatrix();
     showToast(currentLang === 'ar' ? 'تم حفظ تعديلات الصنف بنجاح' : 'Item updated', 'success');
+}
+
+// "Where is it on this floor?" — split the floor count of an asset item over the floor's departments and buffet.
+// The departments page (تحليل الطوابق بالأقسام) reads these numbers as each department's current count.
+function renderEditFurnitureAlloc(item) {
+    const box = document.getElementById('ef-alloc');
+    if (!box) return;
+    const fl = selectedFurnitureFloor;
+    document.getElementById('ef-alloc-floor').textContent = fl;
+    const places = (typeof deptLayout !== 'undefined' ? deptLayout : []).filter(d => d.floor === fl);
+    if (!places.length) {
+        box.innerHTML = `<div class="cg-edit-hint" style="margin:0;">مفيش أقسام متسجلة في ${fl}. ضيف الأقسام من "تحليل الطوابق بالأقسام".</div>`;
+        return;
+    }
+    const alloc = item.deptAlloc || {};
+    box.innerHTML = places.map(d => `
+        <label class="ef-alloc-row"><span>${escHtml(d.name)}${isBuffetArea(d) ? ' <small>(بوفيه)</small>' : ''}</span>
+            <input type="number" min="0" class="form-control ef-alloc-qty" data-dept="${d.id}" value="${alloc[d.id] !== undefined && alloc[d.id] !== null ? alloc[d.id] : ''}" placeholder="0" oninput="updateEditFurnitureAllocSum()">
+        </label>`).join('') + `<div class="cg-edit-hint" id="ef-alloc-sum"></div>`;
+    updateEditFurnitureAllocSum();
+}
+function updateEditFurnitureAllocSum() {
+    const el = document.getElementById('ef-alloc-sum');
+    if (!el) return;
+    const sum = [...document.querySelectorAll('.ef-alloc-qty')].reduce((s, i) => s + (Number(i.value) || 0), 0);
+    const qInp = document.querySelector(`.ef-floor-qty[data-floor="${selectedFurnitureFloor}"]`);
+    const total = qInp ? (Number(qInp.value) || 0) : 0;
+    const diff = total - sum;
+    el.innerHTML = `اتوزع <strong>${sum}</strong> من <strong>${total}</strong> في ${selectedFurnitureFloor}${diff > 0 ? ` — <b style="color:var(--warning)">لسه ${diff} مش متوزعين</b>` : (diff < 0 ? ` — <b style="color:var(--danger)">الموزع أكتر من العدد بـ ${-diff}</b>` : ' ✓')}`;
+}
+function saveEditFurnitureAlloc(item) {
+    const inputs = document.querySelectorAll('.ef-alloc-qty');
+    if (!inputs.length) return;
+    if (!item.deptAlloc) item.deptAlloc = {};
+    const deptName = deptNameForAsset(item);
+    inputs.forEach(inp => {
+        const id = Number(inp.dataset.dept);
+        if (inp.value === '') { delete item.deptAlloc[id]; return; }
+        const q = Math.max(0, Number(inp.value) || 0);
+        item.deptAlloc[id] = q;
+        // make sure the department lists this item so it shows as a column there
+        const d = deptLayout.find(x => x.id === id);
+        if (d && q > 0) {
+            if (!d.items) d.items = [];
+            const linked = d.items.some(it => assetItemsFor(it.name).some(a => a.id === item.id));
+            if (!linked) d.items.push({ name: deptName, per: 0, need: null, have: null });
+        }
+    });
 }
 
 // --- COMPANY FURNITURE INVENTORY (FLOORS 4 TO 9) ---
@@ -14259,9 +14329,56 @@ function isUncounted(v) { return v === null || v === undefined || v === ''; }
 function deptItemAutoNeed(dept, it) { return Math.round((Number(dept.offices) || 0) * (Number(it.per) || 0)); }
 function deptItemNeedIsManual(it) { return it && it.need !== null && it.need !== undefined && it.need !== ''; }
 function deptItemNeed(dept, it) { return deptItemNeedIsManual(it) ? Math.max(0, Number(it.need) || 0) : deptItemAutoNeed(dept, it); }
+// ---- Link with the asset inventory (جرد أصول الشركة) ----
+// A department item is matched to asset items by exact name, or by these common short names
+const ASSET_ALIASES = {
+    'مكتب': ['مكتب موظف', 'مكتب موظف 140', 'مكتب موظف 120'],
+    'كرسي': ['كرسي موظف'], 'كرسي مدير': ['كرسي مدير جلد'], 'كرسي ضيوف': ['كرسي انتظار'],
+    'لوكر': ['لوكر موظفين (Locker)'], 'دولاب مكتب': ['دولاب مكتبي'], 'دولاب ملفات': ['دولاب ملفات متوسط', 'دولاب حفظ ملفات كبير'],
+    'ترابيزة اجتماعات': ['ترابيزة اجتماعات كبيرة', 'ترابيزة اجتماعات صغيرة'],
+    'ثلاجة': ['ثلاجة بوفيه'], 'كاتل': ['غلاية مياه (كاتل)'], 'غلاية مياه': ['غلاية مياه (كاتل)'], 'شاشة عرض حائط': ['شاشة عرض']
+};
+function assetItemsFor(name) {
+    const inv = (typeof furnitureInventory !== 'undefined' && Array.isArray(furnitureInventory)) ? furnitureInventory : [];
+    const exact = inv.filter(f => f.name === name);
+    if (exact.length) return exact;
+    const al = ASSET_ALIASES[name];
+    return al ? inv.filter(f => al.includes(f.name)) : [];
+}
+// Department item name for an asset item (used when allocating from the asset inventory)
+function deptNameForAsset(asset) {
+    const alias = Object.keys(ASSET_ALIASES).find(k => ASSET_ALIASES[k].includes(asset.name));
+    return alias || asset.name;
+}
+function assetFloorCount(name, floor) {
+    const items = assetItemsFor(name);
+    if (!items.length) return null;
+    return items.reduce((s, f) => s + (Number((f.floors || {})[floor]) || 0), 0);
+}
+// How many of an asset item the asset inventory gives to one department (set from the asset edit window)
+function assetAllocFor(name, deptId) {
+    const items = assetItemsFor(name);
+    let found = false, sum = 0;
+    items.forEach(f => { const a = f.deptAlloc && f.deptAlloc[deptId]; if (a !== undefined && a !== null && a !== '') { found = true; sum += Number(a) || 0; } });
+    return found ? sum : null;
+}
+// The current count of a department item and where it comes from:
+// typed in the department > allocated in the asset inventory > the whole floor count when only this place on the floor has the item
+function deptItemHaveInfo(d, it) {
+    if (!isUncounted(it.have)) return { have: Number(it.have) || 0, src: 'manual' };
+    const al = assetAllocFor(it.name, d.id);
+    if (al !== null) return { have: al, src: 'alloc' };
+    const sharers = deptLayout.filter(x => x.floor === d.floor && (x.items || []).some(y => y.name === it.name));
+    if (sharers.length === 1) {
+        const a = assetFloorCount(it.name, d.floor);
+        if (a !== null) return { have: a, src: 'asset' };
+    }
+    return null;
+}
 function deptItemShort(dept, it) {
-    if (isUncounted(it.have)) return null; // not counted yet
-    return Math.max(0, deptItemNeed(dept, it) - Number(it.have));
+    const h = deptItemHaveInfo(dept, it);
+    if (!h) return null; // not counted yet
+    return Math.max(0, deptItemNeed(dept, it) - h.have);
 }
 // Main families shown as their own columns: desks, chairs, lockers
 function deptFamily(name) {
@@ -14276,7 +14393,8 @@ function deptFamilyTotals(dept, fam) {
     (dept.items || []).forEach(it => {
         if (deptFamily(it.name) !== fam) return;
         need += deptItemNeed(dept, it);
-        if (!isUncounted(it.have)) { counted = true; have += Number(it.have) || 0; }
+        const h = deptItemHaveInfo(dept, it);
+        if (h) { counted = true; have += h.have; }
         short += deptItemShort(dept, it) || 0;
     });
     return { need, have, counted, short };
@@ -14285,11 +14403,12 @@ function deptFamilyTotals(dept, fam) {
 // Current (actual) count first, then "of N" (what should be there) and what is missing
 function deptCell(t) {
     if (!t.need && !t.counted) return `<span style="color: var(--text-muted);">—</span>`;
+    const tag = t.fromAsset ? '<span class="dept-from-asset" title="الرقم مقروء من جرد أصول الشركة">من الجرد</span>' : '';
     // No required number set (e.g. a buffet item): just show what is there, never "من 0"
-    if (!t.need) return `<span class="dept-cell-num">${t.have}</span><span class="dept-cell-sub">الحالي</span>`;
+    if (!t.need) return `<span class="dept-cell-num">${t.have}</span><span class="dept-cell-sub">الحالي</span>${tag}`;
     const num = t.counted ? t.have : '<span style="color: var(--text-muted);" title="لسه ماتعدّش">؟</span>';
     const sub = t.short ? `من ${t.need} · <b class="dept-short-inline">ناقص ${t.short}</b>` : (t.counted ? `من ${t.need} ✓` : `المفروض ${t.need}`);
-    return `<span class="dept-cell-num">${num}</span><span class="dept-cell-sub">${sub}</span>`;
+    return `<span class="dept-cell-num">${num}</span><span class="dept-cell-sub">${sub}</span>${tag}`;
 }
 // "محتاج شراء" spelled out per item, e.g. "كرسي 2 · لوكر 3" (one department, or a whole floor)
 function deptShortMap(d, depts) {
@@ -14334,7 +14453,7 @@ function renderDeptsView() {
     const totalOffices = deptLayout.reduce((s, d) => s + (Number(d.offices) || 0), 0);
     const fam = f => deptLayout.reduce((acc, d) => { const t = deptFamilyTotals(d, f); acc.need += t.need; acc.have += t.have; return acc; }, { need: 0, have: 0 });
     const desks = fam('desk'), chairs = fam('chair'), lockers = fam('locker');
-    const notCounted = deptLayout.filter(d => (d.items || []).some(it => isUncounted(it.have))).length;
+    const notCounted = deptLayout.filter(d => (d.items || []).some(it => it.name && !deptItemHaveInfo(d, it))).length;
     document.getElementById('depts-summary').innerHTML = `
         <div><span>الأقسام</span><b>${deptLayout.filter(d => !isBuffetArea(d)).length}</b></div>
         <div><span>البوفيهات</span><b>${deptLayout.filter(isBuffetArea).length}</b></div>
@@ -14391,7 +14510,7 @@ function renderDeptsView() {
                 <table class="data-table dept-table">
                     <thead><tr><th>القسم / المكتب</th><th style="text-align:center;">إجمالي المكاتب<br><small>المتفق عليه</small></th>${itemCols.map(n => `<th style="text-align:center;">${escHtml(n)}<br><small>الحالي</small></th>`).join('')}<th style="text-align:center;">محتاج شراء</th></tr></thead>
                     <tbody>${rows || `<tr><td colspan="${3 + itemCols.length}" style="text-align:center; color: var(--text-muted); padding: 1rem;">مفيش أقسام في الدور ده</td></tr>`}</tbody>
-                    ${depts.length ? `<tfoot><tr><th>إجمالي ${fl}</th><th style="text-align:center;">${flOffices}</th>${itemCols.map(n => `<th style="text-align:center;">${deptItemFloorTotalHtml(depts, n)}</th>`).join('')}<th style="text-align:center;">${deptShortListHtml(null, depts)}</th></tr></tfoot>` : ''}
+                    ${depts.length ? `<tfoot><tr><th>إجمالي ${fl}</th><th style="text-align:center;">${flOffices}</th>${itemCols.map(n => `<th style="text-align:center;">${deptItemFloorTotalHtml(depts, n, fl)}</th>`).join('')}<th style="text-align:center;">${deptShortListHtml(null, depts)}</th></tr></tfoot>` : ''}
                 </table>
             </div>
             ${buffetSection}
@@ -14411,9 +14530,14 @@ function deptItemColumns(depts) {
 function deptItemCellData(d, name) {
     const its = (d.items || []).filter(it => it.name === name);
     if (!its.length) return null;
-    let need = 0, have = 0, counted = false, short = 0;
-    its.forEach(it => { need += deptItemNeed(d, it); if (!isUncounted(it.have)) { counted = true; have += Number(it.have) || 0; } short += deptItemShort(d, it) || 0; });
-    return { need, have, counted, short };
+    let need = 0, have = 0, counted = false, short = 0, fromAsset = false;
+    its.forEach(it => {
+        need += deptItemNeed(d, it);
+        const h = deptItemHaveInfo(d, it);
+        if (h) { counted = true; have += h.have; if (h.src !== 'manual') fromAsset = true; }
+        short += deptItemShort(d, it) || 0;
+    });
+    return { need, have, counted, short, fromAsset };
 }
 function deptItemCellHtml(d, name) {
     const c = deptItemCellData(d, name);
@@ -14427,10 +14551,17 @@ function deptItemCellText(d, name) {
     const sub = !c.counted ? 'لم يُعد' : (c.short ? `موجود ${c.have} · ناقص ${c.short}` : `موجود ${c.have} ✓`);
     return `<b style="font-size:0.86rem;">${c.need}</b><br><span style="font-size:0.66rem; color:#8a8b8c;">${sub}</span>`;
 }
-function deptItemFloorTotalHtml(depts, name) {
+function deptItemFloorTotalHtml(depts, name, floor) {
     let need = 0, have = 0, counted = false, short = 0;
     depts.forEach(d => { const c = deptItemCellData(d, name); if (c) { need += c.need; have += c.have; counted = counted || c.counted; short += c.short; } });
-    return deptCell({ need, have, counted, short });
+    let html = deptCell({ need, have, counted, short });
+    // Compare with the asset inventory for this floor: what is recorded vs what is placed in departments
+    const a = floor ? assetFloorCount(name, floor) : null;
+    if (a !== null) {
+        const diff = a - have;
+        html += `<span class="dept-asset-line">في جرد الأصول ${a}${diff > 0 ? ` · <b class="warn">غير موزع ${diff}</b>` : (diff < 0 ? ` · <b class="bad">زيادة ${-diff}</b>` : ' ✓')}</span>`;
+    }
+    return html;
 }
 
 // Suggestions = the basic list + every item name already typed in any department (so new names are remembered)
@@ -14441,6 +14572,8 @@ function refreshDeptItemSuggestions() {
     if (!dl) return;
     const names = new Set(DEPT_ITEM_SUGGESTIONS);
     deptLayout.forEach(d => (d.items || []).forEach(it => { if (it.name) names.add(it.name); }));
+    // plus every item name from the asset inventory, so a department item can be linked to it exactly
+    (furnitureInventory || []).forEach(f => { if (f.name) names.add(f.name); });
     dl.innerHTML = [...names].map(n => `<option value="${escHtml(n)}"></option>`).join('');
 }
 // Area type: an office/department (counted against its agreed offices) or the floor's buffet (its own table)
@@ -14517,7 +14650,7 @@ function drawDeptItemsDraft() {
     body.innerHTML = deptItemsDraft.map((it, i) => `<tr>
             <td><input type="text" class="form-control di-name" list="dept-item-names" value="${escHtml(it.name)}" placeholder="اكتب اسم أي غرض أو اختار" title="اكتب أي اسم (مثلاً ترابيزة مدورة) أو اختار من القايمة" style="min-width:190px;"><input type="hidden" class="di-per" value="${it.per}"></td>
             <td class="di-need" style="text-align:center;"><div class="elec-new"><input type="number" class="form-control di-need-in ${deptItemNeedIsManual(it) ? 'is-manual' : ''}" min="0" step="1" data-manual="${deptItemNeedIsManual(it) ? '1' : ''}" value="${deptItemNeedIsManual(it) ? it.need : ''}" oninput="onDeptNeedInput(this)" style="width:80px; text-align:center; font-weight:800;" title="اكتب العدد المطلوب بنفسك، أو سيبه للحساب"><button type="button" class="cg-x di-need-reset" title="رجّعه للحساب (المكاتب × لكل مكتب)" onclick="resetDeptNeed(${i})">↺</button></div></td>
-            <td><input type="number" class="form-control di-have" min="0" value="${isUncounted(it.have) ? '' : it.have}" placeholder="؟" oninput="renderDeptItemsDraft()" style="width:90px; text-align:center;"></td>
+            <td><input type="number" class="form-control di-have" min="0" value="${isUncounted(it.have) ? '' : it.have}" placeholder="${(() => { const cur = deptLayout.find(x => x.id === Number(document.getElementById('dept-id').value)); const h = cur && it.name ? deptItemHaveInfo(cur, { name: it.name, have: null }) : null; return h ? `${h.have} من الجرد` : '؟'; })()}" title="سيبه فاضي علشان يتقري من جرد الأصول، أو اكتب الرقم بنفسك" oninput="renderDeptItemsDraft()" style="width:100px; text-align:center;"></td>
             <td class="di-short" style="text-align:center;"></td>
             <td><button type="button" class="btn btn-sm btn-danger-outline" onclick="removeDeptItemDraft(${i})">✖</button></td>
         </tr>`).join('');
@@ -14646,7 +14779,8 @@ function shareDeptsWhatsApp() {
         depts.forEach(d => {
             const parts = (d.items || []).map(it => {
                 const s = deptItemShort(d, it);
-                return `${it.name} ${isUncounted(it.have) ? '؟' : it.have}/${deptItemNeed(d, it)}${s ? ` (ناقص ${s})` : ''}`;
+                const h = deptItemHaveInfo(d, it);
+                return `${it.name} ${h ? h.have : '؟'}/${deptItemNeed(d, it)}${s ? ` (ناقص ${s})` : ''}`;
             });
             lines.push(`• ${d.name}: إجمالي المكاتب ${Number(d.offices) || '—'}${parts.length ? ' — ' + parts.join('، ') : ''}${d.notes ? ` (${d.notes})` : ''}`);
         });
@@ -15469,13 +15603,14 @@ function exportDeptsToCSV() {
             const rowsOf = items.length ? items : [{ name: '', per: 0, have: null }];
             rowsOf.forEach((it, k) => {
                 const r = sh.row();
-                const counted = !isUncounted(it.have);
+                const hInfo = it.name ? deptItemHaveInfo(d, it) : null;
+                const counted = !!hInfo;
                 sh.add([
                     { v: k === 0 ? fl : '', s: 'text' }, { v: k === 0 ? (isBuffetArea(d) ? `${d.name} (بوفيه)` : d.name) : '', s: k === 0 ? 'textBold' : 'text' },
                     k === 0 && !isBuffetArea(d) ? { v: Number(d.offices) || 0, s: 'inputInt' } : { v: '', s: 'text' },
                     { v: it.name || '', s: 'text' },
                     it.name ? { v: deptItemNeed(d, it), s: 'inputInt' } : { v: '', s: 'text' },
-                    counted ? { v: Number(it.have), s: 'inputInt' } : { v: '', s: 'inputInt' },
+                    counted ? { v: hInfo.have, s: 'inputInt' } : { v: '', s: 'inputInt' },
                     { f: `IF(F${r}="","",MAX(0,E${r}-F${r}))`, s: 'totInt' },
                     { v: k === 0 ? (d.notes || '') : '', s: 'text' }
                 ]);
@@ -15554,7 +15689,7 @@ function printDeptsReport(opts) {
         const d = list[0];
         const body = (d.items || []).filter(it => it.name).map((it, i) => {
             const need = deptItemNeed(d, it), s = deptItemShort(d, it);
-            return `<tr><td style="text-align:center;">${i + 1}</td><td style="text-align:right !important; font-weight:600;">${escHtml(it.name)}</td><td style="text-align:center; font-size:1rem !important;">${need}</td><td style="text-align:center; font-size:1rem !important;">${isUncounted(it.have) ? 'لم يُعد' : it.have}</td><td style="text-align:center; font-size:1rem !important;">${s ? s : (s === 0 ? '✓' : '—')}</td></tr>`;
+            return `<tr><td style="text-align:center;">${i + 1}</td><td style="text-align:right !important; font-weight:600;">${escHtml(it.name)}</td><td style="text-align:center; font-size:1rem !important;">${need}</td><td style="text-align:center; font-size:1rem !important;">${(() => { const h = deptItemHaveInfo(d, it); return h ? `${h.have}${h.src !== 'manual' ? ' <small style="color:#8a8b8c;">(من الجرد)</small>' : ''}` : 'لم يُعد'; })()}</td><td style="text-align:center; font-size:1rem !important;">${s ? s : (s === 0 ? '✓' : '—')}</td></tr>`;
         }).join('');
         const info = `<tr><td colspan="5" style="text-align:right !important; background:#fef2ce; font-weight:600;">${isBuffetArea(d) ? 'بوفيه' : `إجمالي المكاتب (المتفق عليه): ${Number(d.offices) || '—'}`}${d.group ? `   ·   تابع: ${escHtml(d.group)}` : ''}${d.notes ? `   ·   ${escHtml(d.notes)}` : ''}</td></tr>`;
         const buy = deptShortMap(d);
