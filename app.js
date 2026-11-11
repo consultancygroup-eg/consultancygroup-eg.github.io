@@ -8680,7 +8680,10 @@ let deptItemsDraft = [];
 
 function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function isUncounted(v) { return v === null || v === undefined || v === ''; }
-function deptItemNeed(dept, it) { return Math.round((Number(dept.offices) || 0) * (Number(it.per) || 0)); }
+// Auto need = offices × per office; a number typed by hand in "المطلوب" (it.need) overrides it
+function deptItemAutoNeed(dept, it) { return Math.round((Number(dept.offices) || 0) * (Number(it.per) || 0)); }
+function deptItemNeedIsManual(it) { return it && it.need !== null && it.need !== undefined && it.need !== ''; }
+function deptItemNeed(dept, it) { return deptItemNeedIsManual(it) ? Math.max(0, Number(it.need) || 0) : deptItemAutoNeed(dept, it); }
 function deptItemShort(dept, it) {
     if (isUncounted(it.have)) return null; // not counted yet
     return Math.max(0, deptItemNeed(dept, it) - Number(it.have));
@@ -8819,7 +8822,22 @@ function readDeptItemsDraft() {
         it.per = Math.max(0, Number(tr.querySelector('.di-per').value) || 0);
         const h = tr.querySelector('.di-have').value;
         it.have = h === '' ? null : Math.max(0, Number(h) || 0);
+        // "المطلوب": only a number the user typed counts as manual; empty = back to the calculation
+        const nIn = tr.querySelector('.di-need-in');
+        if (nIn) it.need = (nIn.dataset.manual === '1' && nIn.value !== '') ? Math.max(0, Number(nIn.value) || 0) : null;
     });
+}
+function onDeptNeedInput(inp) {
+    inp.dataset.manual = inp.value === '' ? '' : '1';
+    renderDeptItemsDraft();
+}
+function resetDeptNeed(i) {
+    const tr = document.querySelectorAll('#dept-items-body tr')[i];
+    if (!tr) return;
+    const nIn = tr.querySelector('.di-need-in');
+    nIn.dataset.manual = '';
+    nIn.value = '';
+    renderDeptItemsDraft();
 }
 function deptShortHtml(s) {
     return s === null ? '<span style="color: var(--text-muted);">—</span>' : (s ? `<span class="dept-short">${s}</span>` : '<span style="color: var(--success); font-weight:800;">مكتمل</span>');
@@ -8831,7 +8849,7 @@ function drawDeptItemsDraft() {
     body.innerHTML = deptItemsDraft.map((it, i) => `<tr>
             <td><input type="text" class="form-control di-name" list="dept-item-names" value="${escHtml(it.name)}" style="min-width:150px;"></td>
             <td><input type="number" class="form-control di-per" min="0" step="1" value="${it.per}" oninput="renderDeptItemsDraft()" style="width:80px; text-align:center;"></td>
-            <td class="di-need" style="text-align:center; font-weight:800;"></td>
+            <td class="di-need" style="text-align:center;"><div class="elec-new"><input type="number" class="form-control di-need-in ${deptItemNeedIsManual(it) ? 'is-manual' : ''}" min="0" step="1" data-manual="${deptItemNeedIsManual(it) ? '1' : ''}" value="${deptItemNeedIsManual(it) ? it.need : ''}" oninput="onDeptNeedInput(this)" style="width:80px; text-align:center; font-weight:800;" title="اكتب العدد المطلوب بنفسك، أو سيبه للحساب"><button type="button" class="cg-x di-need-reset" title="رجّعه للحساب (المكاتب × لكل مكتب)" onclick="resetDeptNeed(${i})">↺</button></div></td>
             <td><input type="number" class="form-control di-have" min="0" value="${isUncounted(it.have) ? '' : it.have}" placeholder="؟" oninput="renderDeptItemsDraft()" style="width:90px; text-align:center;"></td>
             <td class="di-short" style="text-align:center;"></td>
             <td><button type="button" class="btn btn-sm btn-danger-outline" onclick="removeDeptItemDraft(${i})">✖</button></td>
@@ -8844,7 +8862,12 @@ function renderDeptItemsDraft() {
     document.querySelectorAll('#dept-items-body tr').forEach((tr, i) => {
         const it = deptItemsDraft[i];
         if (!it) return;
-        tr.querySelector('.di-need').textContent = deptItemNeed(tmp, it);
+        const nIn = tr.querySelector('.di-need-in');
+        const manual = deptItemNeedIsManual(it);
+        if (nIn && !manual && document.activeElement !== nIn) nIn.value = deptItemAutoNeed(tmp, it); // show the calculated number
+        if (nIn) nIn.classList.toggle('is-manual', manual);
+        const rb = tr.querySelector('.di-need-reset');
+        if (rb) rb.style.visibility = manual ? 'visible' : 'hidden';
         tr.querySelector('.di-short').innerHTML = deptShortHtml(deptItemShort(tmp, it));
     });
 }
@@ -9781,7 +9804,7 @@ function exportDeptsToCSV() {
                     k === 0 ? (isUncounted(d.staff) ? { v: '', s: 'inputInt' } : { v: Number(d.staff), s: 'inputInt' }) : { v: '', s: 'text' },
                     k === 0 ? { f: `IF(D${r}="","",C${r}-D${r})`, s: 'totInt' } : { v: '', s: 'text' },
                     { v: it.name || '', s: 'text' }, { v: Number(it.per) || 0, s: 'inputInt' },
-                    { f: `$C$${top}*G${r}`, v: deptItemNeed(d, it), s: 'int' },
+                    deptItemNeedIsManual(it) ? { v: deptItemNeed(d, it), s: 'inputInt' } : { f: `$C$${top}*G${r}`, v: deptItemNeed(d, it), s: 'int' },
                     counted ? { v: Number(it.have), s: 'inputInt' } : { v: '', s: 'inputInt' },
                     { f: `IF(I${r}="","",MAX(0,H${r}-I${r}))`, s: 'totInt' },
                     { v: k === 0 ? (d.notes || '') : '', s: 'text' }

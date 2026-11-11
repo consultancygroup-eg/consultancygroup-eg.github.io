@@ -2925,3 +2925,4 @@ tr.elec-active td { background: var(--primary-light) !important; }
 .elec-meta div:first-child { border-inline-start: 0; }
 .elec-meta span { display: block; font-size: 12px; color: #8a8b8c; }
 .elec-meta b { font-size: 16px; font-weight: 600; color: #3d3a34; }
+.di-need-in.is-manual { font-style: italic; border-color: var(--brand-gold); }
