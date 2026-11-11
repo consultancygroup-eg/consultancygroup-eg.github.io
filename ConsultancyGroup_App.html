@@ -8494,11 +8494,23 @@ function safeWindowPrint() {
     const prevTitle = document.title;
     document.title = ' ';
     document.querySelectorAll('.print-only').forEach(softenPrintInk);
-    window.print();
-    setTimeout(() => {
-        document.title = prevTitle;
-    }, 500);
+    // Wait until the logo (and any invoice pictures) are loaded, otherwise the print preview shows no logo
+    const imgs = [...document.querySelectorAll('.print-only img')];
+    const ready = imgs.map(img => (img.complete && img.naturalWidth) ? Promise.resolve() :
+        new Promise(res => { img.addEventListener('load', res, { once: true }); img.addEventListener('error', res, { once: true }); }));
+    const timeout = new Promise(res => setTimeout(res, 4000));
+    Promise.race([Promise.all(ready), timeout]).then(() => {
+        // one more frame so the images are painted before the print snapshot
+        requestAnimationFrame(() => setTimeout(() => {
+            window.print();
+            setTimeout(() => { document.title = prevTitle; }, 500);
+        }, 50));
+    });
 }
+// Load the sharp logo once when the program opens, so the first print already has it
+window.addEventListener('load', () => {
+    try { const pre = new Image(); pre.src = getPrintLogoSrc(); if (pre.decode) pre.decode().catch(() => {}); window.__cgLogoPreload = pre; } catch (e) {}
+});
 
 function getFormattedTodayDate(isAr) {
     const d = new Date();
@@ -14278,22 +14290,16 @@ function renderDeptsView() {
     wrap.innerHTML = DEPT_FLOORS.map(fl => {
         const depts = deptLayout.filter(d => d.floor === fl);
         const flOffices = depts.reduce((s, d) => s + (Number(d.offices) || 0), 0);
+        // Every office item used on this floor gets its own column
+        const itemCols = deptItemColumns(depts);
         const rows = depts.map(d => {
-            const others = (d.items || []).filter(it => deptFamily(it.name) === 'other');
-            const othersTxt = others.length ? others.map(it => {
-                const s = deptItemShort(d, it);
-                const h = isUncounted(it.have) ? '؟' : it.have;
-                return `${escHtml(it.name)} ${h}/${deptItemNeed(d, it)}${s ? ` <span class="dept-short">ناقص ${s}</span>` : ''}`;
-            }).join('<br>') : '<span style="color: var(--text-muted);">—</span>';
+            const itemCells = itemCols.map(n => `<td style="text-align:center;">${deptItemCellHtml(d, n)}</td>`).join('');
             const shortAll = (d.items || []).reduce((s, it) => s + (deptItemShort(d, it) || 0), 0);
             return `<tr class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}>
                 <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button><span class="dept-move no-print"><button type="button" class="btn btn-sm btn-secondary" title="لأعلى" onclick="event.stopPropagation(); moveDept(${d.id}, -1)">▲</button><button type="button" class="btn btn-sm btn-secondary" title="لأسفل" onclick="event.stopPropagation(); moveDept(${d.id}, 1)">▼</button></span>`}</td>
                 <td style="text-align:center; font-weight:800;">${Number(d.offices) || '<span style="color: var(--text-muted);" title="العدد لسه ماتحددش">—</span>'}</td>
                 <td style="text-align:center;">${deptVacantHtml(d)}</td>
-                <td style="text-align:center;">${deptCell(deptFamilyTotals(d, 'desk'))}</td>
-                <td style="text-align:center;">${deptCell(deptFamilyTotals(d, 'chair'))}</td>
-                <td style="text-align:center;">${deptCell(deptFamilyTotals(d, 'locker'))}</td>
-                <td style="font-size: 0.8rem;">${othersTxt}</td>
+                ${itemCells}
                 <td style="text-align:center; font-weight:800;">${shortAll ? `<span class="dept-short">${shortAll}</span>` : '<span style="color: var(--text-muted);">—</span>'}</td>
             </tr>`;
         }).join('');
@@ -14305,12 +14311,45 @@ function renderDeptsView() {
             </div>
             <div class="table-responsive">
                 <table class="data-table dept-table">
-                    <thead><tr><th>القسم / المكتب</th><th style="text-align:center;">إجمالي المكاتب</th><th style="text-align:center;">الموظفين<br><small>موجود / إجمالي المكاتب</small></th><th style="text-align:center;">مكاتب<br><small>موجود / مطلوب</small></th><th style="text-align:center;">كراسي<br><small>موجود / مطلوب</small></th><th style="text-align:center;">لوكرات<br><small>موجود / مطلوب</small></th><th>أغراض تانية</th><th style="text-align:center;">محتاج شراء</th></tr></thead>
-                    <tbody>${rows || `<tr><td colspan="8" style="text-align:center; color: var(--text-muted); padding: 1rem;">مفيش أقسام في الدور ده</td></tr>`}</tbody>
+                    <thead><tr><th>القسم / المكتب</th><th style="text-align:center;">إجمالي المكاتب</th><th style="text-align:center;">الموظفين<br><small>موجود / إجمالي المكاتب</small></th>${itemCols.map(n => `<th style="text-align:center;">${escHtml(n)}<br><small>موجود / مطلوب</small></th>`).join('')}<th style="text-align:center;">محتاج شراء</th></tr></thead>
+                    <tbody>${rows || `<tr><td colspan="${4 + itemCols.length}" style="text-align:center; color: var(--text-muted); padding: 1rem;">مفيش أقسام في الدور ده</td></tr>`}</tbody>
+                    ${depts.length ? `<tfoot><tr><th>إجمالي ${fl}</th><th style="text-align:center;">${flOffices}</th><th></th>${itemCols.map(n => `<th style="text-align:center;">${deptItemFloorTotalHtml(depts, n)}</th>`).join('')}<th></th></tr></tfoot>` : ''}
                 </table>
             </div>
         </div>`;
     }).join('');
+}
+
+// Item columns for a set of departments: the basic order first (desk, chairs, locker, tables…), then any new names
+function deptItemColumns(depts) {
+    const used = new Set();
+    depts.forEach(d => (d.items || []).forEach(it => { if (it.name) used.add(it.name); }));
+    const ordered = DEPT_ITEM_SUGGESTIONS.filter(n => used.has(n));
+    const rest = [...used].filter(n => !DEPT_ITEM_SUGGESTIONS.includes(n)).sort((a, b) => a.localeCompare(b, 'ar'));
+    return [...ordered, ...rest];
+}
+// One department × one item: "have / need" and what is missing
+function deptItemCellData(d, name) {
+    const its = (d.items || []).filter(it => it.name === name);
+    if (!its.length) return null;
+    let need = 0, have = 0, counted = false, short = 0;
+    its.forEach(it => { need += deptItemNeed(d, it); if (!isUncounted(it.have)) { counted = true; have += Number(it.have) || 0; } short += deptItemShort(d, it) || 0; });
+    return { need, have, counted, short };
+}
+function deptItemCellHtml(d, name) {
+    const c = deptItemCellData(d, name);
+    if (!c || (!c.need && !c.counted)) return '<span style="color: var(--text-muted);">—</span>';
+    return deptCell(c);
+}
+function deptItemCellText(d, name) {
+    const c = deptItemCellData(d, name);
+    if (!c || (!c.need && !c.counted)) return '—';
+    return `${c.counted ? c.have : '؟'} / ${c.need}${c.short ? ` (ناقص ${c.short})` : ''}`;
+}
+function deptItemFloorTotalHtml(depts, name) {
+    let need = 0, have = 0, counted = false, short = 0;
+    depts.forEach(d => { const c = deptItemCellData(d, name); if (c) { need += c.need; have += c.have; counted = counted || c.counted; short += c.short; } });
+    return deptCell({ need, have, counted, short });
 }
 
 // Suggestions = the basic list + every item name already typed in any department (so new names are remembered)
@@ -14470,22 +14509,26 @@ function exportDeptsToCSVLegacy() {
 function printDeptsReport() {
     const isAr = currentLang === 'ar';
     let body = '';
+    // Same item columns for every floor in the PDF so the pages line up
+    const cols = deptItemColumns(deptLayout);
+    const N = 4 + cols.length;
+    const cellStyle = 'text-align:center; font-size:0.74rem !important; white-space:nowrap;';
     DEPT_FLOORS.forEach(fl => {
         const depts = deptLayout.filter(d => d.floor === fl);
+        if (!depts.length) return;
         const flOffices = depts.reduce((s, d) => s + (Number(d.offices) || 0), 0);
-        body += `<tr><td colspan="8" style="text-align:right !important; font-weight:700; background:#fef2ce;">${fl} — ${depts.length} قسم · ${flOffices} مكتب</td></tr>`;
+        body += `<tr><td colspan="${N}" style="text-align:right !important; font-weight:700; background:#fef2ce;">${fl} — ${depts.length} قسم · ${flOffices} مكتب</td></tr>`;
         depts.forEach(d => {
-            const c = f => { const t = deptFamilyTotals(d, f); return (!t.need && !t.counted) ? '—' : `${t.counted ? t.have : '؟'} / ${t.need}${t.short ? ` (ناقص ${t.short})` : ''}`; };
-            const others = (d.items || []).filter(it => deptFamily(it.name) === 'other').map(it => { const s = deptItemShort(d, it); return `${escHtml(it.name)} ${isUncounted(it.have) ? '؟' : it.have}/${deptItemNeed(d, it)}${s ? ` (ناقص ${s})` : ''}`; }).join('، ') || '—';
             const shortAll = (d.items || []).reduce((s, it) => s + (deptItemShort(d, it) || 0), 0);
             const vac = deptVacant(d);
-            body += `<tr><td style="text-align:right !important;">${escHtml(d.name)}${d.notes ? ` <small>(${escHtml(d.notes)})</small>` : ''}</td><td style="text-align:center;">${Number(d.offices) || '—'}</td><td style="text-align:center;">${isUncounted(d.staff) ? '؟' : d.staff} / ${deptContract(d)}${vac ? ` (فاضي ${vac})` : ''}</td><td style="text-align:center;">${c('desk')}</td><td style="text-align:center;">${c('chair')}</td><td style="text-align:center;">${c('locker')}</td><td style="font-size:0.8rem;">${others}</td><td style="text-align:center;">${shortAll || '—'}</td></tr>`;
+            body += `<tr><td style="text-align:right !important; font-size:0.78rem !important;">${escHtml(d.name)}${d.notes ? ` <small>(${escHtml(d.notes)})</small>` : ''}</td><td style="${cellStyle}">${Number(d.offices) || '—'}</td><td style="${cellStyle}">${isUncounted(d.staff) ? '؟' : d.staff} / ${deptContract(d)}${vac ? ` (فاضي ${vac})` : ''}</td>${cols.map(n => `<td style="${cellStyle}">${deptItemCellText(d, n)}</td>`).join('')}<td style="${cellStyle}">${shortAll || '—'}</td></tr>`;
         });
     });
     const buy = getDeptBuyList();
-    const foot = `<tr><th colspan="8" style="text-align:right !important;">محتاج يتشترى: ${buy.length ? buy.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr>`;
-    const head = `<tr><th>القسم / المكتب</th><th style="text-align:center;">إجمالي المكاتب</th><th style="text-align:center;">الموظفين (موجود/إجمالي المكاتب)</th><th style="text-align:center;">مكاتب (موجود/مطلوب)</th><th style="text-align:center;">كراسي (موجود/مطلوب)</th><th style="text-align:center;">لوكرات (موجود/مطلوب)</th><th>أغراض تانية</th><th style="text-align:center;">محتاج شراء</th></tr>`;
-    printCgTable('تحليل الطوابق بالأقسام', `${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`, 8, head, body, foot);
+    const foot = `<tr><th colspan="${N}" style="text-align:right !important;">محتاج يتشترى: ${buy.length ? buy.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr>`;
+    const hs = 'text-align:center; font-size:0.72rem !important;';
+    const head = `<tr><th style="font-size:0.74rem !important;">القسم / المكتب</th><th style="${hs}">إجمالي المكاتب</th><th style="${hs}">الموظفين (موجود/المكاتب)</th>${cols.map(n => `<th style="${hs}">${escHtml(n)}<br><small>موجود/مطلوب</small></th>`).join('')}<th style="${hs}">محتاج شراء</th></tr>`;
+    printCgTable('تحليل الطوابق بالأقسام', `${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`, N, head, body, foot);
 }
 
 // Detailed department breakdown for the regional manager (floor analysis stays for senior management / accounts)
