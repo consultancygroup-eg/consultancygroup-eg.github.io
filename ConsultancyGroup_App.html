@@ -8079,11 +8079,24 @@ function printCgTable(title, sub, colCount, theadRows, tbodyRows, tfootRows) {
     const printArea = document.getElementById('official-print-viewport');
     if (!printArea) return;
     const isAr = currentLang === 'ar';
-    printArea.innerHTML = `
+    // Fit the paper automatically: many columns -> landscape, and if still too many, scale the table down
+    // (the logo header keeps its size). Column headings wrap instead of being cut.
+    const landscape = colCount > 9;
+    const capacity = landscape ? 16 : 11;
+    const zoom = Math.max(0.5, Math.min(1, capacity / colCount));
+    const fitCss = `<style>
+        @page { size: A4 ${landscape ? 'landscape' : 'portrait'}; margin: 7mm; }
+        .cg-fit-table { width: 100% !important; ${landscape ? 'table-layout: fixed;' : ''} zoom: ${zoom}; }
+        .cg-fit-table th, .cg-fit-table td { white-space: normal !important; word-break: break-word; overflow-wrap: anywhere; }
+        .cg-fit-table tr { page-break-inside: avoid; break-inside: avoid; }
+        .cg-fit-head { zoom: ${(1 / zoom).toFixed(4)}; }
+    </style>`;
+    printArea.innerHTML = `${fitCss}
         <div class="voucher-print-container" dir="${isAr ? 'rtl' : 'ltr'}">
-            <table class="print-table">
+            <table class="print-table cg-fit-table">
+                ${landscape ? `<colgroup><col style="width:${Math.max(10, Math.round(150 / colCount * 1.4))}%">${'<col>'.repeat(colCount - 1)}</colgroup>` : ''}
                 <thead>
-                    <tr><th colspan="${colCount}" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">${buildCenteredPrintHeader(title, sub)}</th></tr>
+                    <tr><th colspan="${colCount}" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;"><div class="cg-fit-head">${buildCenteredPrintHeader(title, sub)}</div></th></tr>
                     ${theadRows}
                 </thead>
                 <tbody>${tbodyRows}</tbody>
