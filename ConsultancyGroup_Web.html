@@ -2894,6 +2894,7 @@ select.cg-f:focus { outline: 2px solid var(--brand-gold); outline-offset: 0; }
 .custody-compact-filter-bar select.form-control { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 9px; padding: 9px 10px; height: auto; }
 .hq-row-click { cursor: pointer; }
 .hq-row-click:hover td { background: var(--primary-light); }
+.dept-edit-btn { margin-top: 6px; padding: 0.15rem 0.55rem !important; font-size: 0.72rem !important; }
 
 </style>
 
@@ -14092,7 +14093,7 @@ function renderDeptsView() {
             }).join('<br>') : '<span style="color: var(--text-muted);">—</span>';
             const shortAll = (d.items || []).reduce((s, it) => s + (deptItemShort(d, it) || 0), 0);
             return `<tr class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}>
-                <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}</td>
+                <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button>`}</td>
                 <td style="text-align:center; font-weight:800;">${Number(d.offices) || '<span style="color: var(--text-muted);" title="العدد لسه ماتحددش">—</span>'}</td>
                 <td style="text-align:center;">${deptVacantHtml(d)}</td>
                 <td style="text-align:center;">${deptCell(deptFamilyTotals(d, 'desk'))}</td>

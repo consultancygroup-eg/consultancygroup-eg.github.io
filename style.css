@@ -2875,3 +2875,4 @@ select.cg-f:focus { outline: 2px solid var(--brand-gold); outline-offset: 0; }
 .custody-compact-filter-bar select.form-control { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 9px; padding: 9px 10px; height: auto; }
 .hq-row-click { cursor: pointer; }
 .hq-row-click:hover td { background: var(--primary-light); }
+.dept-edit-btn { margin-top: 6px; padding: 0.15rem 0.55rem !important; font-size: 0.72rem !important; }

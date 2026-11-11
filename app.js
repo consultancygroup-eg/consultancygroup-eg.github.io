@@ -8692,7 +8692,7 @@ function renderDeptsView() {
             }).join('<br>') : '<span style="color: var(--text-muted);">—</span>';
             const shortAll = (d.items || []).reduce((s, it) => s + (deptItemShort(d, it) || 0), 0);
             return `<tr class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}>
-                <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}</td>
+                <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button>`}</td>
                 <td style="text-align:center; font-weight:800;">${Number(d.offices) || '<span style="color: var(--text-muted);" title="العدد لسه ماتحددش">—</span>'}</td>
                 <td style="text-align:center;">${deptVacantHtml(d)}</td>
                 <td style="text-align:center;">${deptCell(deptFamilyTotals(d, 'desk'))}</td>
