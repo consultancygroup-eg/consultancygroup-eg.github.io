@@ -8738,6 +8738,8 @@ function deptFamilyTotals(dept, fam) {
 // Current (actual) count first, then "of N" (what should be there) and what is missing
 function deptCell(t) {
     if (!t.need && !t.counted) return `<span style="color: var(--text-muted);">—</span>`;
+    // No required number set (e.g. a buffet item): just show what is there, never "من 0"
+    if (!t.need) return `<span class="dept-cell-num">${t.have}</span><span class="dept-cell-sub">الحالي</span>`;
     const num = t.counted ? t.have : '<span style="color: var(--text-muted);" title="لسه ماتعدّش">؟</span>';
     const sub = t.short ? `من ${t.need} · <b class="dept-short-inline">ناقص ${t.short}</b>` : (t.counted ? `من ${t.need} ✓` : `المفروض ${t.need}`);
     return `<span class="dept-cell-num">${num}</span><span class="dept-cell-sub">${sub}</span>`;
@@ -8895,7 +8897,12 @@ function refreshDeptItemSuggestions() {
     dl.innerHTML = [...names].map(n => `<option value="${escHtml(n)}"></option>`).join('');
 }
 // Area type: an office/department (counted against its agreed offices) or the floor's buffet (its own table)
-function isBuffetArea(d) { return d && d.kind === 'buffet'; }
+// A row saved as a department but named buffet / kitchen (بوفيه / مطبخ) with no agreed offices is treated as the buffet
+function isBuffetArea(d) {
+    if (!d) return false;
+    if (d.kind === 'buffet') return true;
+    return !(Number(d.offices) > 0) && /بوفيه|بوفية|مطبخ/.test(`${d.name || ''} ${d.group || ''}`);
+}
 function onDeptKindChange() {
     const buffet = document.getElementById('dept-kind').value === 'buffet';
     document.getElementById('dept-offices-wrap').style.display = buffet ? 'none' : '';
@@ -8908,7 +8915,7 @@ function openDeptModal(id, floor, kind) {
     if (currentUserRole === 'viewer') return;
     refreshDeptItemSuggestions();
     const d = id ? deptLayout.find(x => x.id === id) : null;
-    const k = d ? (d.kind || 'office') : (kind || 'office');
+    const k = d ? (isBuffetArea(d) ? 'buffet' : 'office') : (kind || 'office');
     document.getElementById('dept-kind').value = k;
     document.getElementById('dept-modal-title').textContent = d ? `تعديل: ${d.name}` : (k === 'buffet' ? 'إضافة بوفيه' : 'إضافة قسم / مكتب');
     document.getElementById('dept-id').value = d ? d.id : '';
@@ -10018,6 +10025,7 @@ function printDeptsReport(opts) {
     const cs = 'text-align:center; font-size:0.74rem !important; white-space:nowrap;';
     const cellTxt = (c) => {
         if (!c || (!c.need && !c.counted)) return '—';
+        if (!c.need) return `<b style="font-size:0.9rem;">${c.have}</b><br><span style="font-size:0.64rem; color:#8a8b8c;">الحالي</span>`;
         const num = c.counted ? c.have : '؟';
         const sub = c.short ? `من ${c.need} · ناقص ${c.short}` : (c.counted ? `من ${c.need} ✓` : `المفروض ${c.need}`);
         return `<b style="font-size:0.9rem;">${num}</b><br><span style="font-size:0.64rem; color:#8a8b8c;">${sub}</span>`;

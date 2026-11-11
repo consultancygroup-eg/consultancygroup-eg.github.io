@@ -2939,3 +2939,17 @@ tr.elec-active td { background: var(--primary-light) !important; }
 .dept-sub-title { display: inline-block; font-weight: 800; font-size: 0.88rem; color: var(--primary); border-bottom: 2px solid var(--brand-gold); padding-bottom: 2px; }
 .dept-buffet-table { margin-bottom: 4px; }
 .cg-print-section-title { margin: 14px 0 0; font-weight: 700; font-size: 0.95rem; color: #3d3a34; border-bottom: 1.5px solid #d9aa28; padding-bottom: 3px; page-break-after: avoid; break-after: avoid; }
+
+/* Departments: the whole floor table fits the screen width (no sideways scrolling on a computer) */
+@media (min-width: 900px) {
+    table.data-table.dept-table { table-layout: fixed; width: 100%; font-size: 0.82rem; }
+    table.data-table.dept-table th, table.data-table.dept-table td { padding: 0.5rem 0.3rem; white-space: normal; overflow-wrap: anywhere; word-break: normal; letter-spacing: 0; }
+    table.data-table.dept-table th { font-size: 0.72rem; line-height: 1.25; text-align: center; }
+    table.data-table.dept-table th:first-child, table.data-table.dept-table td:first-child { width: 170px; text-align: start; }
+    table.data-table.dept-table:not(.dept-buffet-table) th:nth-child(2) { width: 72px; }
+    table.data-table.dept-table th:last-child { width: 110px; }
+    table.data-table.dept-table .dept-cell-num { font-size: 1rem; }
+    table.data-table.dept-table .dept-cell-sub { white-space: normal; font-size: 0.68rem; }
+    table.data-table.dept-table .dept-buy-line { white-space: normal; }
+    table.data-table.dept-table .dept-edit-btn { font-size: 0.68rem !important; }
+}
