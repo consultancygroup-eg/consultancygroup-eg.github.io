@@ -8051,7 +8051,7 @@ function saveMonthPrices() {
     showToast(currentLang === 'ar' ? `تم حفظ أسعار ${cycleShortLabel(key)}` : 'Prices saved', 'success');
 }
 
-function exportFloorsCompareToCSV() {
+function exportFloorsCompareToCSVLegacy() {
     const { months, rows, totals } = buildFloorsCompareData();
     if (!months.length) return;
     let csv = '﻿' + '"الصنف","الوحدة"';
@@ -8743,7 +8743,7 @@ function sharePurchaseOrderWhatsApp() {
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
 }
 
-function exportPurchaseOrderToCSV() {
+function exportPurchaseOrderToCSVLegacy() {
     const currentCycleTrans = getCycleTransactions();
     let csvContent = '\uFEFF';
     csvContent += 'م,اسم الصنف,الوحدة,الرصيد الحالي,المنصرف,الكمية المطلوبة,سعر الوحدة,الإجمالي,ملاحظات\n';
@@ -10147,7 +10147,7 @@ function shareFloorsAnalysisWhatsApp() {
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
 }
 
-function exportFurnitureToCSV() {
+function exportFurnitureToCSVLegacy() {
     const floors = ['الدور الرابع', 'الدور الخامس', 'الدور السادس', 'الدور السابع', 'الدور الثامن', 'الدور التاسع'];
     let csvContent = '\uFEFF';
     csvContent += 'رقم,اسم الصنف,التصنيف,الدور 4,الدور 5,الدور 6,الدور 7,الدور 8,الدور 9,إجمالي الشركة\n';
@@ -10543,7 +10543,7 @@ function printHqReport() {
     safeWindowPrint();
 }
 
-function exportHqToCSV() {
+function exportHqToCSVLegacy() {
     let csvContent = '\uFEFF';
     csvContent += 'رقم,اسم الصنف,التصنيف,العدد المتواجد بالفعل,الحالة,ملاحظات\n';
 
@@ -10733,7 +10733,7 @@ function quickSupplyItem(itemId) {
 }
 
 // --- EXCEL / CSV EXPORT UTILITIES ---
-function exportInventoryToCSV() {
+function exportInventoryToCSVLegacy() {
     const currentCycleTrans = getCycleTransactions();
     let csvContent = '\uFEFF'; // Arabic UTF-8 BOM
     csvContent += 'رقم,اسم الصنف,الفئة,الوحدة,الرصيد الابتدائي,المنصرف خلال الدورة,الرصيد المتبقي,الحد الأدنى,الحالة\n';
@@ -10750,7 +10750,7 @@ function exportInventoryToCSV() {
     showToast(currentLang === 'ar' ? 'تم تصدير كشف المخزن إلى ملف إكسيل!' : 'Inventory exported to CSV!', 'success');
 }
 
-function exportHistoryToCSV() {
+function exportHistoryToCSVLegacy() {
     const currentCycleTrans = getHistoryRangeLogs();
     let csvContent = '\uFEFF';
     csvContent += 'رقم,التاريخ,الطابق,اسم الصنف,الوحدة,الكمية المنصرفة,اسم المستلم,ملاحظات\n';
@@ -10764,7 +10764,7 @@ function exportHistoryToCSV() {
     showToast(currentLang === 'ar' ? 'تم تصدير سجل الحركات إلى ملف إكسيل!' : 'Transactions exported to CSV!', 'success');
 }
 
-function exportFloorsMatrixToCSV() {
+function exportFloorsMatrixToCSVLegacy() {
     const currentCycleTrans = getCycleTransactions();
     const floors = ['الدور الرابع', 'الدور الخامس', 'الدور السادس', 'الدور السابع', 'الدور الثامن', 'الدور التاسع'];
 
@@ -10791,11 +10791,8 @@ function exportFloorsMatrixToCSV() {
 
 function downloadCSV(content, filename) {
     if (currentUserRole === 'viewer') { showToast(currentLang === 'ar' ? 'الحساب ده للعرض بس' : 'View-only account', 'warning'); return; }
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    link.click();
+    // Every export now downloads a real branded Excel file (.xlsx) instead of plain CSV text
+    cgCsvToXlsx(content, filename);
 }
 
 // --- JSON BACKUP & RESTORE ---
@@ -13504,7 +13501,7 @@ function printCustodyReport() {
     safeWindowPrint();
 }
 
-function exportCustodyToCSV() {
+function exportCustodyToCSVLegacy() {
     const calculated = recalculateCustodyBalances();
     const { rows } = getFilteredCustodyRows(calculated);
     let csv = '\uFEFF';
@@ -14422,7 +14419,7 @@ function deleteDept() {
     showToast('تم حذف القسم', 'info');
 }
 
-function exportDeptsToCSV() {
+function exportDeptsToCSVLegacy() {
     const q = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
     let csv = '﻿' + ['الدور', 'القسم / المكتب', 'تابع لقسم', 'إجمالي مكاتب القسم', 'الموظفين الموجودين', 'مكاتب فاضية للتعاقد', 'الغرض', 'لكل مكتب', 'المطلوب', 'الموجود فعلاً', 'محتاج شراء', 'ملاحظات'].map(q).join(',') + '\n';
     DEPT_FLOORS.forEach(fl => deptLayout.filter(d => d.floor === fl).forEach(d => {
@@ -14761,10 +14758,10 @@ function renderElecHistory() {
     if (window.lucide) window.lucide.createIcons();
 }
 
-function exportElecToCSV() {
+function exportElecCsvLegacy() {
     const d = elecData.draft;
     const c = computeElec(d);
-    const q = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+    const q = v =>`"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
     let csv = '﻿' + [q('بيان شحن عدادات الكهرباء'), q(`تاريخ الشحن: ${d.date}`), q(`الإجمالي المطلوب لكل عداد: ${c.target}`)].join(',') + '\n';
     csv += ['م', 'الدور', 'رقم العداد', 'رصيد الكارت الحالي', 'الرصيد الجديد', 'إجمالي الرصيد بالعداد', 'المديونية'].map(q).join(',') + '\n';
     c.rows.forEach((r, i) => { csv += [i + 1, r.floor, r.meter, r.current, r.newBal, r.total, r.debt].map(q).join(',') + '\n'; });
@@ -14824,6 +14821,535 @@ function printElecCharge(historyId) {
             </div>
         </div>`;
     safeWindowPrint();
+}
+
+// ======================================================================
+// CG EXCEL ENGINE — real .xlsx files (brand look, logo, RTL, live formulas)
+// No library: the workbook XML is written here and zipped (stored) in the browser.
+// ======================================================================
+const CGX = (() => {
+    // ---- brand styles (index = position in cellXfs) ----
+    // fonts: 0 body, 1 title, 2 sub (ink-2), 3 header (on gold), 4 bold, 5 final, 6 bad (data only), 7 note, 8 gold-ink bold
+    const FONTS = [
+        { sz: 11, c: '252525' }, { sz: 16, b: 1, c: '252525' }, { sz: 11, c: '55524B' }, { sz: 11, b: 1, c: '1B1A17' },
+        { sz: 11, b: 1, c: '252525' }, { sz: 13, b: 1, c: '252525' }, { sz: 11, c: 'B3261E' }, { sz: 9, i: 1, c: '8A8B8C' }, { sz: 11, b: 1, c: '94700F' }
+    ];
+    // fills: 0 none, 1 gray125 (required), 2 gold, 3 cream, 4 gold-soft, 5 paper
+    const FILLS = ['none', 'gray125', 'D9AA28', 'FEF2CE', 'F6E7BC', 'FBF8F1'];
+    // borders: 0 none, 1 thin line, 2 gold rule top+bottom, 3 gold rule bottom only (under the title block)
+    const BORDERS = [
+        null,
+        { l: ['thin', 'E8E0CB'], r: ['thin', 'E8E0CB'], t: ['thin', 'E8E0CB'], b: ['thin', 'E8E0CB'] },
+        { l: ['thin', 'E8E0CB'], r: ['thin', 'E8E0CB'], t: ['medium', 'D9AA28'], b: ['medium', 'D9AA28'] },
+        { b: ['thin', 'D9AA28'] }
+    ];
+    // numFmts: 3 = #,##0 (built-in), 164 = #,##0.00
+    const ST = {}; const XF = [];
+    function xf(name, font, fill, border, numFmt, h, v, wrap) { ST[name] = XF.length; XF.push({ font, fill, border, numFmt, h, v, wrap }); }
+    xf('default', 0, 0, 0, 0, null, 'center');
+    xf('title', 1, 0, 0, 0, 'center', 'center');
+    xf('sub', 2, 0, 0, 0, 'center', 'center');
+    xf('band', 2, 0, 3, 0, 'center', 'center');
+    xf('head', 3, 2, 1, 0, 'center', 'center', 1);
+    xf('text', 0, 0, 1, 0, 'right', 'center', 1);
+    xf('center', 0, 0, 1, 0, 'center', 'center');
+    xf('int', 0, 0, 1, 3, 'center', 'center');
+    xf('money', 0, 0, 1, 164, 'center', 'center');
+    xf('moneyBad', 6, 0, 1, 164, 'center', 'center');
+    xf('input', 0, 5, 1, 164, 'center', 'center');
+    xf('inputInt', 0, 5, 1, 3, 'center', 'center');
+    xf('inputText', 0, 5, 1, 0, 'center', 'center');
+    xf('textBold', 4, 0, 1, 0, 'right', 'center', 1);
+    xf('totLabel', 4, 3, 1, 0, 'right', 'center');
+    xf('totInt', 4, 3, 1, 3, 'center', 'center');
+    xf('totMoney', 4, 3, 1, 164, 'center', 'center');
+    xf('finLabel', 5, 4, 2, 0, 'right', 'center');
+    xf('finMoney', 5, 4, 2, 164, 'center', 'center');
+    xf('group', 8, 3, 1, 0, 'right', 'center');
+    xf('note', 7, 0, 0, 0, 'right', 'center', 1);
+    xf('gold', 8, 0, 1, 164, 'center', 'center');
+
+    const esc = s => String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const colName = i => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+    const ref = (c, r) => colName(c) + r;
+
+    function stylesXml() {
+        const fonts = FONTS.map(f => `<font>${f.b ? '<b/>' : ''}${f.i ? '<i/>' : ''}<sz val="${f.sz}"/><color rgb="FF${f.c}"/><name val="Tajawal"/><family val="2"/></font>`).join('');
+        const fills = FILLS.map(f => f === 'none' ? '<fill><patternFill patternType="none"/></fill>' : f === 'gray125' ? '<fill><patternFill patternType="gray125"/></fill>' : `<fill><patternFill patternType="solid"><fgColor rgb="FF${f}"/><bgColor indexed="64"/></patternFill></fill>`).join('');
+        const side = (n, s) => s ? `<${n} style="${s[0]}"><color rgb="FF${s[1]}"/></${n}>` : `<${n}/>`;
+        const borders = BORDERS.map(b => b ? `<border>${side('left', b.l)}${side('right', b.r)}${side('top', b.t)}${side('bottom', b.b)}<diagonal/></border>` : '<border><left/><right/><top/><bottom/><diagonal/></border>').join('');
+        const xfs = XF.map(x => `<xf numFmtId="${x.numFmt}" fontId="${x.font}" fillId="${x.fill}" borderId="${x.border}" xfId="0"${x.numFmt ? ' applyNumberFormat="1"' : ''} applyFont="1"${x.fill ? ' applyFill="1"' : ''}${x.border ? ' applyBorder="1"' : ''} applyAlignment="1"><alignment${x.h ? ` horizontal="${x.h}"` : ''}${x.v ? ` vertical="${x.v}"` : ''}${x.wrap ? ' wrapText="1"' : ''} readingOrder="2"/></xf>`).join('');
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.00;-#,##0.00;&quot;—&quot;"/></numFmts><fonts count="${FONTS.length}">${fonts}</fonts><fills count="${FILLS.length}">${fills}</fills><borders count="${BORDERS.length}">${borders}</borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${XF.length}">${xfs}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+    }
+
+    // A cell is a value, or { v, f, s }. Strings starting with "=" are NOT treated as formulas (use f).
+    function cellXml(c, r, cell) {
+        if (cell === undefined || cell === null || cell === '') return '';
+        const o = (typeof cell === 'object') ? cell : { v: cell };
+        const s = ST[o.s || (typeof o.v === 'number' ? 'money' : 'text')] || 0;
+        const a = ref(c, r);
+        if (o.f) {
+            const cached = (o.v !== undefined && o.v !== null && o.v !== '' && isFinite(Number(o.v))) ? `<v>${Number(o.v)}</v>` : '';
+            return `<c r="${a}" s="${s}"><f>${esc(o.f)}</f>${cached}</c>`;
+        }
+        if (o.v === undefined || o.v === null || o.v === '') return `<c r="${a}" s="${s}"/>`;
+        if (typeof o.v === 'number' && isFinite(o.v)) return `<c r="${a}" s="${s}"><v>${o.v}</v></c>`;
+        return `<c r="${a}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${esc(o.v)}</t></is></c>`;
+    }
+
+    function sheetXml(sh, idx) {
+        const rowsXml = sh.rows.map((row, ri) => {
+            const r = ri + 1;
+            const ht = sh.heights && sh.heights[r] ? ` ht="${sh.heights[r]}" customHeight="1"` : '';
+            const cells = (row || []).map((cell, ci) => cellXml(ci, r, cell)).join('');
+            return `<row r="${r}"${ht}>${cells}</row>`;
+        }).join('');
+        const cols = (sh.cols || []).map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('');
+        const merges = (sh.merges || []).length ? `<mergeCells count="${sh.merges.length}">${sh.merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : '';
+        const pane = sh.freezeRow ? `<pane ySplit="${sh.freezeRow}" topLeftCell="A${sh.freezeRow + 1}" activePane="bottomLeft" state="frozen"/>` : '';
+        const drawing = sh.image ? `<drawing r:id="rId1"/>` : '';
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView rightToLeft="1" showGridLines="0" workbookViewId="0" zoomScale="110">${pane}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="20" customHeight="1"/>${cols ? `<cols>${cols}</cols>` : ''}<sheetData>${rowsXml}</sheetData>${merges}<printOptions horizontalCentered="1"/><pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="${sh.landscape ? 'landscape' : 'portrait'}" fitToWidth="1" fitToHeight="0"/><headerFooter><oddFooter>&amp;C&amp;"Tajawal"&amp;9 &amp;P / &amp;N</oddFooter></headerFooter>${drawing}</worksheet>`;
+    }
+
+    function drawingXml(img) {
+        const emu = px => Math.round(px * 9525);
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><xdr:oneCellAnchor><xdr:from><xdr:col>${img.col || 0}</xdr:col><xdr:colOff>${emu(img.offX || 6)}</xdr:colOff><xdr:row>${img.row || 0}</xdr:row><xdr:rowOff>${emu(img.offY || 6)}</xdr:rowOff></xdr:from><xdr:ext cx="${emu(img.w)}" cy="${emu(img.h)}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="CG Logo" descr="Consultancy Group"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${emu(img.w)}" cy="${emu(img.h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`;
+    }
+
+    // ---- minimal ZIP (stored, no compression) ----
+    const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+    const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_TABLE[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+    function zip(files) {
+        const enc = new TextEncoder(); const parts = []; const central = []; let offset = 0;
+        files.forEach(f => {
+            const name = enc.encode(f.name);
+            const data = typeof f.data === 'string' ? enc.encode(f.data) : f.data;
+            const crc = crc32(data);
+            const h = new DataView(new ArrayBuffer(30));
+            h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+            h.setUint16(10, 0, true); h.setUint16(12, 0x21, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true);
+            h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+            parts.push(new Uint8Array(h.buffer), name, data);
+            const c = new DataView(new ArrayBuffer(46));
+            c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+            c.setUint16(12, 0, true); c.setUint16(14, 0x21, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true);
+            c.setUint16(28, name.length, true); c.setUint32(42, offset, true);
+            central.push(new Uint8Array(c.buffer), name);
+            offset += 30 + name.length + data.length;
+        });
+        const cdSize = central.reduce((s, p) => s + p.length, 0);
+        const e = new DataView(new ArrayBuffer(22));
+        e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cdSize, true); e.setUint32(16, offset, true);
+        return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    }
+
+    function logoBytes() {
+        try {
+            const uri = (typeof COMPANY_LOGO_HD_URI !== 'undefined' && COMPANY_LOGO_HD_URI) ? COMPANY_LOGO_HD_URI : COMPANY_LOGO_LIGHT_URI;
+            const bin = atob(uri.split(',')[1]); const b = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+            return b;
+        } catch (e) { return null; }
+    }
+
+    function build(sheets) {
+        const files = [];
+        const hasImg = sheets.some(s => s.image);
+        const logo = hasImg ? logoBytes() : null;
+        sheets.forEach((s, i) => { if (s.image && !logo) s.image = null; });
+        files.push({ name: '[Content_Types].xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>${s.image ? `<Override PartName="/xl/drawings/drawing${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>` : ''}`).join('')}</Types>` });
+        files.push({ name: '_rels/.rels', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` });
+        const defNames = sheets.map((s, i) => s.printTitles ? `<definedName name="_xlnm.Print_Titles" localSheetId="${i}">'${esc(s.name).replace(/'/g, "''")}'!$${s.printTitles}:$${s.printTitles}</definedName>` : '').join('');
+        files.push({ name: 'xl/workbook.xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView rightToLeft="1"/></bookViews><sheets>${sheets.map((s, i) => `<sheet name="${esc(s.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets>${defNames ? `<definedNames>${defNames}</definedNames>` : ''}<calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>` });
+        files.push({ name: 'xl/_rels/workbook.xml.rels', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` });
+        files.push({ name: 'xl/styles.xml', data: stylesXml() });
+        sheets.forEach((s, i) => {
+            files.push({ name: `xl/worksheets/sheet${i + 1}.xml`, data: sheetXml(s, i) });
+            if (s.image) {
+                files.push({ name: `xl/worksheets/_rels/sheet${i + 1}.xml.rels`, data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${i + 1}.xml"/></Relationships>` });
+                files.push({ name: `xl/drawings/drawing${i + 1}.xml`, data: drawingXml(s.image) });
+                files.push({ name: `xl/drawings/_rels/drawing${i + 1}.xml.rels`, data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/logo.png"/></Relationships>` });
+            }
+        });
+        if (logo) files.push({ name: 'xl/media/logo.png', data: logo });
+        return zip(files);
+    }
+
+    // Standard CG report sheet:
+    // row 1 logo (top, reading-start side) · row 2 department line · row 3 title · row 4 details (gold rule under) · row 5 gap · row 6 column headers · data from row 7
+    const HEAD_ROW = 6, FIRST = 7;
+    function report({ name, title, subtitle, columns, landscape }) {
+        const n = columns.length;
+        const last = colName(n - 1);
+        const rows = [[], [{ v: 'إدارة المرافق - مدير المرافق', s: 'sub' }], [{ v: title, s: 'title' }], [{ v: subtitle || '', s: 'band' }], [], columns.map(c => ({ v: c.h, s: 'head' }))];
+        // fill merged band cells so the gold rule runs across the whole width
+        for (let i = 1; i < n; i++) rows[3][i] = { v: '', s: 'band' };
+        const sh = {
+            name: String(name || title || 'Sheet').replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 31),
+            cols: columns.map(c => c.w || 14),
+            rows,
+            merges: [`A2:${last}2`, `A3:${last}3`, `A4:${last}4`],
+            heights: { 1: 62, 2: 18, 3: 26, 4: 20, 5: 8, 6: 30 },
+            freezeRow: HEAD_ROW,
+            printTitles: HEAD_ROW,
+            landscape: !!landscape,
+            image: { col: 0, row: 0, w: 225, h: 54, offX: 8, offY: 12 }
+        };
+        sh.add = (cells, height) => { sh.rows.push(cells); if (height) sh.heights[sh.rows.length] = height; return sh.rows.length; };
+        sh.row = () => sh.rows.length + 1; // the row number the next add() will use
+        sh.merge = m => sh.merges.push(m);
+        sh.lastCol = last;
+        return sh;
+    }
+
+    function download(sheets, filename) {
+        if (currentUserRole === 'viewer') { showToast(currentLang === 'ar' ? 'الحساب ده للعرض بس' : 'View-only account', 'warning'); return; }
+        const blob = build(Array.isArray(sheets) ? sheets : [sheets]);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename.replace(/\.csv$/i, '') .replace(/\.xlsx$/i, '') + '.xlsx';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        showToast(currentLang === 'ar' ? 'تم تنزيل ملف Excel' : 'Excel downloaded', 'success');
+    }
+
+    return { build, report, download, colName, ref, FIRST, HEAD_ROW };
+})();
+
+// Parse the old CSV text (used by exports that have no dedicated sheet yet) into rows of cells
+function cgParseCsv(text) {
+    const rows = []; let row = [], cur = '', q = false;
+    const t = String(text).replace(/^﻿/, '');
+    for (let i = 0; i < t.length; i++) {
+        const ch = t[i];
+        if (q) { if (ch === '"') { if (t[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+        else if (ch === '"') q = true;
+        else if (ch === ',') { row.push(cur); cur = ''; }
+        else if (ch === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+        else if (ch !== '\r') cur += ch;
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows;
+}
+// Any CSV export -> branded Excel sheet (numbers stay numbers; title from the file name)
+function cgCsvToXlsx(content, filename) {
+    const rows = cgParseCsv(content).filter(r => r.some(c => String(c).trim() !== ''));
+    if (!rows.length) return;
+    // header = the widest of the first rows; anything above it becomes the details line
+    let hi = 0; for (let i = 0; i < Math.min(3, rows.length); i++) if (rows[i].length > rows[hi].length) hi = i;
+    const header = rows[hi];
+    const above = rows.slice(0, hi).map(r => r.filter(Boolean).join(' — ')).join(' | ');
+    const title = String(filename).replace(/\.(csv|xlsx)$/i, '').replace(/_\d{4}-\d{2}-\d{2}.*$/, '').replace(/_/g, ' ');
+    const widths = header.map((h, i) => Math.min(48, Math.max(10, String(h).length + 4, ...rows.slice(hi + 1).map(r => String(r[i] || '').length + 2))));
+    const sh = CGX.report({ name: title, title, subtitle: above || `تاريخ التقرير: ${getFormattedTodayDate(true)}`, columns: header.map((h, i) => ({ h, w: widths[i] })), landscape: header.length > 7 });
+    const isNum = v => /^-?\d+(\.\d+)?$/.test(String(v).trim());
+    rows.slice(hi + 1).forEach(r => {
+        const isTotal = /إجمالي|الإجمالي|اجمالي/.test(String(r[0] || '') + String(r[1] || ''));
+        sh.add(header.map((_, i) => {
+            const v = r[i];
+            if (v === undefined || v === '') return { v: '', s: isTotal ? 'totLabel' : 'text' };
+            if (isNum(v)) { const n = Number(v); return { v: n, s: isTotal ? (Number.isInteger(n) ? 'totInt' : 'totMoney') : (Number.isInteger(n) ? 'int' : 'money') }; }
+            return { v, s: isTotal ? 'totLabel' : (i === 0 && r.length < header.length / 2 ? 'group' : 'text') };
+        }));
+    });
+    CGX.download(sh, title.replace(/ /g, '_') + '_' + new Date().toISOString().split('T')[0]);
+}
+
+// ======================================================================
+// EXCEL EXPORTS WITH LIVE FORMULAS (same look as the program)
+// ======================================================================
+
+// Electricity sheet: change a current balance or the target and every total updates
+function exportElecToCSV() {
+    const d = elecData.draft;
+    const c = computeElec(d);
+    const F = CGX.FIRST;
+    const sh = CGX.report({
+        name: 'شحن الكهرباء',
+        title: 'بيان شحن عدادات الكهرباء للأدوار',
+        subtitle: `تاريخ الشحن: ${d.date || elecToday()}   |   الشحنة الجاية: ${elecAddDays(d.date || elecToday(), ELEC_EVERY_DAYS)}`,
+        columns: [{ h: 'م', w: 6 }, { h: 'الدور', w: 16 }, { h: 'رقم العداد', w: 15 }, { h: 'رصيد الكارت الحالي', w: 18 }, { h: 'الرصيد الجديد (الشحن)', w: 20 }, { h: 'إجمالي الرصيد بالعداد', w: 20 }, { h: 'المديونية', w: 16 }]
+    });
+    const last = F + c.rows.length - 1;
+    const S = last + 2;              // summary block starts after one empty row
+    const T = `$E$${S}`;             // target per meter
+    c.rows.forEach((r, i) => {
+        const row = F + i;
+        sh.add([
+            { v: i + 1, s: 'center' },
+            { v: r.floor, s: 'textBold' },
+            { v: String(r.meter), s: 'inputText' },
+            { v: r.current, s: 'input' },
+            r.manual ? { v: r.newBal, s: 'input' } : { f: `MAX(0,${T}-D${row})`, v: r.newBal, s: 'gold' },
+            { f: `D${row}+E${row}`, v: r.total, s: 'money' },
+            { v: r.debt, s: 'input' }
+        ], 24);
+    });
+    sh.add([]);
+    const lab = (txt, st) => { st = st || 'totLabel'; return [{ v: txt, s: st }, { v: '', s: st }, { v: '', s: st }, { v: '', s: st }]; };
+    const rng = col => `${col}${F}:${col}${last}`;
+    const block = [
+        [...lab('الإجمالي المطلوب لكل عداد'), { v: c.target, s: 'input' }],
+        [...lab('إجمالي الشحن'), { f: `SUM(${rng('E')})`, v: c.totalCharge, s: 'totMoney' }],
+        [...lab('المديونية'), { f: `SUM(${rng('G')})`, v: c.totalDebt, s: 'totMoney' }],
+        [...lab('الإجمالي بعد المديونية'), { f: `E${S + 1}+E${S + 2}`, v: c.afterDebt, s: 'totMoney' }],
+        [...lab('نسبة تحصيل للدفع بالفيزا %'), { v: c.feePct, s: 'input' }],
+        [...lab(c.feeFixed ? 'رسوم تحصيل الفيزا (المبلغ الفعلي)' : 'رسوم تحصيل الفيزا'), c.feeFixed ? { v: c.fee, s: 'input' } : { f: `ROUND(E${S + 3}*E${S + 4}/100,2)`, v: c.fee, s: 'totMoney' }],
+        [...lab('الإجمالي المطلوب', 'finLabel'), { f: `E${S + 3}+E${S + 5}`, v: c.final, s: 'finMoney' }]
+    ];
+    block.forEach((cells, i) => { const r = sh.add(cells, i === block.length - 1 ? 30 : 24); sh.merge(`A${r}:D${r}`); });
+    sh.add([]);
+    const nr = sh.add([{ v: 'الخانات بالخلفية الفاتحة بتتكتب بالإيد (الرصيد الحالي، المديونية، الإجمالي المطلوب، النسبة). الرصيد الجديد = الإجمالي المطلوب − الرصيد الحالي، وكل الإجماليات بتتحسب لوحدها.', s: 'note' }], 34);
+    sh.merge(`A${nr}:G${nr}`);
+    CGX.download(sh, `شحن_عدادات_الكهرباء_${d.date || elecToday()}`);
+}
+
+// Shared helpers for the Excel sheets below
+function cgxToday() { return new Date().toISOString().split('T')[0]; }
+function cgxTotalRow(sh, labelSpan, cells, final) {
+    const st = final ? 'finLabel' : 'totLabel';
+    const lab = [{ v: final ? 'الإجمالي النهائي' : 'الإجمالي', s: st }];
+    for (let i = 1; i < labelSpan; i++) lab.push({ v: '', s: st });
+    const r = sh.add([...lab, ...cells], final ? 30 : 24);
+    if (labelSpan > 1) sh.merge(`A${r}:${CGX.colName(labelSpan - 1)}${r}`);
+    return r;
+}
+const CGX_FLOORS = ['الدور الرابع', 'الدور الخامس', 'الدور السادس', 'الدور السابع', 'الدور الثامن', 'الدور التاسع'];
+
+// Main store: balance = total in − issued (formula), low stock flagged by formula too
+function exportInventoryToCSV() {
+    const trans = getCycleTransactions();
+    const F = CGX.FIRST;
+    const sh = CGX.report({
+        name: 'المخزن الرئيسي', title: 'كشف المخزن الرئيسي والأرصدة',
+        subtitle: `الدورة: ${activeCycleKey}   |   تاريخ التقرير: ${cgxToday()}`,
+        columns: [{ h: 'م', w: 6 }, { h: 'اسم الصنف', w: 26 }, { h: 'الفئة', w: 18 }, { h: 'الوحدة', w: 10 }, { h: 'إجمالي الوارد', w: 14 }, { h: 'المنصرف خلال الدورة', w: 16 }, { h: 'الرصيد المتبقي', w: 15 }, { h: 'حد الطلب', w: 11 }, { h: 'الحالة', w: 16 }]
+    });
+    inventory.forEach((item, i) => {
+        const r = F + i;
+        const issued = trans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
+        const rem = item.total - issued;
+        sh.add([
+            { v: i + 1, s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.cat), s: 'text' }, { v: trText(item.unit), s: 'center' },
+            { v: Number(item.total) || 0, s: 'inputInt' }, { v: issued, s: 'int' },
+            { f: `E${r}-F${r}`, v: rem, s: 'totInt' }, { v: Number(item.minLimit) || 0, s: 'inputInt' },
+            { f: `IF(G${r}<=0,"نفذ بالكامل",IF(G${r}<=H${r},"قارب على النفاذ","متوفر"))`, v: rem <= 0 ? 'نفذ بالكامل' : (rem <= item.minLimit ? 'قارب على النفاذ' : 'متوفر'), s: 'center' }
+        ]);
+    });
+    const L = F + inventory.length - 1;
+    cgxTotalRow(sh, 4, [{ f: `SUM(E${F}:E${L})`, s: 'totInt' }, { f: `SUM(F${F}:F${L})`, s: 'totInt' }, { f: `SUM(G${F}:G${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }, { v: '', s: 'totLabel' }]);
+    CGX.download(sh, `كشف_المخزن_الرئيسي_${cgxToday()}`);
+}
+
+// Issue log (filtered like the screen): total quantity by formula
+function exportHistoryToCSV() {
+    const logs = getHistoryRangeLogs();
+    const F = CGX.FIRST;
+    const range = (historyDateFrom || historyDateTo) ? `من ${historyDateFrom || '...'} إلى ${historyDateTo || '...'}` : `الدورة: ${activeCycleKey}`;
+    const sh = CGX.report({
+        name: 'سجل الحركات', title: 'سجل حركات الصرف والتدقيق',
+        subtitle: `${range}   |   الدور: ${activeFloorFilter === 'الكل' ? 'كل الأدوار' : activeFloorFilter}   |   تاريخ التقرير: ${cgxToday()}`,
+        columns: [{ h: 'م', w: 6 }, { h: 'التاريخ', w: 13 }, { h: 'الطابق', w: 15 }, { h: 'اسم الصنف', w: 24 }, { h: 'الوحدة', w: 10 }, { h: 'الكمية المنصرفة', w: 15 }, { h: 'اسم المستلم', w: 20 }, { h: 'ملاحظات', w: 24 }]
+    });
+    logs.forEach((t, i) => {
+        const item = inventory.find(x => x.id === t.itemId);
+        sh.add([{ v: i + 1, s: 'center' }, { v: t.date || '', s: 'center' }, { v: trText(t.floor), s: 'text' }, { v: item ? trText(item.name) : 'صنف غير معرف', s: 'textBold' }, { v: item ? trText(item.unit) : '', s: 'center' }, { v: Number(t.qty) || 0, s: 'int' }, { v: trText(t.recipient || ''), s: 'text' }, { v: t.notes || '', s: 'text' }]);
+    });
+    const L = F + Math.max(logs.length, 1) - 1;
+    cgxTotalRow(sh, 5, [{ f: `SUM(F${F}:F${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }, { v: '', s: 'totLabel' }]);
+    CGX.download(sh, `سجل_حركات_الصرف_${cgxToday()}`);
+}
+
+// Floors consumption: row totals and floor totals are SUM formulas
+function exportFloorsMatrixToCSV() {
+    const trans = getCycleTransactions();
+    const F = CGX.FIRST;
+    const sh = CGX.report({
+        name: 'استهلاك الأدوار', title: 'تحليل استهلاك الطوابق (4 - 9)',
+        subtitle: `الدورة: ${activeCycleKey}   |   تاريخ التقرير: ${cgxToday()}`,
+        columns: [{ h: 'م', w: 6 }, { h: 'اسم الصنف', w: 24 }, { h: 'الوحدة', w: 10 }, ...CGX_FLOORS.map(f => ({ h: f, w: 12 })), { h: 'الإجمالي', w: 12 }],
+        landscape: true
+    });
+    inventory.forEach((item, i) => {
+        const r = F + i;
+        const q = CGX_FLOORS.map(fl => trans.filter(t => t.itemId === item.id && t.floor === fl).reduce((s, t) => s + Number(t.qty), 0));
+        sh.add([{ v: i + 1, s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.unit), s: 'center' }, ...q.map(v => ({ v, s: 'int' })), { f: `SUM(D${r}:I${r})`, v: q.reduce((a, b) => a + b, 0), s: 'totInt' }]);
+    });
+    const L = F + inventory.length - 1;
+    cgxTotalRow(sh, 3, ['D', 'E', 'F', 'G', 'H', 'I', 'J'].map(c => ({ f: `SUM(${c}${F}:${c}${L})`, s: 'totInt' })));
+    CGX.download(sh, `تحليل_استهلاك_الطوابق_${cgxToday()}`);
+}
+
+// Buffet supplier purchase order: line total = qty × price, grand total = SUM
+function exportPurchaseOrderToCSV() {
+    const trans = getCycleTransactions();
+    const F = CGX.FIRST;
+    const sh = CGX.report({
+        name: 'أمر شراء البوفيه', title: 'أمر شراء للمورد (البوفيه)',
+        subtitle: `الدورة: ${activeCycleKey}   |   تاريخ التقرير: ${cgxToday()}`,
+        columns: [{ h: 'م', w: 6 }, { h: 'اسم الصنف', w: 24 }, { h: 'الوحدة', w: 10 }, { h: 'الرصيد الحالي', w: 13 }, { h: 'المنصرف', w: 11 }, { h: 'الكمية المطلوبة', w: 15 }, { h: 'سعر الوحدة', w: 13 }, { h: 'الإجمالي', w: 15 }, { h: 'ملاحظات', w: 22 }]
+    });
+    inventory.forEach((item, i) => {
+        const r = F + i;
+        const issued = trans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
+        const e = poPricingMap[item.id] || {};
+        const qty = e.qty !== undefined ? Number(e.qty) : issued;
+        const price = Number(e.unitPrice) || 0;
+        sh.add([{ v: i + 1, s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.unit), s: 'center' }, { v: item.total - issued, s: 'int' }, { v: issued, s: 'int' }, { v: qty, s: 'inputInt' }, { v: price, s: 'input' }, { f: `F${r}*G${r}`, v: +(qty * price).toFixed(2), s: 'gold' }, { v: e.notes || '', s: 'text' }]);
+    });
+    const L = F + inventory.length - 1;
+    cgxTotalRow(sh, 7, [{ f: `SUM(H${F}:H${L})`, s: 'finMoney' }, { v: '', s: 'finLabel' }], true);
+    CGX.download(sh, `أمر_شراء_المورد_${cgxToday()}`);
+}
+
+// Custody ledger: running balance = previous balance + in − out (formula on every row)
+function exportCustodyToCSV() {
+    const calculated = recalculateCustodyBalances();
+    const { rows, rawSearch } = getFilteredCustodyRows(calculated);
+    const F = CGX.FIRST;
+    const first = rows[0], lastR = rows[rows.length - 1];
+    const sh = CGX.report({
+        name: 'جرد العهدة', title: 'بيان جرد وتسوية عهدة الشركة',
+        subtitle: rows.length ? `من ${first.date} إلى ${lastR.date}${rawSearch ? `   |   صنف: ${rawSearch}` : ''}` : `تاريخ التقرير: ${cgxToday()}`,
+        columns: [{ h: 'م', w: 6 }, { h: 'التاريخ', w: 12 }, { h: 'اسم الصنف / البيان', w: 32 }, { h: 'وارد', w: 14 }, { h: 'منصرف', w: 14 }, { h: 'المتبقي', w: 15 }, { h: 'ملاحظات', w: 26 }, { h: 'اسم الفاتورة', w: 18 }]
+    });
+    rows.forEach((x, i) => {
+        const r = F + i;
+        const opening = +(x.balance - x.inflow + x.outflow).toFixed(2);
+        sh.add([
+            { v: x.serialNum, s: 'center' }, { v: x.date, s: 'center' }, { v: trText(x.desc), s: 'textBold' },
+            { v: x.inflow || 0, s: 'money' }, { v: x.outflow || 0, s: x.outflow ? 'moneyBad' : 'money' },
+            i === 0 ? { f: `${opening}+D${r}-E${r}`, v: x.balance, s: x.balance < 0 ? 'moneyBad' : 'totMoney' } : { f: `F${r - 1}+D${r}-E${r}`, v: x.balance, s: x.balance < 0 ? 'moneyBad' : 'totMoney' },
+            { v: x.notes || '', s: 'text' }, { v: custodyInvoicesMap[x.id] ? custodyInvoicesMap[x.id].name : '', s: 'text' }
+        ]);
+    });
+    const L = F + Math.max(rows.length, 1) - 1;
+    cgxTotalRow(sh, 3, [{ f: `SUM(D${F}:D${L})`, s: 'finMoney' }, { f: `SUM(E${F}:E${L})`, s: 'finMoney' }, { f: `F${L}`, s: 'finMoney' }, { v: '', s: 'finLabel' }, { v: '', s: 'finLabel' }], true);
+    CGX.download(sh, `جرد_عهدة_الشركة_${cgxToday()}`);
+}
+
+// Month comparison: offer total = consumption × price for each month, change columns by formula
+function exportFloorsCompareToCSV() {
+    const { months, rows } = buildFloorsCompareData();
+    if (!months.length) return;
+    const F = CGX.FIRST;
+    const cols = [{ h: 'م', w: 6 }, { h: 'الصنف', w: 22 }, { h: 'الوحدة', w: 9 }];
+    months.forEach(k => { const l = cycleShortLabel(k); cols.push({ h: `استهلاك ${l}`, w: 13 }, { h: `سعر ${l}`, w: 12 }, { h: `إجمالي العرض ${l}`, w: 15 }); });
+    const multi = months.length >= 2;
+    if (multi) cols.push({ h: 'فرق الاستهلاك', w: 13 }, { h: 'فرق السعر', w: 12 }, { h: 'فرق الإجمالي', w: 14 });
+    const sh = CGX.report({ name: 'مقارنة الشهور', title: 'مقارنة الشهور: الاستهلاك وسعر الشراء وإجمالي العرض', subtitle: `الأدوار: ${floorsCompareFloor === 'الكل' ? 'كل الأدوار' : floorsCompareFloor}   |   تاريخ التقرير: ${cgxToday()}`, columns: cols, landscape: true });
+    const C = CGX.colName;
+    rows.forEach((x, i) => {
+        const r = F + i;
+        const cells = [{ v: i + 1, s: 'center' }, { v: trText(x.item.name), s: 'textBold' }, { v: trText(x.item.unit), s: 'center' }];
+        x.cells.forEach((c, m) => {
+            const q = 3 + m * 3;
+            cells.push({ v: c.qty, s: 'int' }, { v: c.price, s: 'input' }, { f: `${C(q)}${r}*${C(q + 1)}${r}`, v: c.total, s: 'gold' });
+        });
+        if (multi) {
+            const a = 3, b = 3 + (months.length - 1) * 3;
+            cells.push({ f: `${C(b)}${r}-${C(a)}${r}`, s: 'int' }, { f: `${C(b + 1)}${r}-${C(a + 1)}${r}`, s: 'money' }, { f: `${C(b + 2)}${r}-${C(a + 2)}${r}`, s: 'money' });
+        }
+        sh.add(cells);
+    });
+    const L = F + Math.max(rows.length, 1) - 1;
+    const tot = [];
+    months.forEach((k, m) => { const q = 3 + m * 3; tot.push({ f: `SUM(${C(q)}${F}:${C(q)}${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }, { f: `SUM(${C(q + 2)}${F}:${C(q + 2)}${L})`, s: 'totMoney' }); });
+    if (multi) { const a = 3, b = 3 + (months.length - 1) * 3; const tr = L + 1; tot.push({ f: `${C(b)}${tr}-${C(a)}${tr}`, s: 'totInt' }, { v: '', s: 'totLabel' }, { f: `${C(b + 2)}${tr}-${C(a + 2)}${tr}`, s: 'totMoney' }); }
+    cgxTotalRow(sh, 3, tot);
+    CGX.download(sh, `مقارنة_الشهور_${cgxToday()}`);
+}
+
+// Floors by department: needed = offices × per office, missing = MAX(0, needed − counted), free offices = offices − staff
+function exportDeptsToCSV() {
+    const F = CGX.FIRST;
+    const sh = CGX.report({
+        name: 'الأقسام', title: 'تحليل الطوابق بالأقسام',
+        subtitle: `تاريخ التقرير: ${cgxToday()}`,
+        columns: [{ h: 'الدور', w: 14 }, { h: 'القسم / المكتب', w: 26 }, { h: 'إجمالي المكاتب', w: 13 }, { h: 'الموظفين الموجودين', w: 14 }, { h: 'مكاتب فاضية للتعاقد', w: 15 }, { h: 'الغرض', w: 20 }, { h: 'لكل مكتب', w: 10 }, { h: 'المطلوب', w: 11 }, { h: 'الموجود فعلاً', w: 13 }, { h: 'محتاج شراء', w: 12 }, { h: 'ملاحظات', w: 22 }],
+        landscape: true
+    });
+    DEPT_FLOORS.forEach(fl => {
+        const depts = deptLayout.filter(d => d.floor === fl);
+        if (!depts.length) return;
+        const gr = sh.add([{ v: fl, s: 'group' }, ...Array(10).fill({ v: '', s: 'group' })]);
+        sh.merge(`A${gr}:K${gr}`);
+        depts.forEach(d => {
+            const items = (d.items || []).length ? d.items : [{ name: '', per: 0, have: null }];
+            const top = sh.row();
+            items.forEach((it, k) => {
+                const r = sh.row();
+                const counted = !isUncounted(it.have);
+                sh.add([
+                    { v: k === 0 ? fl : '', s: 'text' }, { v: k === 0 ? d.name : '', s: k === 0 ? 'textBold' : 'text' },
+                    k === 0 ? { v: Number(d.offices) || 0, s: 'inputInt' } : { v: '', s: 'text' },
+                    k === 0 ? (isUncounted(d.staff) ? { v: '', s: 'inputInt' } : { v: Number(d.staff), s: 'inputInt' }) : { v: '', s: 'text' },
+                    k === 0 ? { f: `IF(D${r}="","",C${r}-D${r})`, s: 'totInt' } : { v: '', s: 'text' },
+                    { v: it.name || '', s: 'text' }, { v: Number(it.per) || 0, s: 'inputInt' },
+                    { f: `$C$${top}*G${r}`, v: deptItemNeed(d, it), s: 'int' },
+                    counted ? { v: Number(it.have), s: 'inputInt' } : { v: '', s: 'inputInt' },
+                    { f: `IF(I${r}="","",MAX(0,H${r}-I${r}))`, s: 'totInt' },
+                    { v: k === 0 ? (d.notes || '') : '', s: 'text' }
+                ]);
+            });
+        });
+    });
+    const L = sh.rows.length;
+    sh.add([]);
+    cgxTotalRow(sh, 2, [{ f: `SUM(C${F}:C${L})`, s: 'totInt' }, { f: `SUM(D${F}:D${L})`, s: 'totInt' }, { f: `SUM(E${F}:E${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }, { v: '', s: 'totLabel' }, { f: `SUM(H${F}:H${L})`, s: 'totInt' }, { f: `SUM(I${F}:I${L})`, s: 'totInt' }, { f: `SUM(J${F}:J${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }]);
+    CGX.download(sh, `تحليل_الطوابق_بالأقسام_${cgxToday()}`);
+}
+
+// Company assets: per-floor counts, company total = SUM, value = total × unit price
+function exportFurnitureToCSV() {
+    const F = CGX.FIRST;
+    const sh = CGX.report({
+        name: 'جرد أصول الشركة', title: 'جرد أصول الشركة (الأدوار 4 - 9)',
+        subtitle: `تاريخ التقرير: ${cgxToday()}`,
+        columns: [{ h: 'الكود', w: 8 }, { h: 'اسم الصنف', w: 26 }, { h: 'المجموعة', w: 18 }, ...CGX_FLOORS.map(f => ({ h: f, w: 11 })), { h: 'إجمالي الشركة', w: 13 }, { h: 'سعر الوحدة', w: 12 }, { h: 'إجمالي القيمة', w: 15 }],
+        landscape: true
+    });
+    furnitureInventory.forEach((item, i) => {
+        const r = sh.row();
+        const q = CGX_FLOORS.map(fl => Number((item.floors || {})[fl]) || 0);
+        const sum = q.reduce((a, b) => a + b, 0);
+        const fin = getFurnitureItemFinancials(item, sum);
+        sh.add([
+            { v: item.code || String(i + 1), s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.cat || ''), s: 'text' },
+            ...q.map(v => ({ v, s: 'inputInt' })),
+            { f: `SUM(D${r}:I${r})`, v: sum, s: 'totInt' },
+            fin.hasBatches ? { v: fin.priceDisplay, s: 'center' } : { v: fin.unitPrice || 0, s: 'input' },
+            fin.hasBatches ? { v: fin.totalCost, s: 'money' } : { f: `J${r}*K${r}`, v: fin.totalCost, s: 'gold' }
+        ]);
+    });
+    const L = F + furnitureInventory.length - 1;
+    cgxTotalRow(sh, 3, [...['D', 'E', 'F', 'G', 'H', 'I', 'J'].map(c => ({ f: `SUM(${c}${F}:${c}${L})`, s: 'totInt' })), { v: '', s: 'totLabel' }, { f: `SUM(L${F}:L${L})`, s: 'totMoney' }]);
+    CGX.download(sh, `جرد_أصول_الشركة_${cgxToday()}`);
+}
+
+// Senior management HQ
+function exportHqToCSV() {
+    const F = CGX.FIRST;
+    const sh = CGX.report({
+        name: 'مقر الإدارة العليا', title: 'جرد وتجهيزات مقر الإدارة العليا',
+        subtitle: `تاريخ التقرير: ${cgxToday()}`,
+        columns: [{ h: 'الكود', w: 8 }, { h: 'اسم الصنف / البيان', w: 28 }, { h: 'المقاس', w: 16 }, { h: 'المجموعة', w: 18 }, { h: 'العدد', w: 10 }, { h: 'الحالة', w: 14 }, { h: 'ملاحظات', w: 30 }]
+    });
+    hqInventory.forEach((item, i) => {
+        sh.add([{ v: item.code || String(i + 1), s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: item.size || '', s: 'center' }, { v: trText(item.cat || ''), s: 'text' }, { v: Number(item.qty) || 0, s: 'inputInt' }, { v: trText(item.status || 'ممتاز'), s: 'center' }, { v: item.notes || '', s: 'text' }]);
+    });
+    const L = F + hqInventory.length - 1;
+    cgxTotalRow(sh, 4, [{ f: `SUM(E${F}:E${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }, { v: '', s: 'totLabel' }]);
+    CGX.download(sh, `جرد_مقر_الإدارة_العليا_${cgxToday()}`);
 }
 
 </script>
