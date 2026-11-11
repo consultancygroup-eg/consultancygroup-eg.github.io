@@ -2644,7 +2644,7 @@ function renderHistoryTable() {
     const t = I18N[currentLang];
 
     if (logs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">${currentLang === 'ar' ? 'لا توجد حركات مسجلة لهذه الدورة أو المرشحات المحددة' : 'No transactions recorded for this cycle'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">${currentLang === 'ar' ? 'لا توجد حركات مسجلة لهذه الدورة أو المرشحات المحددة' : 'No transactions recorded for this cycle'}</td></tr>`;
         return;
     }
 
@@ -2657,7 +2657,8 @@ function renderHistoryTable() {
             <td style="white-space: nowrap;">${log.date || '—'}</td>
             <td><strong style="color: var(--primary);">${trText(log.floor)}</strong></td>
             <td style="font-weight: 700;">${item ? trText(item.name) : (currentLang === 'ar' ? 'صنف غير معرف' : 'Unknown Item')}${log.addedLater ? ` <span class="badge badge-secondary" title="${currentLang === 'ar' ? 'اتضاف بعد التسجيل' : 'Added later'}">${currentLang === 'ar' ? 'مضاف' : 'added'}</span>` : ''}</td>
-            <td style="text-align: center; font-weight: 800; color: var(--warning);">${log.qty} ${item ? trText(item.unit) : ''}</td>
+            <td style="text-align: center; color: var(--text-muted);">${item ? trText(item.unit) : '—'}</td>
+            <td style="text-align: center; font-weight: 800; color: var(--warning);">${log.qty}</td>
             <td>${trText(log.recipient || '')}</td>
             <td style="text-align: center; white-space: nowrap;" class="no-print">
                 <button onclick="printSingleVoucher(${log.id})" class="btn btn-sm btn-secondary" title="PDF"><i data-lucide="printer" style="width:13px;height:13px;"></i></button>
@@ -5200,11 +5201,11 @@ function exportInventoryToCSV() {
 function exportHistoryToCSV() {
     const currentCycleTrans = getHistoryRangeLogs();
     let csvContent = '\uFEFF';
-    csvContent += 'رقم,التاريخ,الطابق,اسم الصنف,الكمية المنصرفة,اسم المستلم,ملاحظات\n';
+    csvContent += 'رقم,التاريخ,الطابق,اسم الصنف,الوحدة,الكمية المنصرفة,اسم المستلم,ملاحظات\n';
 
     currentCycleTrans.forEach((t, idx) => {
         const item = inventory.find(i => i.id === t.itemId);
-        csvContent += `"${idx + 1}","${t.date}","${t.floor}","${item ? item.name : 'صنف غير معرف'}","${t.qty}","${t.recipient}","${t.notes || ''}"\n`;
+        csvContent += `"${idx + 1}","${t.date}","${t.floor}","${item ? item.name : 'صنف غير معرف'}","${item ? item.unit : ''}","${t.qty}","${t.recipient}","${t.notes || ''}"\n`;
     });
 
     downloadCSV(csvContent, `سجل_صرف_الطوابق_${new Date().toISOString().split('T')[0]}.csv`);
