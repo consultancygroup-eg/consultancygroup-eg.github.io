@@ -2160,6 +2160,12 @@ body.role-viewer button[onclick*="moveFurnitureItem"],
 body.role-viewer button[onclick*="moveHqItem"],
 body.role-viewer button[onclick*="openHqManualJump"],
 body.role-viewer button[onclick*="openFurnManualJump"],
+body.role-viewer button[onclick*="CSV"],
+body.role-viewer button[onclick*="removeCustodyInvoice"],
+body.role-viewer button[onclick*="downloadCustodyInvoiceFile"],
+body.role-viewer button[onclick*="scanInvoiceFromPrinter"],
+body.role-viewer button[onclick*="openPhoneCameraForInvoice"],
+body.role-viewer button[onclick*="triggerDirectRowFileAttach"],
 body.role-viewer #btn-dispense-confirm {
     display: none !important;
 }
@@ -2801,3 +2807,71 @@ body.dark .pay-rem-box { background: rgba(217, 170, 40, 0.1); }
 .inst-paid { flex-wrap: wrap; }
 .inst-paid label { display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; }
 .inst-paid .form-control { width: auto; max-width: 9.5rem; padding: 0.25rem 0.4rem; font-size: 0.76rem; }
+
+/* ---------- Toolbar / search / date range (same look as the CG projects app) ---------- */
+.cg-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.cg-search { flex: 1 1 260px; display: flex; align-items: center; gap: 8px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 9px; padding-inline: 12px; }
+.cg-search input { border: 0 !important; background: transparent !important; outline: 0; padding: 10px 0; width: 100%; box-shadow: none !important; font: inherit; color: var(--text-primary); }
+.cg-search:focus-within { border-color: var(--brand-gold); }
+.cg-search svg { width: 17px; height: 17px; color: var(--text-muted); flex: none; }
+.cg-period { display: flex; align-items: center; gap: 6px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 9px; padding: 3px 8px; font-size: 13px; color: var(--text-secondary); }
+.cg-period input.f { border: 0; background: transparent; padding: 6px 2px; color: var(--text-primary); font: inherit; font-size: 14px; max-width: 150px; }
+.cg-period input.f:focus { outline: 2px solid var(--brand-gold); outline-offset: 0; border-radius: 6px; }
+.cg-x { all: unset; cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; color: var(--text-muted); font-size: 12px; }
+.cg-x:hover { background: var(--bg-subtle); color: var(--text-primary); }
+select.cg-f { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 9px; padding: 9px 10px; font: inherit; color: var(--text-primary); }
+select.cg-f:focus { outline: 2px solid var(--brand-gold); outline-offset: 0; }
+/* Excel / PDF buttons: white box, thin line, gold on hover, ⬇ before the word */
+.btn.cg-dl { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 9px; font-weight: 700; box-shadow: none; }
+.btn.cg-dl:hover { border-color: var(--brand-gold); background: var(--bg-card); color: var(--text-primary); transform: none; }
+.btn.cg-dl .cg-dl-arrow { color: var(--primary); font-weight: 900; }
+
+/* Edit issue window: forgotten items list */
+.et-extras { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.et-extra-row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--primary-light); }
+.et-extra-row span { flex: 1; font-weight: 700; }
+
+/* Month comparison (floor analysis) */
+.floors-compare { margin: 0 1.4rem 1.2rem; padding: 1rem 1.1rem; border: 1px solid var(--border-color); border-top: 3px solid var(--brand-gold); border-radius: 10px; background: var(--bg-card); display: flex; flex-direction: column; gap: 0.8rem; }
+.floors-compare-head { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; }
+.floors-compare-head h3 { margin: 0; font-size: 1rem; font-weight: 800; color: var(--text-primary); }
+.floors-compare-head span { font-size: 0.78rem; color: var(--text-muted); }
+.floors-compare-summary { display: flex; flex-wrap: wrap; gap: 8px 22px; background: var(--brand-rail); border-radius: 10px; padding: 12px 16px; }
+.floors-compare-summary:empty { display: none; }
+.floors-compare-summary div { display: flex; flex-direction: column; }
+.floors-compare-summary span, .floors-compare-summary small { color: #b8b2a3; font-size: 12px; }
+.floors-compare-summary b { color: var(--brand-gold); font-size: 16px; font-variant-numeric: tabular-nums; }
+.floors-compare-table th, .floors-compare-table td { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mp-rows { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 50vh; overflow-y: auto; }
+.mp-row { display: grid; grid-template-columns: 1fr 140px; gap: 10px; align-items: center; font-weight: 700; font-size: 0.85rem; }
+.mp-row small { color: var(--text-muted); font-weight: 400; }
+
+/* Floors by department */
+.depts-summary { display: flex; flex-wrap: wrap; gap: 8px 26px; background: var(--brand-rail); border-radius: 10px; padding: 12px 16px; }
+.depts-summary div { display: flex; flex-direction: column; }
+.depts-summary span { color: #b8b2a3; font-size: 12px; }
+.depts-summary b { color: var(--brand-gold); font-size: 17px; font-variant-numeric: tabular-nums; }
+.depts-buy { border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 14px; background: var(--bg-card); }
+.depts-buy-title { font-weight: 800; font-size: 0.88rem; margin-bottom: 6px; color: var(--text-primary); }
+.depts-buy-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.depts-buy-chip { border: 1px solid var(--border-color); border-radius: 999px; padding: 3px 12px; font-size: 0.82rem; background: var(--primary-light); }
+.depts-buy-chip b { color: var(--danger); }
+.depts-floors { display: flex; flex-direction: column; gap: 1rem; }
+.dept-floor { border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; background: var(--bg-card); }
+.dept-floor-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-bottom: 2px solid var(--brand-gold); }
+.dept-floor-head h3 { margin: 0; font-size: 1rem; font-weight: 800; color: var(--text-primary); }
+.dept-floor-head span { color: var(--text-muted); font-size: 0.82rem; flex: 1; }
+.dept-table th small { font-weight: 400; opacity: 0.8; }
+.dept-row { cursor: pointer; }
+.dept-row:hover td { background: var(--primary-light); }
+.dept-sub { font-size: 0.75rem; color: var(--text-muted); }
+.dept-hn { font-weight: 700; font-variant-numeric: tabular-nums; }
+.dept-short { display: inline-block; margin-inline-start: 6px; color: var(--danger); font-weight: 800; font-size: 0.8rem; }
+.dept-items-table td { padding: 4px 6px; }
+
+/* Custody search/filter row: same light toolbar as the CG projects app */
+.custody-compact-filter-bar { background: transparent; border: 0; padding: 0; gap: 10px; justify-content: flex-start; }
+.custody-compact-filter-bar .cg-search { flex: 1 1 260px; }
+.custody-compact-filter-bar select.form-control { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 9px; padding: 9px 10px; height: auto; }
+.hq-row-click { cursor: pointer; }
+.hq-row-click:hover td { background: var(--primary-light); }

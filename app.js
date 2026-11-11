@@ -876,11 +876,48 @@ let custodyInvoicesMap = JSON.parse(localStorage.getItem('buffet_v9_custody_invo
 let poPricingMap = JSON.parse(localStorage.getItem('buffet_v9_po_pricing')) || {};
 let supplierPOs = JSON.parse(localStorage.getItem('buffet_v9_supplier_pos')) || JSON.parse(JSON.stringify(SEED_DIRECT_SUPPLIER_POS));
 let monthlyCoreExpenses = JSON.parse(localStorage.getItem('buffet_v9_monthly_core')) || JSON.parse(JSON.stringify(SEED_MONTHLY_CORE_EXPENSES));
+
+// --- Floors by department: offices per department and what each office holds ---
+// item.per = how many per office; item.have = counted on site (null = not counted yet)
+const DEPT_KITS = {
+    staff: [{ name: 'مكتب', per: 1 }, { name: 'كرسي', per: 1 }, { name: 'لوكر', per: 1 }],
+    manager: [{ name: 'مكتب مدير', per: 1 }, { name: 'كرسي مدير', per: 1 }, { name: 'ترابيزة أمام المكتب', per: 1 }, { name: 'كرسي ضيوف', per: 2 }, { name: 'لوكر', per: 1 }]
+};
+function seedDept(id, floor, name, offices, kit, extra) {
+    return Object.assign({ id, floor, name, group: '', offices, notes: '', items: DEPT_KITS[kit].map(k => ({ name: k.name, per: k.per, have: null })) }, extra || {});
+}
+const SEED_DEPTS = [
+    seedDept(1, 'الدور التاسع', 'قسم مدراء المشروعات', 5, 'manager', { notes: 'مع باقي الأغراض' }),
+    seedDept(2, 'الدور التاسع', 'قسم العروض', 9, 'staff'),
+    seedDept(3, 'الدور التاسع', 'مكتب مدير قسم العروض', 1, 'manager', { group: 'قسم العروض' }),
+    seedDept(4, 'الدور الثامن', 'قسم الكهرباء', 0, 'staff', { notes: 'الدور كامل لقسم الكهرباء' }),
+    seedDept(5, 'الدور السابع', 'قسم المعماري', 0, 'staff', { notes: 'باقي مكاتب الدور' }),
+    seedDept(6, 'الدور السابع', 'مكتب مدير قسم المعماري', 1, 'manager', { group: 'قسم المعماري' }),
+    seedDept(7, 'الدور السابع', 'قسم حافظ الوثائق DC', 3, 'staff'),
+    seedDept(8, 'الدور السابع', 'قسم IT', 4, 'staff'),
+    seedDept(9, 'الدور السادس', 'مكتب المدير الإقليمي', 1, 'manager'),
+    seedDept(10, 'الدور السادس', 'مكتب مديرة HR', 1, 'manager'),
+    seedDept(11, 'الدور السادس', 'مكتب مدير المرافق مع المحاسب', 1, 'staff', { items: [{ name: 'مكتب', per: 2, have: null }, { name: 'كرسي', per: 2, have: null }, { name: 'لوكر', per: 2, have: null }] }),
+    seedDept(12, 'الدور السادس', 'قسم HR', 4, 'staff'),
+    seedDept(13, 'الدور السادس', 'قسم الجرافيك', 6, 'staff'),
+    seedDept(14, 'الدور السادس', 'التصميم — معماري', 0, 'staff', { group: 'قسم التصميم' }),
+    seedDept(15, 'الدور السادس', 'التصميم — انتريور', 0, 'staff', { group: 'قسم التصميم' }),
+    seedDept(16, 'الدور السادس', 'التصميم — لاندسكيب', 0, 'staff', { group: 'قسم التصميم' }),
+    seedDept(17, 'الدور الخامس', 'قسم الميكانيكا', 0, 'staff'),
+    seedDept(18, 'الدور الخامس', 'قسم الحصر QS', 15, 'staff'),
+    seedDept(19, 'الدور الخامس', 'مكتب مدير IT', 1, 'manager'),
+    seedDept(20, 'الدور الرابع', 'قسم الإنشائي', 15, 'staff'),
+    seedDept(21, 'الدور الرابع', 'قسم BIM', 15, 'staff'),
+    seedDept(22, 'الدور الرابع', 'قسم EI', 0, 'staff')
+];
+let deptLayout = JSON.parse(localStorage.getItem('buffet_v9_depts')) || JSON.parse(JSON.stringify(SEED_DEPTS));
 let activeCustodySubtab = 'ledger';
 let custodyCameraStream = null;
 
 let cycleStartDay = Number(localStorage.getItem('buffet_v9_cycle_day')) || 19;
 let activeCycleKey = 'CURRENT';
+let historyDateFrom = '';
+let historyDateTo = '';
 
 // Active UI filters
 let activeModule = 'buffet'; // 'buffet' | 'furniture' | 'hq' | 'custody'
@@ -1549,16 +1586,16 @@ const I18N = {
         btnAddItem: 'إضافة صنف',
         btnExportBackup: 'تصدير نسخة احتياطية (JSON)',
         btnImportBackup: 'استعادة من ملف',
-        btnExportExcel: 'تصدير إكسيل (CSV)',
+        btnExportExcel: 'Excel',
         btnResetSystem: 'إصلاح وتصفير النظام',
         btnSetCycle: 'ضبط بداية الدورة',
         btnSave: 'حفظ التعديلات',
         btnCancel: 'إلغاء',
-        btnPrint: 'طباعة التقرير',
-        btnPrintVoucher: 'طباعة سند الصرف',
+        btnPrint: 'PDF',
+        btnPrintVoucher: 'PDF',
         btnDelete: 'حذف',
         btnConfirmIssue: 'تأكيد وحفظ الصرف',
-        btnConfirmPrintIssue: 'حفظ وطباعة إذن الصرف',
+        btnConfirmPrintIssue: 'حفظ + PDF',
 
         // KPI Labels
         kpiItems: 'أنواع الأصناف المسجلة',
@@ -1608,16 +1645,16 @@ const I18N = {
         btnAddItem: 'Add Item',
         btnExportBackup: 'Export Backup (JSON)',
         btnImportBackup: 'Restore from File',
-        btnExportExcel: 'Export to Excel (CSV)',
+        btnExportExcel: 'Excel',
         btnResetSystem: 'Reset & Format System',
         btnSetCycle: 'Cycle Settings',
         btnSave: 'Save Changes',
         btnCancel: 'Cancel',
-        btnPrint: 'Print Report',
-        btnPrintVoucher: 'Print Issue Voucher',
+        btnPrint: 'PDF',
+        btnPrintVoucher: 'PDF',
         btnDelete: 'Delete',
         btnConfirmIssue: 'Save Transaction',
-        btnConfirmPrintIssue: 'Save & Print Voucher',
+        btnConfirmPrintIssue: 'Save + PDF',
 
         // KPI Labels
         kpiItems: 'Registered Item Types',
@@ -1697,6 +1734,7 @@ function persistState() {
     localStorage.setItem('buffet_v9_po_pricing', JSON.stringify(poPricingMap));
     localStorage.setItem('buffet_v9_supplier_pos', JSON.stringify(supplierPOs));
     localStorage.setItem('buffet_v9_monthly_core', JSON.stringify(monthlyCoreExpenses));
+    localStorage.setItem('buffet_v9_depts', JSON.stringify(deptLayout));
     localStorage.setItem('buffet_v9_cycle_day', cycleStartDay);
     renderAll();
 
@@ -1786,6 +1824,9 @@ function renderAll() {
     renderPurchaseOrder();
     renderFurnitureView();
     renderFurnitureMatrix();
+    const cmpCard = document.getElementById('floors-compare-card');
+    if (cmpCard && cmpCard.style.display !== 'none') renderFloorsCompare();
+    renderDeptsView();
     renderHqView();
     if (typeof renderCustodyModule === 'function') {
         renderCustodyModule();
@@ -2023,34 +2064,66 @@ function renderInventoryTable() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td style="color: var(--text-muted);">${idx + 1}</td>
-            <td>
-                <input type="text" class="table-input" value="${trText(item.name)}" onchange="updateItemField(${item.id}, 'name', this.value)" style="font-weight: 700; min-width: 150px;">
-            </td>
-            <td>
-                <select class="table-input" onchange="updateItemField(${item.id}, 'cat', this.value)">
-                    <option value="مشروبات وضيافة" ${item.cat === 'مشروبات وضيافة' ? 'selected' : ''}>${trText('مشروبات وضيافة')}</option>
-                    <option value="منظفات ومطهرات" ${item.cat === 'منظفات ومطهرات' ? 'selected' : ''}>${trText('منظفات ومطهرات')}</option>
-                    <option value="مناشف ومناديل" ${item.cat === 'مناشف ومناديل' ? 'selected' : ''}>${trText('مناشف ومناديل')}</option>
-                    <option value="أدوات ونظافة" ${item.cat === 'أدوات ونظافة' ? 'selected' : ''}>${trText('أدوات ونظافة')}</option>
-                </select>
-            </td>
-            <td style="text-align: center;">
-                <input type="text" class="table-input" value="${trText(item.unit)}" onchange="updateItemField(${item.id}, 'unit', this.value)" style="width: 80px; text-align: center;">
-            </td>
-            <td style="text-align: center;">
-                <input type="number" min="0" class="table-input" value="${item.total}" onchange="updateItemField(${item.id}, 'total', Number(this.value))" style="width: 85px; text-align: center; font-weight: 800;">
-            </td>
+            <td style="font-weight: 700;">${trText(item.name)}</td>
+            <td><span class="badge badge-secondary">${trText(item.cat)}</span></td>
+            <td style="text-align: center; color: var(--text-muted);">${trText(item.unit)}</td>
+            <td style="text-align: center; font-weight: 800;">${item.total}</td>
             <td style="text-align: center; font-weight: 800; color: var(--warning);">${issued}</td>
             <td style="text-align: center; font-weight: 800; color: ${remaining <= item.minLimit ? 'var(--danger)' : 'var(--success)'};">${remaining}</td>
-            <td style="text-align: center;">
-                <input type="number" min="0" class="table-input" value="${item.minLimit}" onchange="updateItemField(${item.id}, 'minLimit', Number(this.value))" style="width: 70px; text-align: center;">
-            </td>
-            <td style="text-align: center;" class="no-print">
-                <button onclick="deleteItem(${item.id})" class="btn btn-sm btn-danger" title="${currentLang === 'ar' ? 'حذف الصنف' : 'Delete item'}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
+            <td style="text-align: center;">${item.minLimit}</td>
+            <td style="text-align: center; white-space: nowrap;" class="no-print">
+                ${currentUserRole === 'viewer' ? '' : `<button onclick="openEditItemModal(${item.id})" class="btn btn-sm btn-secondary"><i data-lucide="pencil" style="width:13px;height:13px;"></i> ${currentLang === 'ar' ? 'تعديل' : 'Edit'}</button>
+                <button onclick="deleteItem(${item.id})" class="btn btn-sm btn-danger" title="${currentLang === 'ar' ? 'حذف' : 'Delete'}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>`}
             </td>
         `;
         tbody.appendChild(tr);
     });
+}
+
+// Main store rows are locked; editing goes through this window
+function openEditItemModal(id) {
+    if (currentUserRole === 'viewer') return;
+    const item = inventory.find(i => i.id === id);
+    if (!item) return;
+    document.getElementById('ei-id').value = id;
+    document.getElementById('ei-name').value = item.name;
+    document.getElementById('ei-cat').value = item.cat;
+    document.getElementById('ei-unit').value = item.unit;
+    document.getElementById('ei-total').value = item.total;
+    document.getElementById('ei-min').value = item.minLimit;
+    openModal('modal-edit-item');
+}
+function saveEditItem() {
+    if (currentUserRole === 'viewer') return;
+    const item = inventory.find(i => i.id === Number(document.getElementById('ei-id').value));
+    if (!item) return;
+    const name = document.getElementById('ei-name').value.trim();
+    const unit = document.getElementById('ei-unit').value.trim();
+    if (!name || !unit) {
+        showToast(currentLang === 'ar' ? 'اكتب اسم الصنف والوحدة' : 'Enter name and unit', 'warning');
+        return;
+    }
+    item.name = name;
+    item.cat = document.getElementById('ei-cat').value;
+    item.unit = unit;
+    item.total = Math.max(0, Number(document.getElementById('ei-total').value) || 0);
+    item.minLimit = Math.max(0, Number(document.getElementById('ei-min').value) || 0);
+    item.updatedAt = new Date().toISOString();
+    persistState();
+    closeModal('modal-edit-item');
+    showToast(currentLang === 'ar' ? 'تم حفظ التعديل' : 'Changes saved', 'success');
+}
+function printInventoryReport() {
+    const isAr = currentLang === 'ar';
+    const trans = getCycleTransactions();
+    let body = '';
+    inventory.forEach((item, idx) => {
+        const issued = trans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
+        const remaining = item.total - issued;
+        body += `<tr><td style="text-align:center;">${idx + 1}</td><td class="print-item-name" style="text-align:right !important;">${trText(item.name)}</td><td>${trText(item.cat)}</td><td style="text-align:center;">${trText(item.unit)}</td><td style="text-align:center;">${item.total}</td><td style="text-align:center;">${issued}</td><td style="text-align:center;">${remaining}</td><td style="text-align:center;">${item.minLimit}</td></tr>`;
+    });
+    const head = `<tr><th style="text-align:center;">#</th><th>${isAr ? 'اسم الصنف' : 'Item'}</th><th>${isAr ? 'الفئة' : 'Category'}</th><th style="text-align:center;">${isAr ? 'الوحدة' : 'Unit'}</th><th style="text-align:center;">${isAr ? 'إجمالي الوارد' : 'Total in'}</th><th style="text-align:center;">${isAr ? 'المنصرف' : 'Issued'}</th><th style="text-align:center;">${isAr ? 'الرصيد' : 'Balance'}</th><th style="text-align:center;">${isAr ? 'حد الطلب' : 'Min'}</th></tr>`;
+    printCgTable(isAr ? 'كشف المخزن الرئيسي والأرصدة' : 'Main Store Balances', `${isAr ? 'الدورة:' : 'Cycle:'} ${activeCycleKey} | ${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`, 8, head, body, '');
 }
 
 function updateItemField(id, field, value) {
@@ -2271,6 +2344,224 @@ function quickIssueItem(itemId) {
     }
 }
 
+// --- MONTH COMPARISON (consumption, purchase price, offer total per month) ---
+let floorsCompareMonths = [];   // selected cycle keys, oldest first
+let floorsCompareFloor = 'الكل';
+
+function getAllCycleKeys() {
+    const keys = new Set([getCycleKeyForDate(new Date().toISOString().split('T')[0])]);
+    transactions.forEach(t => { if (t.date) keys.add(getCycleKeyForDate(t.date)); });
+    Object.values(poPricingMap).forEach(e => { if (e && e.prices) Object.keys(e.prices).forEach(k => keys.add(k)); });
+    return Array.from(keys).sort();
+}
+function cycleShortLabel(key) {
+    // "2026-10-19 / 2026-11-18" -> "أكتوبر/نوفمبر 2026" (the cycle spans two calendar months)
+    const from = String(key).split(' / ')[0];
+    const [y, m] = from.split('-').map(Number);
+    const ar = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const en = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    if (!y || !m) return key;
+    const n = m % 12; // index of the next month
+    const y2 = m === 12 ? y + 1 : y;
+    if (cycleStartDay <= 1) return currentLang === 'ar' ? `${ar[m - 1]} ${y}` : `${en[m - 1]} ${y}`;
+    return currentLang === 'ar' ? `${ar[m - 1]}/${ar[n]} ${y2}` : `${en[m - 1]}/${en[n]} ${y2}`;
+}
+// Price for an item in a month: that month's saved price, else the last earlier one, else the current price
+function getItemPriceForCycle(itemId, key) {
+    const e = poPricingMap[itemId] || {};
+    const prices = e.prices || {};
+    if (prices[key] !== undefined) return { price: Number(prices[key]) || 0, exact: true };
+    const earlier = Object.keys(prices).filter(k => k < key).sort().pop();
+    if (earlier) return { price: Number(prices[earlier]) || 0, exact: false };
+    return { price: Number(e.unitPrice) || 0, exact: false };
+}
+function toggleFloorsCompare(show) {
+    const box = document.getElementById('floors-compare-card');
+    if (!box) return;
+    const open = show !== undefined ? show : box.style.display === 'none';
+    box.style.display = open ? '' : 'none';
+    if (open) {
+        if (floorsCompareMonths.length === 0) floorsCompareMonths = getAllCycleKeys().slice(-2);
+        renderFloorsCompare();
+        box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+function toggleCompareMonth(key) {
+    if (floorsCompareMonths.includes(key)) floorsCompareMonths = floorsCompareMonths.filter(k => k !== key);
+    else floorsCompareMonths.push(key);
+    floorsCompareMonths.sort();
+    renderFloorsCompare();
+}
+function setCompareFloor(fl) {
+    floorsCompareFloor = fl;
+    renderFloorsCompare();
+}
+function buildFloorsCompareData() {
+    const months = floorsCompareMonths.slice();
+    const rows = inventory.map(item => {
+        const cells = months.map(k => {
+            const qty = transactions.filter(t => t.itemId === item.id && t.date && getCycleKeyForDate(t.date) === k && (floorsCompareFloor === 'الكل' || t.floor === floorsCompareFloor)).reduce((s, t) => s + Number(t.qty), 0);
+            const pr = getItemPriceForCycle(item.id, k);
+            return { qty, price: pr.price, exact: pr.exact, total: +(qty * pr.price).toFixed(2) };
+        });
+        return { item, cells };
+    }).filter(r => r.cells.some(c => c.qty > 0 || c.price > 0));
+    const totals = months.map((k, i) => ({
+        qty: rows.reduce((s, r) => s + r.cells[i].qty, 0),
+        total: rows.reduce((s, r) => s + r.cells[i].total, 0)
+    }));
+    return { months, rows, totals };
+}
+function fmtMoney(n) { return (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+function diffBadge(a, b, money) {
+    const d = +(b - a).toFixed(2);
+    if (!d) return `<span style="color: var(--text-muted);">—</span>`;
+    const pct = a ? ` (${d > 0 ? '+' : ''}${Math.round(d / a * 100)}%)` : '';
+    // more spending / higher price shows as a warning value; less shows as good
+    return `<span style="font-weight: 800; color: ${d > 0 ? 'var(--danger)' : 'var(--success)'};">${d > 0 ? '+' : ''}${money ? fmtMoney(d) : d}${pct}</span>`;
+}
+function renderFloorsCompare() {
+    const chips = document.getElementById('floors-compare-months');
+    const table = document.getElementById('floors-compare-table');
+    if (!chips || !table) return;
+    const isAr = currentLang === 'ar';
+    chips.innerHTML = getAllCycleKeys().map(k => `<button type="button" class="chip-btn ${floorsCompareMonths.includes(k) ? 'active' : ''}" onclick="toggleCompareMonth('${k}')" title="${k}">${cycleShortLabel(k)}</button>`).join('');
+    const fsel = document.getElementById('floors-compare-floor');
+    if (fsel) fsel.value = floorsCompareFloor;
+
+    const { months, rows, totals } = buildFloorsCompareData();
+    if (months.length === 0) {
+        table.innerHTML = `<tbody><tr><td style="text-align:center; padding: 1.5rem; color: var(--text-muted);">${isAr ? 'اختار شهر أو أكتر من فوق للمقارنة' : 'Pick one or more months above'}</td></tr></tbody>`;
+        return;
+    }
+    const multi = months.length >= 2;
+    const first = 0, last = months.length - 1;
+    let head1 = `<tr><th rowspan="2">${isAr ? 'اسم الصنف' : 'Item'}</th><th rowspan="2" style="text-align:center;">${isAr ? 'الوحدة' : 'Unit'}</th>`;
+    let head2 = '<tr>';
+    months.forEach(k => {
+        head1 += `<th colspan="3" style="text-align:center;" title="${k}">${cycleShortLabel(k)}</th>`;
+        head2 += `<th style="text-align:center;">${isAr ? 'الاستهلاك' : 'Qty'}</th><th style="text-align:center;">${isAr ? 'سعر الشراء' : 'Price'}</th><th style="text-align:center;">${isAr ? 'إجمالي العرض' : 'Offer total'}</th>`;
+    });
+    if (multi) {
+        head1 += `<th colspan="3" style="text-align:center;">${isAr ? `الفرق (${cycleShortLabel(months[last])} عن ${cycleShortLabel(months[first])})` : 'Change'}</th>`;
+        head2 += `<th style="text-align:center;">${isAr ? 'الاستهلاك' : 'Qty'}</th><th style="text-align:center;">${isAr ? 'السعر' : 'Price'}</th><th style="text-align:center;">${isAr ? 'الإجمالي' : 'Total'}</th>`;
+    }
+    head1 += '</tr>'; head2 += '</tr>';
+
+    let body = '';
+    if (rows.length === 0) {
+        body = `<tr><td colspan="${2 + months.length * 3 + (multi ? 3 : 0)}" style="text-align:center; padding: 1.5rem; color: var(--text-muted);">${isAr ? 'لا يوجد استهلاك أو أسعار في الشهور المختارة' : 'No data for the selected months'}</td></tr>`;
+    }
+    rows.forEach(r => {
+        body += `<tr><td style="font-weight:700;">${trText(r.item.name)}</td><td style="text-align:center; color: var(--text-muted);">${trText(r.item.unit)}</td>`;
+        r.cells.forEach(c => {
+            body += `<td style="text-align:center; font-weight:${c.qty ? 700 : 400}; color:${c.qty ? 'var(--text-primary)' : 'var(--text-muted)'};">${c.qty}</td>`;
+            body += `<td style="text-align:center; ${c.exact ? '' : 'color: var(--text-muted);'}" title="${c.exact ? '' : (isAr ? 'مفيش سعر متسجل للشهر ده، ده آخر سعر قبله' : 'Last known price')}">${c.price ? fmtMoney(c.price) : '—'}</td>`;
+            body += `<td style="text-align:center; font-weight:800; color: var(--primary);">${c.total ? fmtMoney(c.total) : '—'}</td>`;
+        });
+        if (multi) {
+            const a = r.cells[first], b = r.cells[last];
+            body += `<td style="text-align:center;">${diffBadge(a.qty, b.qty, false)}</td><td style="text-align:center;">${diffBadge(a.price, b.price, true)}</td><td style="text-align:center;">${diffBadge(a.total, b.total, true)}</td>`;
+        }
+        body += '</tr>';
+    });
+    let foot = `<tr><th colspan="2">${isAr ? 'الإجمالي' : 'Total'}</th>`;
+    totals.forEach(t => {
+        foot += `<th style="text-align:center;">${t.qty}</th><th></th><th style="text-align:center; background: var(--primary-fill); color: var(--text-inverse);">${fmtMoney(t.total)} ${isAr ? 'ج.م' : 'EGP'}</th>`;
+    });
+    if (multi) foot += `<th style="text-align:center;">${diffBadge(totals[first].qty, totals[last].qty, false)}</th><th></th><th style="text-align:center;">${diffBadge(totals[first].total, totals[last].total, true)}</th>`;
+    foot += '</tr>';
+    table.innerHTML = `<thead>${head1}${head2}</thead><tbody>${body}</tbody><tfoot>${foot}</tfoot>`;
+
+    // Summary cards: offer total of each month side by side
+    const sum = document.getElementById('floors-compare-summary');
+    if (sum) {
+        sum.innerHTML = months.map((k, i) => `<div><span>${isAr ? 'إجمالي العرض' : 'Offer total'} — ${cycleShortLabel(k)}</span><b>${fmtMoney(totals[i].total)} ${isAr ? 'ج.م' : 'EGP'}</b><small>${isAr ? 'الاستهلاك' : 'Qty'}: ${totals[i].qty}</small></div>`).join('');
+    }
+}
+
+// Enter / fix purchase prices for one month (for months that had no saved price)
+function openMonthPricesModal() {
+    if (currentUserRole === 'viewer') return;
+    const sel = document.getElementById('mp-month');
+    const keys = getAllCycleKeys();
+    sel.innerHTML = keys.map(k => `<option value="${k}">${cycleShortLabel(k)} (${k})</option>`).join('');
+    sel.value = floorsCompareMonths[floorsCompareMonths.length - 1] || keys[keys.length - 1];
+    renderMonthPricesRows();
+    openModal('modal-month-prices');
+}
+function renderMonthPricesRows() {
+    const key = document.getElementById('mp-month').value;
+    document.getElementById('mp-rows').innerHTML = inventory.map(item => {
+        const pr = getItemPriceForCycle(item.id, key);
+        return `<label class="mp-row"><span>${trText(item.name)} <small>(${trText(item.unit)})</small></span><input type="number" min="0" step="0.01" class="form-control" data-item-id="${item.id}" value="${pr.exact && pr.price ? pr.price : ''}" placeholder="${pr.price ? fmtMoney(pr.price) : '0.00'}"></label>`;
+    }).join('');
+}
+function saveMonthPrices() {
+    if (currentUserRole === 'viewer') return;
+    const key = document.getElementById('mp-month').value;
+    document.querySelectorAll('#mp-rows input').forEach(inp => {
+        const id = Number(inp.dataset.itemId);
+        if (inp.value === '') return;
+        if (!poPricingMap[id]) poPricingMap[id] = {};
+        if (!poPricingMap[id].prices) poPricingMap[id].prices = {};
+        poPricingMap[id].prices[key] = Math.max(0, Number(inp.value) || 0);
+    });
+    persistState();
+    closeModal('modal-month-prices');
+    renderFloorsCompare();
+    showToast(currentLang === 'ar' ? `تم حفظ أسعار ${cycleShortLabel(key)}` : 'Prices saved', 'success');
+}
+
+function exportFloorsCompareToCSV() {
+    const { months, rows, totals } = buildFloorsCompareData();
+    if (!months.length) return;
+    let csv = '﻿' + '"الصنف","الوحدة"';
+    months.forEach(k => { const l = cycleShortLabel(k); csv += `,"استهلاك ${l}","سعر ${l}","إجمالي العرض ${l}"`; });
+    csv += '\n';
+    rows.forEach(r => {
+        csv += `"${r.item.name}","${r.item.unit}"`;
+        r.cells.forEach(c => { csv += `,"${c.qty}","${c.price}","${c.total}"`; });
+        csv += '\n';
+    });
+    csv += '"الإجمالي",""';
+    totals.forEach(t => { csv += `,"${t.qty}","","${t.total}"`; });
+    csv += '\n';
+    downloadCSV(csv, `مقارنة_الشهور_${new Date().toISOString().split('T')[0]}.csv`);
+}
+// Shared PDF layout: brand header (logo + title) repeated on each page, then the given table parts
+function printCgTable(title, sub, colCount, theadRows, tbodyRows, tfootRows) {
+    const printArea = document.getElementById('official-print-viewport');
+    if (!printArea) return;
+    const isAr = currentLang === 'ar';
+    printArea.innerHTML = `
+        <div class="voucher-print-container" dir="${isAr ? 'rtl' : 'ltr'}">
+            <table class="print-table">
+                <thead>
+                    <tr><th colspan="${colCount}" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">${buildCenteredPrintHeader(title, sub)}</th></tr>
+                    ${theadRows}
+                </thead>
+                <tbody>${tbodyRows}</tbody>
+                ${tfootRows ? `<tfoot>${tfootRows}</tfoot>` : ''}
+            </table>
+            <div class="voucher-signatures"><div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div></div>
+        </div>`;
+    safeWindowPrint();
+}
+function printFloorsCompare() {
+    const { months } = buildFloorsCompareData();
+    if (!months.length) return;
+    const table = document.getElementById('floors-compare-table');
+    const isAr = currentLang === 'ar';
+    const cols = 2 + months.length * 3 + (months.length >= 2 ? 3 : 0);
+    const thead = table.tHead ? table.tHead.innerHTML : '';
+    const tbody = table.tBodies[0] ? table.tBodies[0].innerHTML : '';
+    const tfoot = table.tFoot ? table.tFoot.innerHTML : '';
+    const title = isAr ? 'مقارنة الشهور: الاستهلاك وسعر الشراء وإجمالي العرض' : 'Month comparison';
+    const sub = `${isAr ? 'الأدوار:' : 'Floors:'} ${floorsCompareFloor === 'الكل' ? (isAr ? 'كل الأدوار' : 'All') : floorsCompareFloor} | ${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`;
+    printCgTable(title, sub, cols, thead, tbody, tfoot);
+}
+
 // --- FLOORS CONSUMPTION MATRIX ---
 function renderFloorsMatrix() {
     const tbody = document.getElementById('floors-matrix-body');
@@ -2299,9 +2590,7 @@ function renderFloorsMatrix() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>
-                <input type="text" class="table-input" value="${trText(item.name)}" onchange="updateItemField(${item.id}, 'name', this.value)" style="font-weight: 700; min-width: 150px;">
-            </td>
+            <td style="font-weight: 700;">${trText(item.name)}</td>
             <td><span class="badge badge-secondary">${trText(item.cat)}</span></td>
             <td style="text-align: center; color: var(--text-muted);">${trText(item.unit)}</td>
             ${cellsHtml}
@@ -2332,13 +2621,16 @@ function renderHistoryTable() {
     const tbody = document.getElementById('history-table-body');
     if (!tbody) return;
 
-    const currentCycleTrans = getCycleTransactions();
+    // A date range searches all saved issues, not just the selected cycle
+    const currentCycleTrans = (historyDateFrom || historyDateTo) ? transactions : getCycleTransactions();
     const query = searchQuery.toLowerCase().trim();
 
     let logs = currentCycleTrans;
     if (activeFloorFilter !== 'الكل') {
         logs = logs.filter(l => l.floor === activeFloorFilter);
     }
+    if (historyDateFrom) logs = logs.filter(l => (l.date || '') >= historyDateFrom);
+    if (historyDateTo) logs = logs.filter(l => (l.date || '') <= historyDateTo);
     if (query) {
         logs = logs.filter(l => {
             const item = inventory.find(i => i.id === l.itemId);
@@ -2359,27 +2651,119 @@ function renderHistoryTable() {
     logs.forEach((log, idx) => {
         const item = inventory.find(i => i.id === log.itemId);
         const tr = document.createElement('tr');
+        const canEdit = currentUserRole !== 'viewer';
         tr.innerHTML = `
             <td style="color: var(--text-muted);">${idx + 1}</td>
-            <td><input type="text" class="table-input" value="${log.date}" onchange="updateTransactionField(${log.id}, 'date', this.value)" style="width: 110px; text-align: center;"></td>
+            <td style="white-space: nowrap;">${log.date || '—'}</td>
             <td><strong style="color: var(--primary);">${trText(log.floor)}</strong></td>
-            <td>
-                ${item
-                    ? `<input type="text" class="table-input" value="${trText(item.name)}" onchange="updateItemField(${item.id}, 'name', this.value)" style="font-weight: 700; min-width: 145px;">`
-                    : `<strong>${currentLang === 'ar' ? 'صنف غير معرف' : 'Unknown Item'}</strong>`
-                }
-            </td>
+            <td style="font-weight: 700;">${item ? trText(item.name) : (currentLang === 'ar' ? 'صنف غير معرف' : 'Unknown Item')}${log.addedLater ? ` <span class="badge badge-secondary" title="${currentLang === 'ar' ? 'اتضاف بعد التسجيل' : 'Added later'}">${currentLang === 'ar' ? 'مضاف' : 'added'}</span>` : ''}</td>
             <td style="text-align: center; font-weight: 800; color: var(--warning);">${log.qty} ${item ? trText(item.unit) : ''}</td>
-            <td>
-                <input type="text" class="table-input" value="${trText(log.recipient)}" onchange="updateTransactionField(${log.id}, 'recipient', this.value)" style="min-width: 140px;">
-            </td>
-            <td style="text-align: center;" class="no-print">
-                <button onclick="printSingleVoucher(${log.id})" class="btn btn-sm btn-secondary" title="${currentLang === 'ar' ? 'طباعة سند صرف' : 'Print Issue Voucher'}"><i data-lucide="printer" style="width:13px;height:13px;"></i></button>
-                <button onclick="deleteSingleTransaction(${log.id})" class="btn btn-sm btn-danger" title="${currentLang === 'ar' ? 'حذف الحركة' : 'Delete Transaction'}"><i data-lucide="trash-2" style="width:13px;height:13px;"></i></button>
+            <td>${trText(log.recipient || '')}</td>
+            <td style="text-align: center; white-space: nowrap;" class="no-print">
+                <button onclick="printSingleVoucher(${log.id})" class="btn btn-sm btn-secondary" title="PDF"><i data-lucide="printer" style="width:13px;height:13px;"></i></button>
+                ${canEdit ? `<button onclick="openEditTransactionModal(${log.id})" class="btn btn-sm btn-secondary"><i data-lucide="pencil" style="width:13px;height:13px;"></i> ${currentLang === 'ar' ? 'تعديل' : 'Edit'}</button>
+                <button onclick="deleteSingleTransaction(${log.id})" class="btn btn-sm btn-danger" title="${currentLang === 'ar' ? 'حذف' : 'Delete'}"><i data-lucide="trash-2" style="width:13px;height:13px;"></i></button>` : ''}
             </td>
         `;
         tbody.appendChild(tr);
     });
+}
+
+// --- Edit a saved issue (rows are locked; changes go through this window) ---
+let editTransExtras = [];
+function fillItemSelect(sel, selectedId) {
+    if (!sel) return;
+    sel.innerHTML = inventory.map(i => `<option value="${i.id}" ${i.id === selectedId ? 'selected' : ''}>${trText(i.name)} (${trText(i.unit)})</option>`).join('');
+}
+function openEditTransactionModal(logId) {
+    if (currentUserRole === 'viewer') return;
+    const log = transactions.find(t => t.id === logId);
+    if (!log) return;
+    document.getElementById('et-id').value = logId;
+    document.getElementById('et-date').value = log.date || '';
+    document.getElementById('et-floor').value = log.floor;
+    fillItemSelect(document.getElementById('et-item'), log.itemId);
+    document.getElementById('et-qty').value = log.qty;
+    document.getElementById('et-recipient').value = log.recipient || '';
+    fillItemSelect(document.getElementById('et-add-item'), null);
+    document.getElementById('et-add-qty').value = '';
+    editTransExtras = [];
+    renderEditTransExtras();
+    openModal('modal-edit-trans');
+}
+function addEditTransExtra() {
+    const itemId = Number(document.getElementById('et-add-item').value);
+    const qty = Number(document.getElementById('et-add-qty').value) || 0;
+    if (!itemId || qty <= 0) {
+        showToast(currentLang === 'ar' ? 'اختار الصنف واكتب الكمية' : 'Choose an item and a quantity', 'warning');
+        return;
+    }
+    editTransExtras.push({ itemId, qty });
+    document.getElementById('et-add-qty').value = '';
+    renderEditTransExtras();
+}
+function removeEditTransExtra(idx) {
+    editTransExtras.splice(idx, 1);
+    renderEditTransExtras();
+}
+function renderEditTransExtras() {
+    const box = document.getElementById('et-extras');
+    if (!box) return;
+    box.innerHTML = editTransExtras.map((x, i) => {
+        const it = inventory.find(v => v.id === x.itemId);
+        return `<div class="et-extra-row"><span>${it ? trText(it.name) : ''}</span><strong>${x.qty} ${it ? trText(it.unit) : ''}</strong><button type="button" class="btn btn-sm btn-danger-outline" onclick="removeEditTransExtra(${i})">✖</button></div>`;
+    }).join('');
+}
+function saveEditTransaction() {
+    if (currentUserRole === 'viewer') return;
+    const log = transactions.find(t => t.id === Number(document.getElementById('et-id').value));
+    if (!log) return;
+    const qty = Number(document.getElementById('et-qty').value) || 0;
+    const date = document.getElementById('et-date').value;
+    const recipient = document.getElementById('et-recipient').value.trim();
+    if (qty <= 0 || !date) {
+        showToast(currentLang === 'ar' ? 'اكتب التاريخ والكمية' : 'Enter the date and quantity', 'warning');
+        return;
+    }
+    // A forgotten item typed in the "add" box but not yet added still counts
+    const pendingQty = Number(document.getElementById('et-add-qty').value) || 0;
+    if (pendingQty > 0) addEditTransExtra();
+    log.date = date;
+    log.floor = document.getElementById('et-floor').value;
+    log.itemId = Number(document.getElementById('et-item').value);
+    log.qty = qty;
+    log.recipient = recipient;
+    log.updatedAt = new Date().toISOString();
+    const now = Date.now();
+    editTransExtras.forEach((x, i) => {
+        transactions.unshift({ id: now + i, itemId: x.itemId, qty: x.qty, floor: log.floor, date, recipient, notes: log.notes || '', addedLater: true });
+    });
+    const added = editTransExtras.length;
+    editTransExtras = [];
+    persistState();
+    closeModal('modal-edit-trans');
+    showToast(currentLang === 'ar' ? (added ? `تم حفظ التعديل وإضافة ${added} صنف` : 'تم حفظ التعديل') : 'Changes saved', 'success');
+}
+
+function getHistoryRangeLogs() {
+    let logs = (historyDateFrom || historyDateTo) ? transactions : getCycleTransactions();
+    if (activeFloorFilter !== 'الكل') logs = logs.filter(l => l.floor === activeFloorFilter);
+    if (historyDateFrom) logs = logs.filter(l => (l.date || '') >= historyDateFrom);
+    if (historyDateTo) logs = logs.filter(l => (l.date || '') <= historyDateTo);
+    return logs;
+}
+function setHistoryDateRange() {
+    historyDateFrom = document.getElementById('history-from').value || '';
+    historyDateTo = document.getElementById('history-to').value || '';
+    const clr = document.getElementById('history-date-clear');
+    if (clr) clr.style.display = (historyDateFrom || historyDateTo) ? '' : 'none';
+    renderHistoryTable();
+    if (window.lucide) window.lucide.createIcons();
+}
+function clearHistoryDateRange() {
+    document.getElementById('history-from').value = '';
+    document.getElementById('history-to').value = '';
+    setHistoryDateRange();
 }
 
 function updateTransactionField(logId, field, value) {
@@ -2488,6 +2872,12 @@ function updatePoPricingField(itemId, field, val) {
         poPricingMap[itemId].notes = String(val || '').trim();
     } else {
         poPricingMap[itemId][field] = Math.max(0, Number(val) || 0);
+        // Keep each month's purchase price so months can be compared later
+        if (field === 'unitPrice') {
+            const key = (activeCycleKey && activeCycleKey !== 'ALL' && activeCycleKey !== 'CURRENT') ? activeCycleKey : getCycleKeyForDate(new Date().toISOString().split('T')[0]);
+            if (!poPricingMap[itemId].prices) poPricingMap[itemId].prices = {};
+            poPricingMap[itemId].prices[key] = poPricingMap[itemId].unitPrice;
+        }
     }
     localStorage.setItem('buffet_v9_po_pricing', JSON.stringify(poPricingMap));
 
@@ -4279,27 +4669,30 @@ function renderHqView() {
         const wbsCode = item.code || `${idx + 1}`;
 
         const tr = document.createElement('tr');
+        const hqLocked = true; // rows are read-only; editing goes through the edit window
+        tr.className = 'cg-sheet-row';
+        if (!isViewer) { tr.classList.add('hq-row-click'); tr.title = currentLang === 'ar' ? 'دوس للتعديل' : 'Click to edit'; tr.onclick = () => openEditHqModal(item.id); }
         tr.innerHTML = `
             <td style="text-align: center; white-space: nowrap;">
                 <span class="wbs-code-badge">${wbsCode}</span>
             </td>
             <td style="white-space: nowrap;">
-                ${isViewer 
+                ${hqLocked 
                     ? `<strong style="font-size: 0.92rem; color: var(--text-main);">${trText(item.name)}</strong>` 
                     : `<input type="text" class="table-input" value="${trText(item.name)}" onchange="updateHqField(${item.id}, 'name', this.value)" style="font-weight: 700; width: 100%; min-width: 145px;">`}
             </td>
             <td>
-                ${isViewer 
+                ${hqLocked 
                     ? `<span class="wbs-size-pill">${itemSize}</span>` 
                     : `<input type="text" class="table-input" value="${itemSize}" placeholder="المقاس..." onchange="updateHqField(${item.id}, 'size', this.value)" style="font-size: 0.82rem; width: 100%; min-width: 110px;">`}
             </td>
             <td style="font-size: 0.76rem; color: var(--text-muted); white-space: nowrap;">
-                ${isViewer 
+                ${hqLocked 
                     ? `<span class="badge" style="background: rgba(138, 139, 140, 0.14); color: var(--text-muted); font-size: 0.72rem;">${trText(item.cat)}</span>` 
                     : `<input type="text" class="table-input" value="${trText(item.cat)}" onchange="updateHqField(${item.id}, 'cat', this.value)" style="width: 115px; font-size: 0.75rem;">`}
             </td>
             <td style="text-align: center; white-space: nowrap;">
-                ${isViewer 
+                ${hqLocked 
                     ? `<span style="display:inline-block; min-width:44px; padding:0.3rem 0.65rem; border-radius:8px; font-weight:900; font-size:1.05rem; background:var(--primary-light); color:var(--primary);">${qty}</span>` 
                     : `<div class="stepper-control">
                         <button type="button" class="stepper-btn" onclick="stepHqQty(${item.id}, -1)">−</button>
@@ -4308,7 +4701,7 @@ function renderHqView() {
                     </div>`}
             </td>
             <td style="text-align: center;">
-                ${isViewer 
+                ${hqLocked 
                     ? `<span class="badge" style="background: var(--primary-light); color: var(--primary); font-size: 0.78rem;">${trText(status)}</span>` 
                     : `<select class="table-input" onchange="updateHqField(${item.id}, 'status', this.value)" style="font-size: 0.82rem; padding: 0.35rem 0.6rem;">
                         <option value="ممتاز" ${status === 'ممتاز' ? 'selected' : ''}>${trText('ممتاز')}</option>
@@ -4317,11 +4710,11 @@ function renderHqView() {
                     </select>`}
             </td>
             <td style="min-width: 280px; width: 100%;">
-                ${isViewer 
+                ${hqLocked 
                     ? `<span style="font-size: 0.86rem; color: ${notes ? 'var(--text-main)' : 'var(--text-muted)'}; display: block; line-height: 1.45;">${notes || '—'}</span>` 
                     : `<input type="text" class="table-input" value="${notes}" placeholder="${currentLang === 'ar' ? 'تفاصيل فنية، مواصفات أو ملاحظات...' : 'Details or notes...'}" onchange="updateHqField(${item.id}, 'notes', this.value)" style="width: 100%; min-width: 280px; font-size: 0.86rem; padding: 0.45rem 0.75rem;">`}
             </td>
-            <td style="text-align: center; white-space: nowrap;" class="no-print admin-only">
+            <td style="text-align: center; white-space: nowrap;" class="no-print admin-only" onclick="event.stopPropagation()">
                 <div style="display: inline-flex; align-items: center; gap: 0.22rem;">
                     <button onclick="promptMoveHqPosition(${item.id})" class="btn btn-sm btn-secondary" style="padding: 0.22rem 0.45rem; font-size: 0.72rem;" title="نقل سريع للترتيب (أدخل رقم الترتيب مباشرة)">🔢</button>
                     <button onclick="moveHqItem(${item.id}, -1)" class="btn btn-sm btn-secondary" style="padding: 0.22rem 0.42rem; font-size: 0.72rem; min-width: 24px;" title="تحريك لأعلى (حدد عدد الخطوات 1، 2، 3...) 🔼" ${idx === 0 ? 'disabled style="opacity:0.35; pointer-events:none;"' : ''}>▲</button>
@@ -4412,6 +4805,39 @@ function stepHqQty(itemId, delta) {
     item.qty = Math.max(0, (Number(item.qty) || 0) + delta);
     persistState();
     renderHqView();
+}
+
+// HQ rows are locked like the asset inventory; this window edits one item
+function openEditHqModal(itemId) {
+    if (currentUserRole === 'viewer') return;
+    const item = hqInventory.find(i => i.id === itemId);
+    if (!item) return;
+    document.getElementById('eh-id').value = itemId;
+    document.getElementById('eh-title').textContent = item.name;
+    document.getElementById('eh-name').value = item.name || '';
+    document.getElementById('eh-cat').value = item.cat || '';
+    document.getElementById('eh-size').value = item.size || '';
+    document.getElementById('eh-qty').value = Number(item.qty) || 0;
+    document.getElementById('eh-status').value = item.status || 'ممتاز';
+    document.getElementById('eh-notes').value = item.notes || '';
+    openModal('modal-edit-hq');
+}
+function saveEditHqItem() {
+    if (currentUserRole === 'viewer') return;
+    const item = hqInventory.find(i => i.id === Number(document.getElementById('eh-id').value));
+    if (!item) return;
+    const name = document.getElementById('eh-name').value.trim();
+    if (!name) { showToast(currentLang === 'ar' ? 'اكتب اسم الصنف' : 'Enter the item name', 'warning'); return; }
+    item.name = name;
+    item.cat = document.getElementById('eh-cat').value.trim() || item.cat;
+    item.size = document.getElementById('eh-size').value.trim();
+    item.qty = Math.max(0, Number(document.getElementById('eh-qty').value) || 0);
+    item.status = document.getElementById('eh-status').value;
+    item.notes = document.getElementById('eh-notes').value.trim();
+    item.updatedAt = new Date().toISOString();
+    persistState();
+    closeModal('modal-edit-hq');
+    showToast(currentLang === 'ar' ? 'تم حفظ التعديل' : 'Changes saved', 'success');
 }
 
 function updateHqField(itemId, field, value) {
@@ -4772,7 +5198,7 @@ function exportInventoryToCSV() {
 }
 
 function exportHistoryToCSV() {
-    const currentCycleTrans = getCycleTransactions();
+    const currentCycleTrans = getHistoryRangeLogs();
     let csvContent = '\uFEFF';
     csvContent += 'رقم,التاريخ,الطابق,اسم الصنف,الكمية المنصرفة,اسم المستلم,ملاحظات\n';
 
@@ -4811,6 +5237,7 @@ function exportFloorsMatrixToCSV() {
 }
 
 function downloadCSV(content, filename) {
+    if (currentUserRole === 'viewer') { showToast(currentLang === 'ar' ? 'الحساب ده للعرض بس' : 'View-only account', 'warning'); return; }
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -4830,6 +5257,7 @@ function exportDataBackup() {
         poPricingMap,
         supplierPOs,
         monthlyCoreExpenses,
+        deptLayout,
         cycleStartDay,
         exportDate: new Date().toISOString()
     };
@@ -4860,6 +5288,7 @@ function importDataBackup(e) {
                 if (data.poPricingMap) poPricingMap = data.poPricingMap;
                 if (data.supplierPOs) supplierPOs = data.supplierPOs;
                 if (data.monthlyCoreExpenses) monthlyCoreExpenses = data.monthlyCoreExpenses;
+                if (data.deptLayout) deptLayout = data.deptLayout;
                 if (data.cycleStartDay) cycleStartDay = data.cycleStartDay;
 
                 persistState();
@@ -5004,6 +5433,10 @@ function getTabTitles() {
             title: isAr ? 'تحليل الطوابق الشامل للأثاث (4 - 9)' : 'Comprehensive Furniture Floors Analysis (4 - 9)',
             sub: isAr ? 'إدارة المرافق - مدير المرافق | بيان تحليلي مقارن جاهز للعرض والإرسال للإدارة العليا' : 'Facilities Management - Facilities Manager | Executive Floors Comparison Report'
         },
+        'furniture-depts': {
+            title: isAr ? 'تحليل الطوابق بالأقسام' : 'Floors by Department',
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | الأقسام في كل دور، عدد المكاتب ومحتوياتها، والمطلوب شراؤه' : 'Facilities Management | Departments per floor, offices, contents and what to buy'
+        },
         hq: {
             title: isAr ? 'جرد وتجهيزات مقر الإدارة العليا' : 'Executive Management HQ Inventory',
             sub: isAr ? 'إدارة المرافق - مدير المرافق | بيان الأعداد الفعلية والحالة الفنية لتجهيزات مقر الإدارة العليا' : 'Facilities Management - Facilities Manager | Executive HQ Assets & Appliances'
@@ -5054,7 +5487,7 @@ function switchTab(tabId) {
     activeTab = tabId;
 
     // Determine which module owns this tab and isolate its UI completely
-    if (tabId === 'furniture' || tabId === 'furniture-matrix') {
+    if (tabId === 'furniture' || tabId === 'furniture-matrix' || tabId === 'furniture-depts') {
         applyModuleIsolation('furniture');
     } else if (tabId === 'hq') {
         applyModuleIsolation('hq');
@@ -5076,7 +5509,7 @@ function switchTab(tabId) {
     // Show cycle banner only on Buffet tabs
     const cycleBanner = document.querySelector('.cycle-banner');
     if (cycleBanner) {
-        const isAssetTab = (tabId === 'furniture' || tabId === 'furniture-matrix' || tabId === 'hq' || tabId === 'custody');
+        const isAssetTab = (tabId === 'furniture' || tabId === 'furniture-matrix' || tabId === 'furniture-depts' || tabId === 'hq' || tabId === 'custody');
         cycleBanner.style.display = isAssetTab ? 'none' : '';
     }
 
@@ -5451,6 +5884,9 @@ function connectToFirebase(config, wsId) {
                 if (cloudData.monthlyCoreExpenses && Array.isArray(cloudData.monthlyCoreExpenses)) {
                     monthlyCoreExpenses = cloudData.monthlyCoreExpenses;
                 }
+                if (cloudData.deptLayout && Array.isArray(cloudData.deptLayout)) {
+                    deptLayout = cloudData.deptLayout;
+                }
                 if (cloudData.cycleStartDay) {
                     cycleStartDay = Number(cloudData.cycleStartDay);
                 }
@@ -5465,6 +5901,7 @@ function connectToFirebase(config, wsId) {
                 localStorage.setItem('buffet_v9_po_pricing', JSON.stringify(poPricingMap));
                 localStorage.setItem('buffet_v9_supplier_pos', JSON.stringify(supplierPOs));
                 localStorage.setItem('buffet_v9_monthly_core', JSON.stringify(monthlyCoreExpenses));
+                localStorage.setItem('buffet_v9_depts', JSON.stringify(deptLayout));
                 localStorage.setItem('buffet_v9_cycle_day', cycleStartDay);
 
                 renderAllWhenNotTyping();
@@ -5527,6 +5964,7 @@ function syncToCloud(isInitial = false) {
         poPricingMap,
         supplierPOs,
         monthlyCoreExpenses,
+        deptLayout,
         cycleStartDay,
         lastUpdated: new Date().toISOString()
     };
@@ -6228,7 +6666,7 @@ function onCustodyFilterModeChange() {
     const tBox = document.getElementById('custody-filter-transfer-box');
 
     if (mBox) mBox.style.display = mode === 'month' ? 'block' : 'none';
-    if (rBox) rBox.style.display = mode === 'range' ? 'block' : 'none';
+    if (rBox) rBox.style.display = mode === 'range' ? 'flex' : 'none';
     if (tBox) tBox.style.display = mode === 'transfer' ? 'block' : 'none';
 
     renderCustodyView();
@@ -6718,6 +7156,7 @@ function saveCustodyInvoiceDataUrl(rowId, dataUrl, mimeType, originalName) {
 }
 
 async function scanInvoiceFromPrinter(rowId) {
+    if (currentUserRole === 'viewer') return;
     const isAr = currentLang === 'ar';
     if (IS_PHONE_DEVICE) {
         showToast(isAr ? 'سكان الطابعة متاح من الكمبيوتر بس. هنفتحلك اختيار ملف بدلاً منه.' : 'Printer scan is only available on the office PC.', 'info');
@@ -6857,6 +7296,7 @@ function openRowMobileScannerAction(rowId) {
 }
 
 function openPhoneCameraForInvoice(rowId) {
+    if (currentUserRole === 'viewer') return;
     directAttachTargetRowId = rowId;
     const inp = document.getElementById('cust-camera-capture-input');
     if (inp) {
@@ -6901,6 +7341,7 @@ function shareSingleCustodyRowByIdEmail(rowId) {
 }
 
 function triggerDirectRowFileAttach(rowId) {
+    if (currentUserRole === 'viewer') return;
     document.querySelectorAll('.custody-inv-dropdown.open').forEach(dd => dd.classList.remove('open'));
     directAttachTargetRowId = rowId;
     const inp = document.getElementById('cust-direct-row-file-input');
@@ -7233,6 +7674,7 @@ function triggerHardwareScannerAcquire() {
 }
 
 function downloadCustodyInvoiceFile() {
+    if (currentUserRole === 'viewer') return;
     const rowId = Number(document.getElementById('cust-inv-row-id')?.value);
     const inv = custodyInvoicesMap[rowId];
     if (!inv || !inv.dataUrl) return;
@@ -7244,6 +7686,7 @@ function downloadCustodyInvoiceFile() {
 }
 
 function removeCustodyInvoice() {
+    if (currentUserRole === 'viewer') return;
     const rowId = Number(document.getElementById('cust-inv-row-id')?.value);
     const calculated = recalculateCustodyBalances();
     const row = calculated.find(r => r.id === rowId);
@@ -7935,6 +8378,30 @@ function deleteSupplierPOItem(id) {
     persistState();
 }
 
+// "متبقي دفعة واحدة / دفعتين / 3 دفعات / 11 دفعة" for the supplier transfers PDF
+function arInstallmentsCount(n) {
+    if (n === 1) return 'دفعة واحدة';
+    if (n === 2) return 'دفعتين';
+    if (n >= 3 && n <= 10) return `${n} دفعات`;
+    return `${n} دفعة`;
+}
+function remainingInstallmentsText(po) {
+    if (Array.isArray(po.installments) && po.installments.length) {
+        const left = po.installments.filter(i => !i.paid).length;
+        return left ? `متبقي ${arInstallmentsCount(left)}` : 'تم سداد كل الدفعات';
+    }
+    return Number(po.remaining) > 0 ? `متبقي ${arInstallmentsCount(1)}` : '';
+}
+function supplierSchemePrintText(po) {
+    if (Array.isArray(po.installments) && po.installments.length) {
+        const insts = po.installments;
+        const paid = insts.filter(i => i.paid).length;
+        const next = insts.filter(i => !i.paid && i.date).sort((a, b) => a.date.localeCompare(b.date))[0];
+        return `دفعات ${paid}/${insts.length}${next ? `<div style="font-size:0.75rem;">الدفعة الجاية: ${next.date} (${Number(next.amount || 0).toLocaleString()})</div>` : ''}`;
+    }
+    return po.scheme || '—';
+}
+
 function printSupplierPOsReport() {
     const printArea = document.getElementById('official-print-viewport');
     if (!printArea) return;
@@ -7954,9 +8421,9 @@ function printSupplierPOsReport() {
                 <td>${trText(po.supplier || '—')}</td>
                 <td style="text-align: center !important;">${po.qty}</td>
                 <td style="text-align: center !important; font-weight: 800;">${Number(po.total).toLocaleString()}</td>
-                <td style="text-align: center !important;">${po.scheme}</td>
+                <td style="text-align: center !important;">${supplierSchemePrintText(po)}</td>
                 <td style="text-align: center !important; font-weight: 800;">${Number(po.paid).toLocaleString()}</td>
-                <td style="text-align: center !important; font-weight: 800;">${Number(po.remaining).toLocaleString()}</td>
+                <td style="text-align: center !important; font-weight: 800;">${Number(po.remaining).toLocaleString()}${remainingInstallmentsText(po) ? `<div style="font-size:0.75rem; font-weight:700;">${remainingInstallmentsText(po)}</div>` : ''}</td>
                 <td class="print-notes-col">${po.notes || '—'}</td>
             </tr>
         `;
@@ -8126,4 +8593,276 @@ function printMonthlyCoreExpenses() {
         </div>
     `;
     safeWindowPrint();
+}
+
+// ======================================================================
+// FLOORS BY DEPARTMENT — offices, office contents, counted vs needed
+// ======================================================================
+const DEPT_FLOORS = ['الدور التاسع', 'الدور الثامن', 'الدور السابع', 'الدور السادس', 'الدور الخامس', 'الدور الرابع'];
+let deptItemsDraft = [];
+
+function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function isUncounted(v) { return v === null || v === undefined || v === ''; }
+function deptItemNeed(dept, it) { return Math.round((Number(dept.offices) || 0) * (Number(it.per) || 0)); }
+function deptItemShort(dept, it) {
+    if (isUncounted(it.have)) return null; // not counted yet
+    return Math.max(0, deptItemNeed(dept, it) - Number(it.have));
+}
+// Main families shown as their own columns: desks, chairs, lockers
+function deptFamily(name) {
+    const n = String(name || '').trim();
+    if (n.startsWith('مكتب')) return 'desk';
+    if (n.startsWith('كرسي')) return 'chair';
+    if (n.startsWith('لوكر')) return 'locker';
+    return 'other';
+}
+function deptFamilyTotals(dept, fam) {
+    let need = 0, have = 0, counted = false, short = 0;
+    (dept.items || []).forEach(it => {
+        if (deptFamily(it.name) !== fam) return;
+        need += deptItemNeed(dept, it);
+        if (!isUncounted(it.have)) { counted = true; have += Number(it.have) || 0; }
+        short += deptItemShort(dept, it) || 0;
+    });
+    return { need, have, counted, short };
+}
+function deptCell(t) {
+    if (!t.need && !t.counted) return `<span style="color: var(--text-muted);">—</span>`;
+    const haveTxt = t.counted ? t.have : '<span style="color: var(--text-muted);" title="لسه ماتعدّش">؟</span>';
+    return `<span class="dept-hn">${haveTxt} / ${t.need}</span>${t.short ? `<span class="dept-short">ناقص ${t.short}</span>` : ''}`;
+}
+function getDeptBuyList() {
+    const map = {};
+    deptLayout.forEach(d => (d.items || []).forEach(it => {
+        const s = deptItemShort(d, it);
+        if (s) map[it.name] = (map[it.name] || 0) + s;
+    }));
+    return Object.entries(map).sort((a, b) => b[1] - a[1]);
+}
+
+function renderDeptsView() {
+    const wrap = document.getElementById('depts-floors');
+    if (!wrap) return;
+    const isViewer = currentUserRole === 'viewer';
+
+    // Summary rail
+    const totalOffices = deptLayout.reduce((s, d) => s + (Number(d.offices) || 0), 0);
+    const fam = f => deptLayout.reduce((acc, d) => { const t = deptFamilyTotals(d, f); acc.need += t.need; acc.have += t.have; return acc; }, { need: 0, have: 0 });
+    const desks = fam('desk'), chairs = fam('chair'), lockers = fam('locker');
+    const notCounted = deptLayout.filter(d => (d.items || []).some(it => isUncounted(it.have))).length;
+    document.getElementById('depts-summary').innerHTML = `
+        <div><span>الأقسام</span><b>${deptLayout.length}</b></div>
+        <div><span>المكاتب</span><b>${totalOffices}</b></div>
+        <div><span>مكاتب (موجود / مطلوب)</span><b>${desks.have} / ${desks.need}</b></div>
+        <div><span>كراسي (موجود / مطلوب)</span><b>${chairs.have} / ${chairs.need}</b></div>
+        <div><span>لوكرات (موجود / مطلوب)</span><b>${lockers.have} / ${lockers.need}</b></div>
+        <div><span>أقسام لسه ماتعدّتش</span><b>${notCounted}</b></div>`;
+
+    // What to buy
+    const buy = getDeptBuyList();
+    document.getElementById('depts-buy').innerHTML = buy.length
+        ? `<div class="depts-buy-title">محتاج يتشترى (الناقص في كل الأقسام)</div><div class="depts-buy-list">${buy.map(([n, q]) => `<span class="depts-buy-chip">${escHtml(n)}: <b>${q}</b></span>`).join('')}</div>`
+        : `<div class="depts-buy-title">محتاج يتشترى</div><div class="cg-edit-hint" style="margin:0;">مفيش نواقص لحد دلوقتي. اكتب "الموجود فعلاً" في كل قسم علشان البرنامج يحسب الناقص.</div>`;
+
+    // One block per floor
+    wrap.innerHTML = DEPT_FLOORS.map(fl => {
+        const depts = deptLayout.filter(d => d.floor === fl);
+        const flOffices = depts.reduce((s, d) => s + (Number(d.offices) || 0), 0);
+        const rows = depts.map(d => {
+            const others = (d.items || []).filter(it => deptFamily(it.name) === 'other');
+            const othersTxt = others.length ? others.map(it => {
+                const s = deptItemShort(d, it);
+                const h = isUncounted(it.have) ? '؟' : it.have;
+                return `${escHtml(it.name)} ${h}/${deptItemNeed(d, it)}${s ? ` <span class="dept-short">ناقص ${s}</span>` : ''}`;
+            }).join('<br>') : '<span style="color: var(--text-muted);">—</span>';
+            const shortAll = (d.items || []).reduce((s, it) => s + (deptItemShort(d, it) || 0), 0);
+            return `<tr class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}>
+                <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}</td>
+                <td style="text-align:center; font-weight:800;">${Number(d.offices) || '<span style="color: var(--text-muted);" title="العدد لسه ماتحددش">—</span>'}</td>
+                <td style="text-align:center;">${deptCell(deptFamilyTotals(d, 'desk'))}</td>
+                <td style="text-align:center;">${deptCell(deptFamilyTotals(d, 'chair'))}</td>
+                <td style="text-align:center;">${deptCell(deptFamilyTotals(d, 'locker'))}</td>
+                <td style="font-size: 0.8rem;">${othersTxt}</td>
+                <td style="text-align:center; font-weight:800;">${shortAll ? `<span class="dept-short">${shortAll}</span>` : '<span style="color: var(--text-muted);">—</span>'}</td>
+            </tr>`;
+        }).join('');
+        return `<div class="dept-floor">
+            <div class="dept-floor-head">
+                <h3>${fl}</h3>
+                <span>${depts.length} قسم · ${flOffices} مكتب</span>
+                ${isViewer ? '' : `<button type="button" class="btn btn-secondary btn-sm" onclick="openDeptModal(null, '${fl}')">+ قسم في ${fl}</button>`}
+            </div>
+            <div class="table-responsive">
+                <table class="data-table dept-table">
+                    <thead><tr><th>القسم / المكتب</th><th style="text-align:center;">المكاتب</th><th style="text-align:center;">مكاتب<br><small>موجود / مطلوب</small></th><th style="text-align:center;">كراسي<br><small>موجود / مطلوب</small></th><th style="text-align:center;">لوكرات<br><small>موجود / مطلوب</small></th><th>أغراض تانية</th><th style="text-align:center;">محتاج شراء</th></tr></thead>
+                    <tbody>${rows || `<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 1rem;">مفيش أقسام في الدور ده</td></tr>`}</tbody>
+                </table>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function openDeptModal(id, floor) {
+    if (currentUserRole === 'viewer') return;
+    const d = id ? deptLayout.find(x => x.id === id) : null;
+    document.getElementById('dept-modal-title').textContent = d ? `تعديل: ${d.name}` : 'إضافة قسم / مكتب';
+    document.getElementById('dept-id').value = d ? d.id : '';
+    document.getElementById('dept-name').value = d ? d.name : '';
+    document.getElementById('dept-floor').value = d ? d.floor : (floor || 'الدور التاسع');
+    document.getElementById('dept-group').value = d ? (d.group || '') : '';
+    document.getElementById('dept-offices').value = d ? (Number(d.offices) || 0) : 1;
+    document.getElementById('dept-notes').value = d ? (d.notes || '') : '';
+    document.getElementById('dept-delete-btn').style.display = d ? '' : 'none';
+    deptItemsDraft = d ? JSON.parse(JSON.stringify(d.items || [])) : DEPT_KITS.staff.map(k => ({ name: k.name, per: k.per, have: null }));
+    drawDeptItemsDraft();
+    openModal('modal-dept');
+}
+function readDeptItemsDraft() {
+    document.querySelectorAll('#dept-items-body tr').forEach((tr, i) => {
+        const it = deptItemsDraft[i];
+        if (!it) return;
+        it.name = tr.querySelector('.di-name').value.trim();
+        it.per = Math.max(0, Number(tr.querySelector('.di-per').value) || 0);
+        const h = tr.querySelector('.di-have').value;
+        it.have = h === '' ? null : Math.max(0, Number(h) || 0);
+    });
+}
+function deptShortHtml(s) {
+    return s === null ? '<span style="color: var(--text-muted);">—</span>' : (s ? `<span class="dept-short">${s}</span>` : '<span style="color: var(--success); font-weight:800;">مكتمل</span>');
+}
+// Full redraw (open / add / remove). Typing only refreshes the computed cells, so focus is kept.
+function drawDeptItemsDraft() {
+    const body = document.getElementById('dept-items-body');
+    if (!body) return;
+    body.innerHTML = deptItemsDraft.map((it, i) => `<tr>
+            <td><input type="text" class="form-control di-name" list="dept-item-names" value="${escHtml(it.name)}" style="min-width:150px;"></td>
+            <td><input type="number" class="form-control di-per" min="0" step="1" value="${it.per}" oninput="renderDeptItemsDraft()" style="width:80px; text-align:center;"></td>
+            <td class="di-need" style="text-align:center; font-weight:800;"></td>
+            <td><input type="number" class="form-control di-have" min="0" value="${isUncounted(it.have) ? '' : it.have}" placeholder="؟" oninput="renderDeptItemsDraft()" style="width:90px; text-align:center;"></td>
+            <td class="di-short" style="text-align:center;"></td>
+            <td><button type="button" class="btn btn-sm btn-danger-outline" onclick="removeDeptItemDraft(${i})">✖</button></td>
+        </tr>`).join('');
+    renderDeptItemsDraft();
+}
+function renderDeptItemsDraft() {
+    readDeptItemsDraft();
+    const tmp = { offices: Number(document.getElementById('dept-offices').value) || 0 };
+    document.querySelectorAll('#dept-items-body tr').forEach((tr, i) => {
+        const it = deptItemsDraft[i];
+        if (!it) return;
+        tr.querySelector('.di-need').textContent = deptItemNeed(tmp, it);
+        tr.querySelector('.di-short').innerHTML = deptShortHtml(deptItemShort(tmp, it));
+    });
+}
+function addDeptItemDraft() {
+    readDeptItemsDraft();
+    deptItemsDraft.push({ name: '', per: 1, have: null });
+    drawDeptItemsDraft();
+    const names = document.querySelectorAll('#dept-items-body .di-name');
+    if (names.length) names[names.length - 1].focus();
+}
+function removeDeptItemDraft(i) {
+    readDeptItemsDraft();
+    deptItemsDraft.splice(i, 1);
+    drawDeptItemsDraft();
+}
+function applyDeptKit(kit) {
+    readDeptItemsDraft();
+    DEPT_KITS[kit].forEach(k => {
+        if (!deptItemsDraft.some(it => it.name === k.name)) deptItemsDraft.push({ name: k.name, per: k.per, have: null });
+    });
+    drawDeptItemsDraft();
+}
+function saveDept() {
+    if (currentUserRole === 'viewer') return;
+    readDeptItemsDraft();
+    const name = document.getElementById('dept-name').value.trim();
+    if (!name) { showToast('اكتب اسم القسم', 'warning'); return; }
+    const id = Number(document.getElementById('dept-id').value) || 0;
+    const data = {
+        name,
+        floor: document.getElementById('dept-floor').value,
+        group: document.getElementById('dept-group').value.trim(),
+        offices: Math.max(0, Number(document.getElementById('dept-offices').value) || 0),
+        notes: document.getElementById('dept-notes').value.trim(),
+        items: deptItemsDraft.filter(it => it.name),
+        updatedAt: new Date().toISOString()
+    };
+    if (id) {
+        const d = deptLayout.find(x => x.id === id);
+        if (d) Object.assign(d, data);
+    } else {
+        const nextId = deptLayout.length ? Math.max(...deptLayout.map(x => x.id)) + 1 : 1;
+        deptLayout.push(Object.assign({ id: nextId }, data));
+    }
+    persistState();
+    closeModal('modal-dept');
+    showToast('تم الحفظ', 'success');
+}
+function deleteDept() {
+    if (currentUserRole === 'viewer') return;
+    const id = Number(document.getElementById('dept-id').value) || 0;
+    const d = deptLayout.find(x => x.id === id);
+    if (!d || !confirm(`حذف "${d.name}" من ${d.floor}؟`)) return;
+    deptLayout = deptLayout.filter(x => x.id !== id);
+    persistState();
+    closeModal('modal-dept');
+    showToast('تم حذف القسم', 'info');
+}
+
+function exportDeptsToCSV() {
+    const q = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+    let csv = '﻿' + ['الدور', 'القسم / المكتب', 'تابع لقسم', 'عدد المكاتب', 'الغرض', 'لكل مكتب', 'المطلوب', 'الموجود فعلاً', 'محتاج شراء', 'ملاحظات'].map(q).join(',') + '\n';
+    DEPT_FLOORS.forEach(fl => deptLayout.filter(d => d.floor === fl).forEach(d => {
+        const items = (d.items || []).length ? d.items : [{ name: '', per: '', have: null }];
+        items.forEach(it => {
+            const s = it.name ? deptItemShort(d, it) : null;
+            csv += [fl, d.name, d.group || '', Number(d.offices) || 0, it.name, it.per, it.name ? deptItemNeed(d, it) : '', isUncounted(it.have) ? 'لم يُعد' : it.have, s === null ? '' : s, d.notes || ''].map(q).join(',') + '\n';
+        });
+    }));
+    csv += '\n' + q('محتاج يتشترى') + '\n';
+    getDeptBuyList().forEach(([n, c]) => { csv += [n, c].map(q).join(',') + '\n'; });
+    downloadCSV(csv, `تحليل_الطوابق_بالأقسام_${new Date().toISOString().split('T')[0]}.csv`);
+}
+function printDeptsReport() {
+    const isAr = currentLang === 'ar';
+    let body = '';
+    DEPT_FLOORS.forEach(fl => {
+        const depts = deptLayout.filter(d => d.floor === fl);
+        const flOffices = depts.reduce((s, d) => s + (Number(d.offices) || 0), 0);
+        body += `<tr><td colspan="7" style="text-align:right !important; font-weight:700; background:#fef2ce;">${fl} — ${depts.length} قسم · ${flOffices} مكتب</td></tr>`;
+        depts.forEach(d => {
+            const c = f => { const t = deptFamilyTotals(d, f); return (!t.need && !t.counted) ? '—' : `${t.counted ? t.have : '؟'} / ${t.need}${t.short ? ` (ناقص ${t.short})` : ''}`; };
+            const others = (d.items || []).filter(it => deptFamily(it.name) === 'other').map(it => { const s = deptItemShort(d, it); return `${escHtml(it.name)} ${isUncounted(it.have) ? '؟' : it.have}/${deptItemNeed(d, it)}${s ? ` (ناقص ${s})` : ''}`; }).join('، ') || '—';
+            const shortAll = (d.items || []).reduce((s, it) => s + (deptItemShort(d, it) || 0), 0);
+            body += `<tr><td style="text-align:right !important;">${escHtml(d.name)}${d.notes ? ` <small>(${escHtml(d.notes)})</small>` : ''}</td><td style="text-align:center;">${Number(d.offices) || '—'}</td><td style="text-align:center;">${c('desk')}</td><td style="text-align:center;">${c('chair')}</td><td style="text-align:center;">${c('locker')}</td><td style="font-size:0.8rem;">${others}</td><td style="text-align:center;">${shortAll || '—'}</td></tr>`;
+        });
+    });
+    const buy = getDeptBuyList();
+    const foot = `<tr><th colspan="7" style="text-align:right !important;">محتاج يتشترى: ${buy.length ? buy.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr>`;
+    const head = `<tr><th>القسم / المكتب</th><th style="text-align:center;">المكاتب</th><th style="text-align:center;">مكاتب (موجود/مطلوب)</th><th style="text-align:center;">كراسي (موجود/مطلوب)</th><th style="text-align:center;">لوكرات (موجود/مطلوب)</th><th>أغراض تانية</th><th style="text-align:center;">محتاج شراء</th></tr>`;
+    printCgTable('تحليل الطوابق بالأقسام', `${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`, 7, head, body, foot);
+}
+
+// Detailed department breakdown for the regional manager (floor analysis stays for senior management / accounts)
+function shareDeptsWhatsApp() {
+    const lines = ['*المجموعة الإستشارية | Consultancy Group*', '*إدارة المرافق - مدير المرافق*', '*تحليل الطوابق بالأقسام — التفاصيل*', `التاريخ: ${getFormattedTodayDate(true)}`, '--------------------------------'];
+    DEPT_FLOORS.forEach(fl => {
+        const depts = deptLayout.filter(d => d.floor === fl);
+        if (!depts.length) return;
+        const offices = depts.reduce((s, d) => s + (Number(d.offices) || 0), 0);
+        lines.push(`*${fl}* (${offices} مكتب)`);
+        depts.forEach(d => {
+            const parts = (d.items || []).map(it => {
+                const s = deptItemShort(d, it);
+                return `${it.name} ${isUncounted(it.have) ? '؟' : it.have}/${deptItemNeed(d, it)}${s ? ` (ناقص ${s})` : ''}`;
+            });
+            lines.push(`• ${d.name}: ${Number(d.offices) || '—'} مكتب${parts.length ? ' — ' + parts.join('، ') : ''}${d.notes ? ` (${d.notes})` : ''}`);
+        });
+    });
+    const buy = getDeptBuyList();
+    lines.push('--------------------------------');
+    lines.push(`*محتاج يتشترى:* ${buy.length ? buy.map(([n, q]) => `${n} ${q}`).join('، ') : 'لا يوجد'}`);
+    lines.push(`رابط للاطلاع فقط (بدون تعديل): ${getShareableUrl('viewer')}`);
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
 }

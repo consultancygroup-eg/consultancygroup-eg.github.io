@@ -247,6 +247,11 @@
                     <span>تحليل الطوابق للأصول</span>
                 </button>
 
+                <button onclick="switchTab('furniture-depts')" id="nav-btn-furniture-depts" class="sidebar-nav-item nav-group-furniture" style="display: none;">
+                    <i data-lucide="building-2"></i>
+                    <span>تحليل الطوابق بالأقسام</span>
+                </button>
+
                 <!-- ==================== MODULE 3 NAV: EXECUTIVE MANAGEMENT HQ ONLY ==================== -->
                 <span class="nav-section-label nav-group-hq" style="display: none;">مقر الإدارة العليا</span>
 
@@ -412,15 +417,15 @@
                             <div class="dropdown-divider"></div>
                             <button onclick="exportInventoryToCSV()" class="dropdown-item">
                                 <i data-lucide="file-spreadsheet"></i>
-                                <span>تصدير كشف المخزن (Excel/CSV)</span>
+                                <span>Excel — كشف المخزن</span>
                             </button>
                             <button onclick="exportHistoryToCSV()" class="dropdown-item">
                                 <i data-lucide="file-text"></i>
-                                <span>تصدير سجل الحركات (Excel/CSV)</span>
+                                <span>Excel — سجل الحركات</span>
                             </button>
                             <button onclick="exportFloorsMatrixToCSV()" class="dropdown-item">
                                 <i data-lucide="table"></i>
-                                <span>تصدير مصفوفة الاستهلاك (Excel/CSV)</span>
+                                <span>Excel — استهلاك الأدوار</span>
                             </button>
                             <div class="dropdown-divider"></div>
                             <button onclick="openCycleModal()" class="dropdown-item">
@@ -601,9 +606,11 @@
                                     <i data-lucide="truck"></i>
                                     <span data-i18n="btnNewSupply">تسجيل توريد</span>
                                 </button>
-                                <button onclick="exportInventoryToCSV()" class="btn btn-secondary btn-sm">
-                                    <i data-lucide="file-spreadsheet"></i>
-                                    <span>تصدير Excel</span>
+                                <button onclick="printInventoryReport()" class="btn cg-dl btn-sm">
+                                    <span><b class="cg-dl-arrow">⬇</b> PDF</span>
+                                </button>
+                                <button onclick="exportInventoryToCSV()" class="btn cg-dl btn-sm">
+                                    <span><b class="cg-dl-arrow">⬇</b> Excel</span>
                                 </button>
                             </div>
                         </div>
@@ -759,16 +766,45 @@
                                 <h2>مصفوفة استهلاك الطوابق بالدورة (الأدوار 4 - 9)</h2>
                             </div>
 
-                            <div style="display: flex; gap: 0.6rem;">
-                                <button onclick="printFloorsReport()" class="btn btn-secondary btn-sm no-print">
-                                    <i data-lucide="printer"></i>
-                                    <span data-i18n="btnPrint">طباعة التقرير</span>
+                            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                                <button onclick="toggleFloorsCompare()" class="btn btn-primary btn-sm no-print">
+                                    <i data-lucide="git-compare"></i>
+                                    <span>مقارنة الشهور</span>
                                 </button>
-                                <button onclick="exportFloorsMatrixToCSV()" class="btn btn-secondary btn-sm no-print">
-                                    <i data-lucide="file-spreadsheet"></i>
-                                    <span>تصدير Excel</span>
+                                <button onclick="printFloorsReport()" class="btn cg-dl btn-sm no-print">
+                                    <span><b class="cg-dl-arrow">⬇</b> PDF</span>
+                                </button>
+                                <button onclick="exportFloorsMatrixToCSV()" class="btn cg-dl btn-sm no-print">
+                                    <span><b class="cg-dl-arrow">⬇</b> Excel</span>
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- Month comparison: consumption, purchase price and offer total of each month -->
+                        <div id="floors-compare-card" class="floors-compare" style="display: none;">
+                            <div class="floors-compare-head">
+                                <div>
+                                    <h3>مقارنة الشهور</h3>
+                                    <span>اختار الشهور اللي عايز تقارن بينها (الشهر = الدورة من يوم بدايتها)</span>
+                                </div>
+                                <div class="cg-toolbar">
+                                    <select id="floors-compare-floor" class="cg-f" onchange="setCompareFloor(this.value)">
+                                        <option value="الكل">كل الأدوار</option>
+                                        <option>الدور الرابع</option><option>الدور الخامس</option><option>الدور السادس</option>
+                                        <option>الدور السابع</option><option>الدور الثامن</option><option>الدور التاسع</option>
+                                    </select>
+                                    <button onclick="openMonthPricesModal()" class="btn btn-secondary btn-sm admin-only">أسعار الشراء لكل شهر</button>
+                                    <button onclick="printFloorsCompare()" class="btn cg-dl btn-sm"><span><b class="cg-dl-arrow">⬇</b> PDF</span></button>
+                                    <button onclick="exportFloorsCompareToCSV()" class="btn cg-dl btn-sm"><span><b class="cg-dl-arrow">⬇</b> Excel</span></button>
+                                    <button onclick="toggleFloorsCompare(false)" class="cg-x" title="إغلاق">✖</button>
+                                </div>
+                            </div>
+                            <div id="floors-compare-months" class="category-filter-bar" style="padding: 0;"></div>
+                            <div id="floors-compare-summary" class="floors-compare-summary"></div>
+                            <div class="table-responsive">
+                                <table id="floors-compare-table" class="data-table floors-compare-table"></table>
+                            </div>
+                            <div class="cg-edit-hint">السعر الرمادي معناه إن الشهر ده مالوش سعر متسجل، فاتاخد آخر سعر قبله. الأسعار بتتسجل لوحدها لما تكتب السعر في "أمر شراء للمورد"، أو من زرار "أسعار الشراء لكل شهر".</div>
                         </div>
 
                         <div class="table-responsive">
@@ -804,9 +840,8 @@
                             </div>
 
                             <div style="display: flex; gap: 0.6rem; align-items: center;">
-                                <button onclick="exportHistoryToCSV()" class="btn btn-secondary btn-sm">
-                                    <i data-lucide="file-spreadsheet"></i>
-                                    <span>تصدير Excel</span>
+                                <button onclick="exportHistoryToCSV()" class="btn cg-dl btn-sm">
+                                    <span><b class="cg-dl-arrow">⬇</b> Excel</span>
                                 </button>
                                 <button onclick="clearAllTransactions()" class="btn btn-danger btn-sm">
                                     <i data-lucide="trash-2"></i>
@@ -824,6 +859,13 @@
                             <button onclick="filterHistoryFloor('الدور السابع')" class="chip-btn history-floor-btn" data-floor="الدور السابع">الدور السابع</button>
                             <button onclick="filterHistoryFloor('الدور الثامن')" class="chip-btn history-floor-btn" data-floor="الدور الثامن">الدور الثامن</button>
                             <button onclick="filterHistoryFloor('الدور التاسع')" class="chip-btn history-floor-btn" data-floor="الدور التاسع">الدور التاسع</button>
+                        </div>
+                        <div class="cg-toolbar" style="padding: 0.75rem 1.4rem 0;">
+                            <div class="cg-period" title="فلترة الحركات بالتاريخ">
+                                <span>من</span><input type="date" id="history-from" class="f" onchange="setHistoryDateRange()">
+                                <span>إلى</span><input type="date" id="history-to" class="f" onchange="setHistoryDateRange()">
+                                <button type="button" id="history-date-clear" class="cg-x" onclick="clearHistoryDateRange()" title="مسح التاريخ" style="display:none;">✖</button>
+                            </div>
                         </div>
 
                         <div class="table-responsive">
@@ -858,17 +900,15 @@
                             </div>
 
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                <button onclick="printPurchaseOrder()" class="btn btn-success btn-sm">
-                                    <i data-lucide="printer"></i>
-                                    <span data-i18n="btnPrint">طباعة أمر شراء للمورد</span>
+                                <button onclick="printPurchaseOrder()" class="btn cg-dl btn-sm">
+                                    <span><b class="cg-dl-arrow">⬇</b> PDF</span>
                                 </button>
                                 <button onclick="sharePurchaseOrderWhatsApp()" class="btn btn-primary btn-sm">
                                     <i data-lucide="send"></i>
                                     <span>إرسال عرض الأسعار (واتساب)</span>
                                 </button>
-                                <button onclick="exportPurchaseOrderToCSV()" class="btn btn-secondary btn-sm">
-                                    <i data-lucide="file-spreadsheet"></i>
-                                    <span>تصدير Excel</span>
+                                <button onclick="exportPurchaseOrderToCSV()" class="btn cg-dl btn-sm">
+                                    <span><b class="cg-dl-arrow">⬇</b> Excel</span>
                                 </button>
                             </div>
                         </div>
@@ -1003,17 +1043,14 @@
                                         <i data-lucide="arrow-down-up"></i>
                                         <span>ترتيب بالمجموعات</span>
                                     </button>
-                                    <button onclick="printSingleFloorFurnitureReport()" class="btn btn-success btn-sm">
-                                        <i data-lucide="printer"></i>
-                                        <span>طباعة جرد الطابق المحدد</span>
+                                    <button onclick="printSingleFloorFurnitureReport()" class="btn cg-dl btn-sm">
+                                        <span><b class="cg-dl-arrow">⬇</b> PDF الدور</span>
                                     </button>
-                                    <button onclick="printFurnitureMatrixReport()" class="btn btn-secondary btn-sm">
-                                        <i data-lucide="file-check-2"></i>
-                                        <span>طباعة جرد جميع الأدوار (4-9)</span>
+                                    <button onclick="printFurnitureMatrixReport()" class="btn cg-dl btn-sm">
+                                        <span><b class="cg-dl-arrow">⬇</b> PDF كل الأدوار</span>
                                     </button>
-                                    <button onclick="exportFurnitureToCSV()" class="btn btn-secondary btn-sm">
-                                        <i data-lucide="file-spreadsheet"></i>
-                                        <span>تصدير Excel</span>
+                                    <button onclick="exportFurnitureToCSV()" class="btn cg-dl btn-sm">
+                                        <span><b class="cg-dl-arrow">⬇</b> Excel</span>
                                     </button>
                                     <button onclick="restoreDefaultFurnitureItems()" class="btn btn-secondary btn-sm" title="استعادة قائمة الأصناف الافتراضية المرتبة (27 صنف)">
                                         <i data-lucide="rotate-ccw"></i>
@@ -1065,6 +1102,35 @@
                 </section>
 
                 <!-- ==================== 8. FURNITURE FLOORS ANALYSIS MATRIX (FOR SENIOR MANAGEMENT) ==================== -->
+                <!-- ==================== FLOORS BY DEPARTMENT (offices, contents, what to buy) ==================== -->
+                <section id="pane-furniture-depts" class="tab-pane">
+                    <div class="card" style="margin-bottom: 1.25rem;">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <i data-lucide="building-2" style="color: var(--primary);"></i>
+                                <div>
+                                    <h2>تحليل الطوابق بالأقسام</h2>
+                                    <span style="font-size: 0.78rem; color: var(--text-muted);">كل دور وأقسامه: عدد المكاتب، والمكاتب فيها إيه، والموجود فعلاً، والناقص اللي محتاج يتشترى. دوس على أي قسم للتعديل.</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                                <button onclick="openDeptModal(null)" class="btn btn-primary btn-sm admin-only">
+                                    <i data-lucide="plus"></i>
+                                    <span>إضافة قسم</span>
+                                </button>
+                                <button onclick="shareDeptsWhatsApp()" class="btn btn-success btn-sm"><i data-lucide="send"></i><span>إرسال التفاصيل للمدير الإقليمي (واتساب)</span></button>
+                                <button onclick="printDeptsReport()" class="btn cg-dl btn-sm"><span><b class="cg-dl-arrow">⬇</b> PDF</span></button>
+                                <button onclick="exportDeptsToCSV()" class="btn cg-dl btn-sm"><span><b class="cg-dl-arrow">⬇</b> Excel</span></button>
+                            </div>
+                        </div>
+                        <div style="padding: 1rem 1.4rem 1.4rem; display: flex; flex-direction: column; gap: 1rem;">
+                            <div id="depts-summary" class="depts-summary"></div>
+                            <div id="depts-buy" class="depts-buy"></div>
+                            <div id="depts-floors" class="depts-floors"></div>
+                        </div>
+                    </div>
+                </section>
+
                 <section id="pane-furniture-matrix" class="tab-pane">
                     <div class="card" style="margin-bottom: 1.25rem;">
                         <div class="card-header">
@@ -1073,17 +1139,15 @@
                                 <h2>تقرير جرد وتحليل أثاث الطوابق (الأدوار 4 إلى 9) — جاهز للعرض والإرسال للإدارة العليا</h2>
                             </div>
                             <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
-                                <button onclick="printFurnitureMatrixReport()" class="btn btn-primary btn-sm">
-                                    <i data-lucide="printer"></i>
-                                    <span>طباعة تقرير جرد وتحليل أثاث الطوابق (PDF)</span>
+                                <button onclick="printFurnitureMatrixReport()" class="btn cg-dl btn-sm">
+                                    <span><b class="cg-dl-arrow">⬇</b> PDF</span>
                                 </button>
                                 <button onclick="shareFloorsAnalysisWhatsApp()" class="btn btn-success btn-sm">
                                     <i data-lucide="send"></i>
                                     <span>إرسال التحليل للإدارة العليا (واتساب)</span>
                                 </button>
-                                <button onclick="exportFurnitureToCSV()" class="btn btn-secondary btn-sm">
-                                    <i data-lucide="file-spreadsheet"></i>
-                                    <span>تصدير Excel</span>
+                                <button onclick="exportFurnitureToCSV()" class="btn cg-dl btn-sm">
+                                    <span><b class="cg-dl-arrow">⬇</b> Excel</span>
                                 </button>
                                 <button onclick="switchTab('furniture')" class="btn btn-secondary btn-sm">
                                     <i data-lucide="edit-3"></i>
@@ -1160,13 +1224,11 @@
                                         <i data-lucide="plus"></i>
                                         <span>إضافة صنف جديد</span>
                                     </button>
-                                    <button onclick="printHqReport()" class="btn btn-success btn-sm">
-                                        <i data-lucide="printer"></i>
-                                        <span>طباعة تقرير مقر الإدارة العليا</span>
+                                    <button onclick="printHqReport()" class="btn cg-dl btn-sm">
+                                        <span><b class="cg-dl-arrow">⬇</b> PDF</span>
                                     </button>
-                                    <button onclick="exportHqToCSV()" class="btn btn-secondary btn-sm">
-                                        <i data-lucide="file-spreadsheet"></i>
-                                        <span>تصدير Excel</span>
+                                    <button onclick="exportHqToCSV()" class="btn cg-dl btn-sm">
+                                        <span><b class="cg-dl-arrow">⬇</b> Excel</span>
                                     </button>
                                 </div>
                             </div>
@@ -1183,7 +1245,7 @@
                             </div>
 
                             <div class="table-responsive">
-                                <table class="data-table">
+                                <table class="data-table cg-sheet">
                                     <thead>
                                         <tr>
                                             <th style="text-align: center; width: 80px;">كود الحصر</th>
@@ -1277,34 +1339,29 @@
                                             <i data-lucide="plus"></i>
                                             <span>تسجيل حركة عهدة (وارد / منصرف)</span>
                                         </button>
-                                        <button onclick="printCustodyReport()" class="btn btn-success btn-sm">
-                                            <i data-lucide="printer"></i>
-                                            <span>طباعة جرد العهدة المحدد</span>
+                                        <button onclick="printCustodyReport()" class="btn cg-dl btn-sm">
+                                            <span><b class="cg-dl-arrow">⬇</b> PDF</span>
                                         </button>
                                         <button onclick="shareCustodyWhatsAppSummary()" class="btn btn-secondary btn-sm">
                                             <i data-lucide="send"></i>
                                             <span>إرسال كشف العهدة (واتساب)</span>
                                         </button>
-                                        <button onclick="exportCustodyToCSV()" class="btn btn-secondary btn-sm">
-                                            <i data-lucide="file-spreadsheet"></i>
-                                            <span>تصدير Excel</span>
+                                        <button onclick="exportCustodyToCSV()" class="btn cg-dl btn-sm">
+                                            <span><b class="cg-dl-arrow">⬇</b> Excel</span>
                                         </button>
                                     </div>
                                 </div>
 
                                 <!-- Compact Single-Row Filter & Instant Item Search Bar -->
                                 <div class="custody-compact-filter-bar">
-                                    <div class="custody-compact-filter-item" style="flex: 1; min-width: 240px;">
-                                        <label>🔍 بحث فوري عن صنف:</label>
-                                        <div style="display: flex; gap: 0.25rem; flex: 1;">
-                                            <input type="text" id="custody-search-input" class="form-control" placeholder="ابحث عن: قهوة، أغراض البوفيه، فلاتر، سباك..." oninput="renderCustodyView()" style="flex: 1;">
-                                            <button onclick="clearCustodySearch()" class="btn btn-secondary btn-sm" style="height: 32px; padding: 0 0.5rem;" title="مسح البحث">✖</button>
-                                        </div>
-                                    </div>
+                                    <label class="cg-search" style="min-width: 240px;">
+                                        <i data-lucide="search"></i>
+                                        <input type="search" id="custody-search-input" placeholder="بحث عن صنف: قهوة، أغراض البوفيه، فلاتر، سباك..." oninput="renderCustodyView()" aria-label="بحث عن صنف">
+                                        <button type="button" onclick="clearCustodySearch()" class="cg-x" title="مسح البحث">✖</button>
+                                    </label>
 
                                     <div class="custody-compact-filter-item">
-                                        <label>📅 نطاق التصفية:</label>
-                                        <select id="custody-filter-mode" class="form-control" onchange="onCustodyFilterModeChange()" style="min-width: 185px;">
+                                        <select id="custody-filter-mode" class="cg-f" onchange="onCustodyFilterModeChange()" style="min-width: 185px;" aria-label="نطاق التصفية" title="نطاق التصفية">
                                             <option value="all">العهدة كاملة (كل السجل)</option>
                                             <option value="month">شهر محدد</option>
                                             <option value="range">فترة من ... إلى ...</option>
@@ -1319,11 +1376,11 @@
                                         <select id="custody-filter-month" class="form-control" onchange="renderCustodyView()"></select>
                                     </div>
 
-                                    <div id="custody-filter-range-box" class="custody-compact-filter-item" style="display: none;">
-                                        <label>من:</label>
-                                        <input type="date" id="custody-filter-from" class="form-control" onchange="renderCustodyView()">
-                                        <label>إلى:</label>
-                                        <input type="date" id="custody-filter-to" class="form-control" onchange="renderCustodyView()">
+                                    <div id="custody-filter-range-box" class="cg-period" style="display: none;">
+                                        <span>من</span>
+                                        <input type="date" id="custody-filter-from" class="f" onchange="renderCustodyView()">
+                                        <span>إلى</span>
+                                        <input type="date" id="custody-filter-to" class="f" onchange="renderCustodyView()">
                                     </div>
 
                                     <div id="custody-filter-transfer-box" class="custody-compact-filter-item" style="display: none;">
@@ -1386,9 +1443,8 @@
                                         <i data-lucide="plus"></i>
                                         <span>إضافة أمر شراء / تحويل مباشر لمورد</span>
                                     </button>
-                                    <button onclick="printSupplierPOsReport()" class="btn btn-success btn-sm">
-                                        <i data-lucide="printer"></i>
-                                        <span>طباعة كشف تحويلات الموردين</span>
+                                    <button onclick="printSupplierPOsReport()" class="btn cg-dl btn-sm">
+                                        <span><b class="cg-dl-arrow">⬇</b> PDF</span>
                                     </button>
                                 </div>
                             </div>
@@ -1432,9 +1488,8 @@
                                         <i data-lucide="plus"></i>
                                         <span>إضافة بند شهري</span>
                                     </button>
-                                    <button onclick="printMonthlyCoreExpenses()" class="btn btn-success btn-sm">
-                                        <i data-lucide="printer"></i>
-                                        <span>طباعة بيان المصروفات الشهرية</span>
+                                    <button onclick="printMonthlyCoreExpenses()" class="btn cg-dl btn-sm">
+                                        <span><b class="cg-dl-arrow">⬇</b> PDF</span>
                                     </button>
                                 </div>
                             </div>
@@ -2066,9 +2121,8 @@
                         <i data-lucide="send"></i>
                         <span>إرسال الفاتورة والبند واتساب</span>
                     </button>
-                    <button onclick="printSingleCustodyInvoice()" class="btn btn-secondary btn-sm">
-                        <i data-lucide="printer"></i>
-                        <span>طباعة الفاتورة منفردة</span>
+                    <button onclick="printSingleCustodyInvoice()" class="btn cg-dl btn-sm">
+                        <span><b class="cg-dl-arrow">⬇</b> PDF</span>
                     </button>
                     <button onclick="downloadCustodyInvoiceFile()" id="btn-download-cust-inv" class="btn btn-secondary btn-sm" style="display: none;">
                         <i data-lucide="download"></i>
@@ -2213,6 +2267,228 @@
             <div class="modal-footer">
                 <button onclick="closeModal('modal-edit-furniture')" class="btn btn-secondary">إلغاء</button>
                 <button onclick="saveEditFurnitureItem()" class="btn btn-primary">حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit a saved issue transaction -->
+    <div id="modal-edit-trans" class="modal-overlay">
+        <div class="modal-box cg-edit-modal" style="max-width: 560px;">
+            <div class="modal-header">
+                <div>
+                    <div class="cg-edit-eyebrow">سجل الحركات</div>
+                    <h3>تعديل حركة صرف</h3>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('modal-edit-trans')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <input type="hidden" id="et-id" value="">
+                <div class="cg-edit-grid">
+                    <label>التاريخ
+                        <input type="date" id="et-date" class="form-control">
+                    </label>
+                    <label>الدور
+                        <select id="et-floor" class="form-control">
+                            <option>الدور الرابع</option><option>الدور الخامس</option><option>الدور السادس</option>
+                            <option>الدور السابع</option><option>الدور الثامن</option><option>الدور التاسع</option>
+                        </select>
+                    </label>
+                    <label>الصنف
+                        <select id="et-item" class="form-control"></select>
+                    </label>
+                    <label>الكمية
+                        <input type="number" id="et-qty" class="form-control" min="0">
+                    </label>
+                    <label class="cg-full">اسم المستلم
+                        <input type="text" id="et-recipient" class="form-control" list="recipients-datalist">
+                    </label>
+                </div>
+                <div class="cg-edit-section">إضافة صنف نسي الموظف يسجله (نفس الدور والتاريخ والمستلم)</div>
+                <div class="cg-edit-grid" style="align-items: end;">
+                    <label>الصنف
+                        <select id="et-add-item" class="form-control"></select>
+                    </label>
+                    <label>الكمية
+                        <input type="number" id="et-add-qty" class="form-control" min="0" placeholder="0">
+                    </label>
+                    <div class="cg-full"><button type="button" class="btn btn-secondary btn-sm" onclick="addEditTransExtra()">+ إضافة الصنف</button></div>
+                </div>
+                <div id="et-extras" class="et-extras"></div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-edit-trans')" class="btn btn-secondary">إلغاء</button>
+                <button onclick="saveEditTransaction()" class="btn btn-primary">حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit an HQ item -->
+    <div id="modal-edit-hq" class="modal-overlay">
+        <div class="modal-box cg-edit-modal" style="max-width: 560px;">
+            <div class="modal-header">
+                <div>
+                    <div class="cg-edit-eyebrow">مقر الإدارة العليا</div>
+                    <h3 id="eh-title">تعديل صنف</h3>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('modal-edit-hq')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <input type="hidden" id="eh-id" value="">
+                <div class="cg-edit-grid">
+                    <label class="cg-full">اسم الصنف / البيان
+                        <input type="text" id="eh-name" class="form-control">
+                    </label>
+                    <label>المجموعة
+                        <input type="text" id="eh-cat" class="form-control">
+                    </label>
+                    <label>المقاس / الأبعاد
+                        <input type="text" id="eh-size" class="form-control">
+                    </label>
+                    <label>العدد
+                        <input type="number" id="eh-qty" class="form-control" min="0">
+                    </label>
+                    <label>الحالة
+                        <select id="eh-status" class="form-control">
+                            <option value="ممتاز">ممتاز</option>
+                            <option value="جيد جداً">جيد جداً</option>
+                            <option value="يحتاج صيانة">يحتاج صيانة</option>
+                        </select>
+                    </label>
+                    <label class="cg-full">ملاحظات / تفاصيل فنية
+                        <input type="text" id="eh-notes" class="form-control">
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-edit-hq')" class="btn btn-secondary">إلغاء</button>
+                <button onclick="saveEditHqItem()" class="btn btn-primary">حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit a main-store item -->
+    <div id="modal-edit-item" class="modal-overlay">
+        <div class="modal-box cg-edit-modal" style="max-width: 520px;">
+            <div class="modal-header">
+                <div>
+                    <div class="cg-edit-eyebrow">المخزن الرئيسي</div>
+                    <h3>تعديل صنف</h3>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('modal-edit-item')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <input type="hidden" id="ei-id" value="">
+                <div class="cg-edit-grid">
+                    <label class="cg-full">اسم الصنف
+                        <input type="text" id="ei-name" class="form-control">
+                    </label>
+                    <label>الفئة
+                        <select id="ei-cat" class="form-control">
+                            <option value="مشروبات وضيافة">مشروبات وضيافة</option>
+                            <option value="منظفات ومطهرات">منظفات ومطهرات</option>
+                            <option value="مناشف ومناديل">مناشف ومناديل</option>
+                            <option value="أدوات ونظافة">أدوات ونظافة</option>
+                        </select>
+                    </label>
+                    <label>الوحدة
+                        <input type="text" id="ei-unit" class="form-control">
+                    </label>
+                    <label>إجمالي الوارد (الكمية)
+                        <input type="number" id="ei-total" class="form-control" min="0">
+                    </label>
+                    <label>حد الطلب
+                        <input type="number" id="ei-min" class="form-control" min="0">
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-edit-item')" class="btn btn-secondary">إلغاء</button>
+                <button onclick="saveEditItem()" class="btn btn-primary">حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Department: offices and what is inside them -->
+    <div id="modal-dept" class="modal-overlay">
+        <div class="modal-box cg-edit-modal" style="max-width: 720px;">
+            <div class="modal-header">
+                <div>
+                    <div class="cg-edit-eyebrow">تحليل الطوابق بالأقسام</div>
+                    <h3 id="dept-modal-title">تعديل قسم</h3>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('modal-dept')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <input type="hidden" id="dept-id" value="">
+                <div class="cg-edit-grid">
+                    <label class="cg-full">اسم القسم / المكتب
+                        <input type="text" id="dept-name" class="form-control" placeholder="مثال: قسم العروض، مكتب Technical Manager">
+                    </label>
+                    <label>الدور
+                        <select id="dept-floor" class="form-control">
+                            <option>الدور التاسع</option><option>الدور الثامن</option><option>الدور السابع</option>
+                            <option>الدور السادس</option><option>الدور الخامس</option><option>الدور الرابع</option>
+                        </select>
+                    </label>
+                    <label>تابع لقسم (لو فرع)
+                        <input type="text" id="dept-group" class="form-control" placeholder="مثال: التصميم">
+                    </label>
+                    <label>عدد المكاتب
+                        <input type="number" id="dept-offices" class="form-control" min="0" oninput="renderDeptItemsDraft()">
+                    </label>
+                    <label>ملاحظات
+                        <input type="text" id="dept-notes" class="form-control" placeholder="مثال: باقي مكاتب الدور">
+                    </label>
+                </div>
+                <div class="cg-edit-section" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <span>محتويات المكاتب (لكل مكتب) والموجود فعلاً</span>
+                    <span style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="applyDeptKit('staff')">مكتب موظف</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="applyDeptKit('manager')">مكتب مدير</button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addDeptItemDraft()">+ غرض</button>
+                    </span>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table dept-items-table">
+                        <thead><tr><th>الغرض</th><th style="text-align:center;">لكل مكتب</th><th style="text-align:center;">المطلوب</th><th style="text-align:center;">الموجود فعلاً</th><th style="text-align:center;">محتاج شراء</th><th></th></tr></thead>
+                        <tbody id="dept-items-body"></tbody>
+                    </table>
+                </div>
+                <datalist id="dept-item-names">
+                    <option value="مكتب"></option><option value="مكتب مدير"></option><option value="كرسي"></option><option value="كرسي مدير"></option>
+                    <option value="كرسي ضيوف"></option><option value="لوكر"></option><option value="ترابيزة أمام المكتب"></option><option value="ترابيزة اجتماعات"></option>
+                    <option value="وحدة أدراج"></option><option value="دولاب ملفات"></option><option value="مكتبة"></option><option value="كنبة"></option>
+                </datalist>
+                <div class="cg-edit-hint">"الموجود فعلاً" سيبه فاضي لو لسه ماتعدّش. المطلوب = عدد المكاتب × العدد لكل مكتب. لو الموجود أقل، البرنامج بيحسب كام محتاج يتشترى.</div>
+            </div>
+            <div class="modal-footer">
+                <button id="dept-delete-btn" onclick="deleteDept()" class="btn btn-danger-outline" style="margin-inline-end:auto;">حذف القسم</button>
+                <button onclick="closeModal('modal-dept')" class="btn btn-secondary">إلغاء</button>
+                <button onclick="saveDept()" class="btn btn-primary">حفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase prices of one month (month comparison) -->
+    <div id="modal-month-prices" class="modal-overlay">
+        <div class="modal-box cg-edit-modal" style="max-width: 560px;">
+            <div class="modal-header">
+                <div>
+                    <div class="cg-edit-eyebrow">مقارنة الشهور</div>
+                    <h3>أسعار الشراء لكل شهر</h3>
+                </div>
+                <button class="modal-close-btn" onclick="closeModal('modal-month-prices')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <label class="cg-edit-grid" style="grid-template-columns: 1fr;"><span style="font-weight:700; font-size:0.85rem;">الشهر</span>
+                    <select id="mp-month" class="form-control" onchange="renderMonthPricesRows()"></select>
+                </label>
+                <div class="cg-edit-hint">اكتب سعر الوحدة لكل صنف في الشهر ده. الخانة الفاضية بتاخد آخر سعر قبلها (المكتوب بالرمادي).</div>
+                <div id="mp-rows" class="mp-rows"></div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-month-prices')" class="btn btn-secondary">إلغاء</button>
+                <button onclick="saveMonthPrices()" class="btn btn-primary">حفظ</button>
             </div>
         </div>
     </div>
