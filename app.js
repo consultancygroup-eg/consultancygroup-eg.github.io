@@ -8798,8 +8798,18 @@ function renderDeptsView() {
     }).join('');
 }
 
+// Suggestions = the basic list + every item name already typed in any department (so new names are remembered)
+const DEPT_ITEM_SUGGESTIONS = ['مكتب', 'مكتب مدير', 'كرسي', 'كرسي مدير', 'كرسي ضيوف', 'لوكر', 'ترابيزة أمام المكتب', 'ترابيزة اجتماعات', 'ترابيزة اجتماعات مدورة', 'ترابيزة مدورة', 'وحدة أدراج', 'دولاب ملفات', 'مكتبة', 'كنبة'];
+function refreshDeptItemSuggestions() {
+    const dl = document.getElementById('dept-item-names');
+    if (!dl) return;
+    const names = new Set(DEPT_ITEM_SUGGESTIONS);
+    deptLayout.forEach(d => (d.items || []).forEach(it => { if (it.name) names.add(it.name); }));
+    dl.innerHTML = [...names].map(n => `<option value="${escHtml(n)}"></option>`).join('');
+}
 function openDeptModal(id, floor) {
     if (currentUserRole === 'viewer') return;
+    refreshDeptItemSuggestions();
     const d = id ? deptLayout.find(x => x.id === id) : null;
     document.getElementById('dept-modal-title').textContent = d ? `تعديل: ${d.name}` : 'إضافة قسم / مكتب';
     document.getElementById('dept-id').value = d ? d.id : '';
@@ -8847,7 +8857,7 @@ function drawDeptItemsDraft() {
     const body = document.getElementById('dept-items-body');
     if (!body) return;
     body.innerHTML = deptItemsDraft.map((it, i) => `<tr>
-            <td><input type="text" class="form-control di-name" list="dept-item-names" value="${escHtml(it.name)}" style="min-width:150px;"></td>
+            <td><input type="text" class="form-control di-name" list="dept-item-names" value="${escHtml(it.name)}" placeholder="اكتب اسم أي غرض أو اختار" title="اكتب أي اسم (مثلاً ترابيزة مدورة) أو اختار من القايمة" style="min-width:170px;"></td>
             <td><input type="number" class="form-control di-per" min="0" step="1" value="${it.per}" oninput="renderDeptItemsDraft()" style="width:80px; text-align:center;"></td>
             <td class="di-need" style="text-align:center;"><div class="elec-new"><input type="number" class="form-control di-need-in ${deptItemNeedIsManual(it) ? 'is-manual' : ''}" min="0" step="1" data-manual="${deptItemNeedIsManual(it) ? '1' : ''}" value="${deptItemNeedIsManual(it) ? it.need : ''}" oninput="onDeptNeedInput(this)" style="width:80px; text-align:center; font-weight:800;" title="اكتب العدد المطلوب بنفسك، أو سيبه للحساب"><button type="button" class="cg-x di-need-reset" title="رجّعه للحساب (المكاتب × لكل مكتب)" onclick="resetDeptNeed(${i})">↺</button></div></td>
             <td><input type="number" class="form-control di-have" min="0" value="${isUncounted(it.have) ? '' : it.have}" placeholder="؟" oninput="renderDeptItemsDraft()" style="width:90px; text-align:center;"></td>
