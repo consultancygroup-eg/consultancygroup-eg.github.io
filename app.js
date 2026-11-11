@@ -911,6 +911,26 @@ const SEED_DEPTS = [
     seedDept(22, 'الدور الرابع', 'قسم EI', 0, 'staff')
 ];
 let deptLayout = JSON.parse(localStorage.getItem('buffet_v9_depts')) || JSON.parse(JSON.stringify(SEED_DEPTS));
+// Electricity top-up sheet (standalone calculation; not part of custody). Filled from the user's Excel sheet.
+const SEED_ELEC = {
+    meters: [
+        { id: 1, floor: 'الدور السادس', meter: '92303365' },
+        { id: 2, floor: 'الدور السابع', meter: '92319641' },
+        { id: 3, floor: 'الدور الثامن', meter: '82303362' },
+        { id: 4, floor: 'الدور التاسع', meter: '92303369' }
+    ],
+    draft: {
+        id: null, date: '', target: 12000, feePct: 1.5, feeFixed: 300,
+        rows: [
+            { meterId: 1, current: 2550, manualNew: null, debt: 6151.51 },
+            { meterId: 2, current: 4495, manualNew: 6001, debt: 8717.54 },
+            { meterId: 3, current: 5623, manualNew: null, debt: 4189 },
+            { meterId: 4, current: 8156, manualNew: null, debt: 4152.64 }
+        ]
+    },
+    history: []
+};
+let elecData = JSON.parse(localStorage.getItem('buffet_v9_elec')) || JSON.parse(JSON.stringify(SEED_ELEC));
 let activeCustodySubtab = 'ledger';
 let custodyCameraStream = null;
 
@@ -1735,6 +1755,7 @@ function persistState() {
     localStorage.setItem('buffet_v9_supplier_pos', JSON.stringify(supplierPOs));
     localStorage.setItem('buffet_v9_monthly_core', JSON.stringify(monthlyCoreExpenses));
     localStorage.setItem('buffet_v9_depts', JSON.stringify(deptLayout));
+    localStorage.setItem('buffet_v9_elec', JSON.stringify(elecData));
     localStorage.setItem('buffet_v9_cycle_day', cycleStartDay);
     renderAll();
 
@@ -1827,6 +1848,7 @@ function renderAll() {
     const cmpCard = document.getElementById('floors-compare-card');
     if (cmpCard && cmpCard.style.display !== 'none') renderFloorsCompare();
     renderDeptsView();
+    renderElecView();
     renderHqView();
     if (typeof renderCustodyModule === 'function') {
         renderCustodyModule();
@@ -5259,6 +5281,7 @@ function exportDataBackup() {
         supplierPOs,
         monthlyCoreExpenses,
         deptLayout,
+        elecData,
         cycleStartDay,
         exportDate: new Date().toISOString()
     };
@@ -5290,6 +5313,7 @@ function importDataBackup(e) {
                 if (data.supplierPOs) supplierPOs = data.supplierPOs;
                 if (data.monthlyCoreExpenses) monthlyCoreExpenses = data.monthlyCoreExpenses;
                 if (data.deptLayout) deptLayout = data.deptLayout;
+                if (data.elecData) elecData = data.elecData;
                 if (data.cycleStartDay) cycleStartDay = data.cycleStartDay;
 
                 persistState();
@@ -5438,6 +5462,10 @@ function getTabTitles() {
             title: isAr ? 'تحليل الطوابق بالأقسام' : 'Floors by Department',
             sub: isAr ? 'إدارة المرافق - مدير المرافق | الأقسام في كل دور، عدد المكاتب ومحتوياتها، والمطلوب شراؤه' : 'Facilities Management | Departments per floor, offices, contents and what to buy'
         },
+        elec: {
+            title: isAr ? 'شحن الكهرباء' : 'Electricity Top-up',
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | حساب شحن عدادات الكهرباء للأدوار كل 15 يوم والمديونيات' : 'Facilities Management | Floor meter top-ups every 15 days and arrears'
+        },
         hq: {
             title: isAr ? 'جرد وتجهيزات مقر الإدارة العليا' : 'Executive Management HQ Inventory',
             sub: isAr ? 'إدارة المرافق - مدير المرافق | بيان الأعداد الفعلية والحالة الفنية لتجهيزات مقر الإدارة العليا' : 'Facilities Management - Facilities Manager | Executive HQ Assets & Appliances'
@@ -5492,7 +5520,7 @@ function switchTab(tabId) {
         applyModuleIsolation('furniture');
     } else if (tabId === 'hq') {
         applyModuleIsolation('hq');
-    } else if (tabId === 'custody') {
+    } else if (tabId === 'custody' || tabId === 'elec') {
         applyModuleIsolation('custody');
     } else {
         applyModuleIsolation('buffet');
@@ -5510,7 +5538,7 @@ function switchTab(tabId) {
     // Show cycle banner only on Buffet tabs
     const cycleBanner = document.querySelector('.cycle-banner');
     if (cycleBanner) {
-        const isAssetTab = (tabId === 'furniture' || tabId === 'furniture-matrix' || tabId === 'furniture-depts' || tabId === 'hq' || tabId === 'custody');
+        const isAssetTab = (tabId === 'furniture' || tabId === 'furniture-matrix' || tabId === 'furniture-depts' || tabId === 'hq' || tabId === 'custody' || tabId === 'elec');
         cycleBanner.style.display = isAssetTab ? 'none' : '';
     }
 
@@ -5888,6 +5916,9 @@ function connectToFirebase(config, wsId) {
                 if (cloudData.deptLayout && Array.isArray(cloudData.deptLayout)) {
                     deptLayout = cloudData.deptLayout;
                 }
+                if (cloudData.elecData && typeof cloudData.elecData === 'object' && Array.isArray(cloudData.elecData.meters)) {
+                    elecData = cloudData.elecData;
+                }
                 if (cloudData.cycleStartDay) {
                     cycleStartDay = Number(cloudData.cycleStartDay);
                 }
@@ -5903,6 +5934,7 @@ function connectToFirebase(config, wsId) {
                 localStorage.setItem('buffet_v9_supplier_pos', JSON.stringify(supplierPOs));
                 localStorage.setItem('buffet_v9_monthly_core', JSON.stringify(monthlyCoreExpenses));
                 localStorage.setItem('buffet_v9_depts', JSON.stringify(deptLayout));
+                localStorage.setItem('buffet_v9_elec', JSON.stringify(elecData));
                 localStorage.setItem('buffet_v9_cycle_day', cycleStartDay);
 
                 renderAllWhenNotTyping();
@@ -5966,6 +5998,7 @@ function syncToCloud(isInitial = false) {
         supplierPOs,
         monthlyCoreExpenses,
         deptLayout,
+        elecData,
         cycleStartDay,
         lastUpdated: new Date().toISOString()
     };
@@ -8929,4 +8962,336 @@ function moveDept(id, dir) {
     const a = sameFloor[pos].i, b = target.i;
     [deptLayout[a], deptLayout[b]] = [deptLayout[b], deptLayout[a]];
     persistState();
+}
+
+// ======================================================================
+// ELECTRICITY TOP-UP — floor meters charged every 15 days (calculation only)
+// ======================================================================
+const ELEC_EVERY_DAYS = 15;
+const ELEC_FLOORS = ['الدور الرابع', 'الدور الخامس', 'الدور السادس', 'الدور السابع', 'الدور الثامن', 'الدور التاسع'];
+
+function elecNum(v) { const n = Number(v); return isFinite(n) ? n : 0; }
+function elecMoney(n) { return elecNum(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+function elecMoney2(n) { return elecNum(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function elecToday() { return new Date().toISOString().split('T')[0]; }
+function elecAddDays(dateStr, days) {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split('T')[0];
+}
+function elecDaysBetween(a, b) { return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000); }
+
+// One charge (draft or saved) -> every number the sheet shows
+function computeElec(charge, meters) {
+    const target = elecNum(charge.target);
+    const rows = (charge.rows || []).map((r, i) => {
+        const m = (meters || elecData.meters).find(x => x.id === r.meterId) || { floor: r.floor || '', meter: r.meter || '' };
+        const current = elecNum(r.current);
+        const auto = Math.max(0, +(target - current).toFixed(2));
+        const manual = r.manualNew !== null && r.manualNew !== undefined && r.manualNew !== '';
+        const newBal = manual ? elecNum(r.manualNew) : auto;
+        return { idx: i, meterId: r.meterId, floor: r.floor || m.floor, meter: r.meter || m.meter, current, newBal, manual, auto, total: +(current + newBal).toFixed(2), debt: elecNum(r.debt) };
+    });
+    const totalCharge = +rows.reduce((s, r) => s + r.newBal, 0).toFixed(2);
+    const totalDebt = +rows.reduce((s, r) => s + r.debt, 0).toFixed(2);
+    const afterDebt = +(totalCharge + totalDebt).toFixed(2);
+    const fixed = charge.feeFixed !== null && charge.feeFixed !== undefined && charge.feeFixed !== '';
+    const fee = fixed ? elecNum(charge.feeFixed) : +(afterDebt * elecNum(charge.feePct) / 100).toFixed(2);
+    const final = +(afterDebt + fee).toFixed(2);
+    return { rows, target, totalCharge, totalDebt, afterDebt, fee, feeFixed: fixed, feePct: elecNum(charge.feePct), final };
+}
+
+function saveElecLocal() {
+    try { localStorage.setItem('buffet_v9_elec', JSON.stringify(elecData)); } catch (e) {}
+    clearTimeout(window.__elecSyncT);
+    window.__elecSyncT = setTimeout(() => syncToCloud(), 1200);
+}
+
+function getElecDueInfo() {
+    const dates = (elecData.history || []).map(h => h.date).filter(Boolean).sort();
+    if (!dates.length) return null;
+    const last = dates[dates.length - 1];
+    const next = elecAddDays(last, ELEC_EVERY_DAYS);
+    return { last, next, left: elecDaysBetween(elecToday(), next) };
+}
+
+function renderElecView() {
+    const tbody = document.getElementById('elec-tbody');
+    if (!tbody) return;
+    if (!elecData.draft) elecData.draft = { id: null, date: elecToday(), target: 12000, feePct: 1.5, feeFixed: null, rows: [] };
+    const d = elecData.draft;
+    if (!d.date) d.date = elecToday();
+
+    // Due badge in the sidebar and the note on the page
+    const due = getElecDueInfo();
+    const badge = document.getElementById('badge-elec-due');
+    if (badge) {
+        const show = due && due.left <= 2;
+        badge.style.display = show ? '' : 'none';
+        if (show) badge.textContent = due.left < 0 ? 'متأخر' : (due.left === 0 ? 'النهارده' : `بعد ${due.left}`);
+    }
+    const dueEl = document.getElementById('elec-due');
+    if (dueEl) {
+        if (!due) dueEl.innerHTML = `<span>الشحن كل ${ELEC_EVERY_DAYS} يوم. احفظ أول شحنة علشان البرنامج يحسب ميعاد الشحنة الجاية.</span>`;
+        else {
+            const cls = due.left < 0 ? 'bad' : (due.left <= 2 ? 'warn' : '');
+            const txt = due.left < 0 ? `متأخرة ${-due.left} يوم` : (due.left === 0 ? 'النهارده' : `فاضل ${due.left} يوم`);
+            dueEl.innerHTML = `<span>آخر شحنة: <b>${due.last}</b></span><span>الشحنة الجاية (كل ${ELEC_EVERY_DAYS} يوم): <b class="${cls}">${due.next} — ${txt}</b></span>`;
+        }
+    }
+
+    // While the user is typing in the sheet, only refresh the computed cells (keeps the cursor)
+    const ae = document.activeElement;
+    const typing = ae && ae.closest && ae.closest('#pane-elec') && /INPUT|SELECT/.test(ae.tagName);
+    if (!typing) {
+        document.getElementById('elec-date').value = d.date || '';
+        document.getElementById('elec-target').value = d.target;
+        document.getElementById('elec-fee-pct').value = d.feePct;
+        document.getElementById('elec-fee-fixed').value = (d.feeFixed === null || d.feeFixed === undefined) ? '' : d.feeFixed;
+        const lbl = document.getElementById('elec-save-label');
+        if (lbl) lbl.textContent = d.id ? 'حفظ التعديل' : 'حفظ الشحنة';
+        const ro = currentUserRole === 'viewer';
+        const floorOpts = sel => ELEC_FLOORS.map(f => `<option ${f === sel ? 'selected' : ''}>${f}</option>`).join('');
+        tbody.innerHTML = d.rows.map((r, i) => {
+            const m = elecData.meters.find(x => x.id === r.meterId) || {};
+            return `<tr class="cg-sheet-row">
+                <td style="text-align:center; font-weight:800;">${i + 1}</td>
+                <td>${ro ? escHtml(m.floor) : `<select class="form-control elec-in" onchange="updateElecMeter(${m.id}, 'floor', this.value)">${floorOpts(m.floor)}</select>`}</td>
+                <td style="text-align:center;">${ro ? escHtml(m.meter) : `<input type="text" class="form-control elec-in" style="text-align:center;" value="${escHtml(m.meter)}" oninput="updateElecMeter(${m.id}, 'meter', this.value)">`}</td>
+                <td style="text-align:center;">${ro ? elecMoney(r.current) : `<input type="number" class="form-control elec-in" step="0.01" value="${r.current === '' || r.current === null ? '' : r.current}" oninput="updateElecRow(${i}, 'current', this.value)">`}</td>
+                <td style="text-align:center;" id="elec-new-${i}"></td>
+                <td style="text-align:center; font-weight:800;" id="elec-total-${i}"></td>
+                <td style="text-align:center;">${ro ? elecMoney2(r.debt) : `<input type="number" class="form-control elec-in" step="0.01" min="0" value="${r.debt === '' || r.debt === null ? '' : r.debt}" oninput="updateElecRow(${i}, 'debt', this.value)">`}</td>
+                <td class="admin-only" style="text-align:center;"><button type="button" class="btn btn-sm btn-danger-outline" title="حذف العداد" onclick="removeElecMeter(${m.id})">✖</button></td>
+            </tr>`;
+        }).join('') || `<tr><td colspan="8" style="text-align:center; color: var(--text-muted); padding: 1rem;">مفيش عدادات. دوس "+ عداد".</td></tr>`;
+    }
+    refreshElecComputed();
+    renderElecHistory();
+}
+
+// Recalculate the "new balance", "meter total" cells and the summary without rebuilding inputs
+function refreshElecComputed() {
+    const c = computeElec(elecData.draft);
+    const ro = currentUserRole === 'viewer';
+    c.rows.forEach(r => {
+        const nc = document.getElementById(`elec-new-${r.idx}`);
+        if (nc) {
+            const ae = document.activeElement;
+            if (!(ae && ae.id === `elec-new-in-${r.idx}`)) {
+                nc.innerHTML = ro ? `<b>${elecMoney(r.newBal)}</b>` :
+                    `<div class="elec-new"><input type="number" id="elec-new-in-${r.idx}" class="form-control elec-in ${r.manual ? 'is-manual' : ''}" step="0.01" value="${r.newBal}" oninput="updateElecRow(${r.idx}, 'manualNew', this.value)" title="${r.manual ? `مكتوب بالإيد (الحساب: ${elecMoney(r.auto)})` : 'محسوب لوحده'}">${r.manual ? `<button type="button" class="cg-x" title="رجّعه للحساب (${elecMoney(r.auto)})" onclick="updateElecRow(${r.idx}, 'manualNew', ''); renderElecView();">↺</button>` : ''}</div>`;
+            }
+        }
+        const tc = document.getElementById(`elec-total-${r.idx}`);
+        if (tc) tc.textContent = elecMoney(r.total);
+    });
+    const sum = document.getElementById('elec-summary');
+    if (sum) {
+        sum.innerHTML = `
+            <div><span>إجمالي الشحن</span><b>${elecMoney2(c.totalCharge)}</b></div>
+            <div><span>المديونية</span><b>${elecMoney2(c.totalDebt)}</b></div>
+            <div><span>الإجمالي بعد المديونية</span><b>${elecMoney2(c.afterDebt)}</b></div>
+            <div><span>${c.feeFixed ? 'رسوم تحصيل الفيزا (مبلغ فعلي)' : `${c.feePct}% نسبة تحصيل للدفع بالفيزا`}</span><b>${elecMoney2(c.fee)}</b></div>
+            <div class="elec-final"><span>الإجمالي المطلوب</span><b>${elecMoney2(c.final)} ج.م</b></div>`;
+    }
+}
+
+function updateElecRow(i, field, val) {
+    if (currentUserRole === 'viewer') return;
+    const r = elecData.draft.rows[i];
+    if (!r) return;
+    if (field === 'manualNew') r.manualNew = (val === '' || val === null) ? null : elecNum(val);
+    else r[field] = val === '' ? '' : elecNum(val);
+    // Changing the current balance re-applies the automatic amount unless it was typed by hand
+    saveElecLocal();
+    refreshElecComputed();
+}
+function updateElecMeter(id, field, val) {
+    if (currentUserRole === 'viewer') return;
+    const m = elecData.meters.find(x => x.id === id);
+    if (!m) return;
+    m[field] = String(val).trim();
+    saveElecLocal();
+}
+function onElecSettingChange() {
+    if (currentUserRole === 'viewer') return;
+    const d = elecData.draft;
+    d.date = document.getElementById('elec-date').value;
+    d.target = elecNum(document.getElementById('elec-target').value);
+    d.feePct = elecNum(document.getElementById('elec-fee-pct').value);
+    const f = document.getElementById('elec-fee-fixed').value;
+    d.feeFixed = f === '' ? null : elecNum(f);
+    saveElecLocal();
+    refreshElecComputed();
+}
+function addElecMeter() {
+    if (currentUserRole === 'viewer') return;
+    const id = elecData.meters.length ? Math.max(...elecData.meters.map(m => m.id)) + 1 : 1;
+    elecData.meters.push({ id, floor: 'الدور الرابع', meter: '' });
+    elecData.draft.rows.push({ meterId: id, current: '', manualNew: null, debt: 0 });
+    saveElecLocal();
+    renderElecView();
+}
+function removeElecMeter(id) {
+    if (currentUserRole === 'viewer') return;
+    const m = elecData.meters.find(x => x.id === id);
+    if (!m || !confirm(`حذف عداد ${m.floor} (${m.meter || 'بدون رقم'}) من الشيت؟ الشحنات المحفوظة قبل كده مش هتتأثر.`)) return;
+    elecData.meters = elecData.meters.filter(x => x.id !== id);
+    elecData.draft.rows = elecData.draft.rows.filter(r => r.meterId !== id);
+    saveElecLocal();
+    renderElecView();
+}
+
+// Saved charges keep their own copy of floor + meter number, so later edits to meters don't change them
+function snapshotElecDraft() {
+    const d = elecData.draft;
+    return {
+        id: d.id || Date.now(),
+        date: d.date || elecToday(),
+        target: elecNum(d.target), feePct: elecNum(d.feePct), feeFixed: d.feeFixed,
+        rows: d.rows.map(r => {
+            const m = elecData.meters.find(x => x.id === r.meterId) || {};
+            return { meterId: r.meterId, floor: m.floor, meter: m.meter, current: elecNum(r.current), manualNew: r.manualNew, debt: elecNum(r.debt) };
+        }),
+        savedAt: new Date().toISOString()
+    };
+}
+function saveElecCharge() {
+    if (currentUserRole === 'viewer') return;
+    const d = elecData.draft;
+    if (!d.rows.length) { showToast('مفيش عدادات في الشيت', 'warning'); return; }
+    if (d.rows.some(r => r.current === '' || r.current === null)) {
+        if (!confirm('فيه عداد رصيده الحالي فاضي (هيتحسب صفر). تكمل الحفظ؟')) return;
+    }
+    const snap = snapshotElecDraft();
+    if (!elecData.history) elecData.history = [];
+    const idx = elecData.history.findIndex(h => h.id === snap.id);
+    if (idx >= 0) elecData.history[idx] = snap; else elecData.history.push(snap);
+    elecData.history.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    d.id = snap.id;
+    persistState();
+    showToast(`تم حفظ شحنة ${snap.date}. الشحنة الجاية ${elecAddDays(snap.date, ELEC_EVERY_DAYS)}`, 'success');
+}
+function newElecCharge() {
+    if (currentUserRole === 'viewer') return;
+    const prev = elecData.draft || {};
+    // Start from the meters; keep last target / fee, carry last arrears so they can be lowered or cleared
+    elecData.draft = {
+        id: null, date: elecToday(), target: elecNum(prev.target) || 12000, feePct: prev.feePct !== undefined ? prev.feePct : 1.5, feeFixed: null,
+        rows: elecData.meters.map(m => {
+            const old = (prev.rows || []).find(r => r.meterId === m.id);
+            return { meterId: m.id, current: '', manualNew: null, debt: old ? elecNum(old.debt) : 0 };
+        })
+    };
+    saveElecLocal();
+    renderElecView();
+    showToast('شحنة جديدة: اكتب رصيد الكارت الحالي لكل عداد، وعدّل المديونية لو اتغيرت', 'info');
+}
+function openElecCharge(id) {
+    const h = (elecData.history || []).find(x => x.id === id);
+    if (!h) return;
+    // Make sure every meter in the saved charge still exists in the sheet
+    h.rows.forEach(r => {
+        if (!elecData.meters.find(m => m.id === r.meterId)) elecData.meters.push({ id: r.meterId, floor: r.floor, meter: r.meter });
+    });
+    elecData.draft = JSON.parse(JSON.stringify({ id: h.id, date: h.date, target: h.target, feePct: h.feePct, feeFixed: h.feeFixed, rows: h.rows.map(r => ({ meterId: r.meterId, current: r.current, manualNew: r.manualNew, debt: r.debt })) }));
+    saveElecLocal();
+    renderElecView();
+    document.getElementById('pane-elec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function deleteElecCharge(id) {
+    if (currentUserRole === 'viewer') return;
+    const h = (elecData.history || []).find(x => x.id === id);
+    if (!h || !confirm(`حذف شحنة ${h.date}؟`)) return;
+    elecData.history = elecData.history.filter(x => x.id !== id);
+    if (elecData.draft && elecData.draft.id === id) elecData.draft.id = null;
+    persistState();
+}
+function renderElecHistory() {
+    const tb = document.getElementById('elec-history');
+    if (!tb) return;
+    const list = (elecData.history || []).slice().reverse();
+    const ro = currentUserRole === 'viewer';
+    tb.innerHTML = list.map(h => {
+        const c = computeElec(h, h.rows.map(r => ({ id: r.meterId, floor: r.floor, meter: r.meter })));
+        const active = elecData.draft && elecData.draft.id === h.id;
+        return `<tr class="cg-sheet-row ${active ? 'elec-active' : ''}" onclick="openElecCharge(${h.id})" title="دوس لعرضها أو تعديلها">
+            <td style="font-weight:700;">${h.date}${active ? ' <span class="badge badge-secondary">معروضة</span>' : ''}</td>
+            <td style="text-align:center;">${elecMoney2(c.totalCharge)}</td>
+            <td style="text-align:center;">${elecMoney2(c.totalDebt)}</td>
+            <td style="text-align:center;">${elecMoney2(c.fee)}</td>
+            <td style="text-align:center; font-weight:800;">${elecMoney2(c.final)}</td>
+            <td style="text-align:center; white-space:nowrap;" onclick="event.stopPropagation()">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="printElecCharge(${h.id})" title="PDF"><i data-lucide="printer" style="width:13px;height:13px;"></i></button>
+                ${ro ? '' : `<button type="button" class="btn btn-sm btn-danger" onclick="deleteElecCharge(${h.id})" title="حذف"><i data-lucide="trash-2" style="width:13px;height:13px;"></i></button>`}
+            </td>
+        </tr>`;
+    }).join('') || `<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 1rem;">لسه مفيش شحنات محفوظة</td></tr>`;
+    if (window.lucide) window.lucide.createIcons();
+}
+
+function exportElecToCSV() {
+    const d = elecData.draft;
+    const c = computeElec(d);
+    const q = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+    let csv = '﻿' + [q('بيان شحن عدادات الكهرباء'), q(`تاريخ الشحن: ${d.date}`), q(`الإجمالي المطلوب لكل عداد: ${c.target}`)].join(',') + '\n';
+    csv += ['م', 'الدور', 'رقم العداد', 'رصيد الكارت الحالي', 'الرصيد الجديد', 'إجمالي الرصيد بالعداد', 'المديونية'].map(q).join(',') + '\n';
+    c.rows.forEach((r, i) => { csv += [i + 1, r.floor, r.meter, r.current, r.newBal, r.total, r.debt].map(q).join(',') + '\n'; });
+    csv += '\n';
+    [['إجمالي الشحن', c.totalCharge], ['المديونية', c.totalDebt], ['الإجمالي بعد المديونية', c.afterDebt], [c.feeFixed ? 'رسوم تحصيل الفيزا' : `${c.feePct}% نسبة تحصيل للدفع بالفيزا`, c.fee], ['الإجمالي المطلوب', c.final]]
+        .forEach(([k, v]) => { csv += [q(k), q(v)].join(',') + '\n'; });
+    downloadCSV(csv, `شحن_عدادات_الكهرباء_${d.date || elecToday()}.csv`);
+}
+
+// Executive-ready PDF: large type, one clean A4 page, brand header, gold rules, light ink
+function printElecCharge(historyId) {
+    const printArea = document.getElementById('official-print-viewport');
+    if (!printArea) return;
+    let charge = elecData.draft, meters = elecData.meters;
+    if (historyId) {
+        const h = (elecData.history || []).find(x => x.id === historyId);
+        if (h) { charge = h; meters = h.rows.map(r => ({ id: r.meterId, floor: r.floor, meter: r.meter })); }
+    }
+    const c = computeElec(charge, meters);
+    const rowsHtml = c.rows.map((r, i) => `
+        <tr>
+            <td class="ec">${i + 1}</td>
+            <td class="ef">${escHtml(r.floor)}</td>
+            <td class="ec en">${escHtml(r.meter)}</td>
+            <td class="ec en">${elecMoney(r.current)}</td>
+            <td class="ec en strong">${elecMoney(r.newBal)}</td>
+            <td class="ec en">${elecMoney(r.total)}</td>
+            <td class="ec en">${r.debt ? elecMoney2(r.debt) : '—'}</td>
+        </tr>`).join('');
+    const sumRow = (label, val, cls) => `<tr class="${cls || ''}"><td class="sl">${label}</td><td class="sv en">${elecMoney2(val)}${cls === 'final' ? ' ج.م' : ''}</td></tr>`;
+    printArea.innerHTML = `
+        <div class="voucher-print-container elec-print" dir="rtl">
+            ${buildCenteredPrintHeader('بيان شحن عدادات الكهرباء للأدوار', '')}
+            <div class="elec-meta"><div><span>تاريخ الشحن</span><b class="en">${charge.date || elecToday()}</b></div><div><span>الإجمالي المطلوب لكل عداد</span><b class="en">${elecMoney(c.target)} ج.م</b></div><div><span>الشحنة الجاية</span><b class="en">${elecAddDays(charge.date || elecToday(), ELEC_EVERY_DAYS)}</b></div></div>
+            <table class="elec-print-table">
+                <thead><tr>
+                    <th class="ec" style="width:6%;">م</th>
+                    <th style="width:16%;">الدور</th>
+                    <th class="ec" style="width:15%;">رقم العداد</th>
+                    <th class="ec" style="width:15%;">رصيد الكارت الحالي</th>
+                    <th class="ec" style="width:16%;">الرصيد الجديد (الشحن)</th>
+                    <th class="ec" style="width:16%;">إجمالي الرصيد بالعداد</th>
+                    <th class="ec" style="width:16%;">المديونية</th>
+                </tr></thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>
+            <table class="elec-print-sum">
+                ${sumRow('إجمالي الشحن', c.totalCharge)}
+                ${sumRow('المديونية', c.totalDebt)}
+                ${sumRow('الإجمالي بعد المديونية', c.afterDebt)}
+                ${sumRow(c.feeFixed ? 'رسوم تحصيل الدفع بالفيزا' : `${c.feePct}% نسبة تحصيل للدفع بالفيزا`, c.fee)}
+                ${sumRow('الإجمالي المطلوب', c.final, 'final')}
+            </table>
+            <div class="voucher-signatures elec-sigs">
+                <div class="sig-line">مدير المرافق</div>
+                <div class="sig-line">اعتماد الإدارة</div>
+            </div>
+        </div>`;
+    safeWindowPrint();
 }

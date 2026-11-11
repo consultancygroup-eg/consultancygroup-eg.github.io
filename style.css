@@ -2883,3 +2883,45 @@ table.print-table tr.custody-page-total.is-final th { background: #f6e7bc !impor
 table.print-table.custody-print-page + table.print-table.custody-print-page { margin-top: 0; }
 .dept-move { display: inline-flex; gap: 4px; margin-inline-start: 6px; vertical-align: middle; margin-top: 6px; }
 .dept-move .btn { padding: 0.12rem 0.45rem !important; font-size: 0.68rem !important; }
+
+/* Electricity top-up page */
+.elec-due { display: flex; flex-wrap: wrap; gap: 6px 26px; padding: 10px 14px; border: 1px solid var(--border-color); border-inline-start: 4px solid var(--brand-gold); border-radius: 10px; background: var(--bg-card); font-size: 0.88rem; color: var(--text-secondary); }
+.elec-due b { color: var(--text-primary); }
+.elec-due b.warn { color: var(--warning); }
+.elec-due b.bad { color: var(--danger); }
+.elec-settings { align-items: flex-end; }
+.elec-field { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); }
+.elec-field .form-control { min-width: 150px; }
+.elec-table td { vertical-align: middle; }
+.elec-table .elec-in { text-align: center; min-width: 110px; font-variant-numeric: tabular-nums; }
+.elec-table select.elec-in { text-align: start; }
+.elec-new { display: flex; align-items: center; gap: 4px; justify-content: center; }
+.elec-in.is-manual { font-style: italic; border-color: var(--brand-gold); }
+.elec-summary { display: flex; flex-wrap: wrap; gap: 8px 28px; background: var(--brand-rail); border-radius: 10px; padding: 14px 18px; }
+.elec-summary div { display: flex; flex-direction: column; }
+.elec-summary span { color: #b8b2a3; font-size: 12px; }
+.elec-summary b { color: #f1ebdb; font-size: 17px; font-variant-numeric: tabular-nums; }
+.elec-summary .elec-final b { color: var(--brand-gold); font-size: 20px; }
+tr.elec-active td { background: var(--primary-light) !important; }
+
+/* Electricity PDF: one clear A4 page with large type for the executive manager */
+.elec-print { font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif; color: #55524b; }
+.elec-print-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 15px; }
+.elec-print-table th { background: #fef2ce !important; color: #55524b !important; font-weight: 700 !important; padding: 11px 8px !important; border: 1px solid #e8e0cb !important; font-size: 14px !important; text-align: right; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.elec-print-table td { padding: 13px 8px !important; border: 1px solid #e8e0cb !important; font-size: 16px !important; color: #3d3a34 !important; }
+.elec-print-table .ec { text-align: center !important; }
+.elec-print-table .ef { font-weight: 600 !important; }
+.elec-print .en { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: plaintext; }
+.elec-print-table td.strong { font-weight: 700 !important; background: #fffbf0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.elec-print-sum { width: 58%; margin: 22px 0 0 auto; margin-inline-start: 0; border-collapse: collapse; font-size: 16px; }
+[dir="rtl"] .elec-print-sum { margin-right: 0; margin-left: auto; }
+.elec-print-sum td { padding: 10px 14px !important; border-bottom: 1px solid #f1ebdb !important; font-size: 16px !important; color: #3d3a34 !important; }
+.elec-print-sum .sl { color: #55524b !important; }
+.elec-print-sum .sv { text-align: left !important; font-weight: 600 !important; }
+.elec-print-sum tr.final td { border-top: 2px solid #d9aa28 !important; border-bottom: 2px solid #d9aa28 !important; font-size: 19px !important; font-weight: 700 !important; background: #fef2ce !important; color: #252525 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.elec-sigs { margin-top: 48px !important; display: flex; justify-content: space-between; }
+.elec-meta { display: flex; justify-content: center; gap: 0; margin-top: 12px; border: 1px solid #e8e0cb; border-radius: 8px; }
+.elec-meta div { flex: 1; text-align: center; padding: 8px 6px; border-inline-start: 1px solid #f1ebdb; }
+.elec-meta div:first-child { border-inline-start: 0; }
+.elec-meta span { display: block; font-size: 12px; color: #8a8b8c; }
+.elec-meta b { font-size: 16px; font-weight: 600; color: #3d3a34; }
