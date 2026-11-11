@@ -5312,10 +5312,13 @@ select.cg-f:focus { outline: 2px solid var(--brand-gold); outline-offset: 0; }
                     <label>تابع لقسم (لو فرع)
                         <input type="text" id="dept-group" class="form-control" placeholder="مثال: التصميم">
                     </label>
-                    <label>عدد المكاتب
+                    <label>إجمالي مكاتب القسم
                         <input type="number" id="dept-offices" class="form-control" min="0" oninput="renderDeptItemsDraft()">
                     </label>
-                    <label>ملاحظات
+                    <label>الموظفين الموجودين فعلاً
+                        <input type="number" id="dept-staff" class="form-control" min="0" placeholder="سيبه فاضي لو مش معروف">
+                    </label>
+                    <label class="cg-full">ملاحظات
                         <input type="text" id="dept-notes" class="form-control" placeholder="مثال: باقي مكاتب الدور">
                     </label>
                 </div>
@@ -14028,6 +14031,20 @@ function deptCell(t) {
     const haveTxt = t.counted ? t.have : '<span style="color: var(--text-muted);" title="لسه ماتعدّش">؟</span>';
     return `<span class="dept-hn">${haveTxt} / ${t.need}</span>${t.short ? `<span class="dept-short">ناقص ${t.short}</span>` : ''}`;
 }
+// A department's total offices = how many staff it can have
+function deptContract(d) { return Number(d.offices) || 0; }
+// Offices still free to hire for = total offices − staff actually there
+function deptVacant(d) { return isUncounted(d.staff) ? null : deptContract(d) - Number(d.staff); }
+// Offices missing when the contract is bigger than the offices given to the department
+function deptOfficesShort(d) { return Math.max(0, deptContract(d) - (Number(d.offices) || 0)); }
+function deptVacantHtml(d) {
+    const v = deptVacant(d);
+    const c = deptContract(d);
+    const extra = '';
+    if (v === null) return `<span class="dept-hn">؟ / ${c || '—'}</span>${extra}`;
+    const tail = v > 0 ? `<div class="dept-sub">فاضي ${v} للتعاقد</div>` : (v < 0 ? `<div class="dept-short">زيادة ${-v} موظف عن المكاتب</div>` : '<div class="dept-sub">مكتمل</div>');
+    return `<span class="dept-hn">${d.staff} / ${c}</span>${tail}${extra}`;
+}
 function getDeptBuyList() {
     const map = {};
     deptLayout.forEach(d => (d.items || []).forEach(it => {
@@ -14050,6 +14067,7 @@ function renderDeptsView() {
     document.getElementById('depts-summary').innerHTML = `
         <div><span>الأقسام</span><b>${deptLayout.length}</b></div>
         <div><span>المكاتب</span><b>${totalOffices}</b></div>
+        <div><span>مكاتب فاضية للتعاقد</span><b>${deptLayout.some(d => !isUncounted(d.staff)) ? deptLayout.reduce((s, d) => s + (deptVacant(d) || 0), 0) : '—'}</b></div>
         <div><span>مكاتب (موجود / مطلوب)</span><b>${desks.have} / ${desks.need}</b></div>
         <div><span>كراسي (موجود / مطلوب)</span><b>${chairs.have} / ${chairs.need}</b></div>
         <div><span>لوكرات (موجود / مطلوب)</span><b>${lockers.have} / ${lockers.need}</b></div>
@@ -14076,6 +14094,7 @@ function renderDeptsView() {
             return `<tr class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}>
                 <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}</td>
                 <td style="text-align:center; font-weight:800;">${Number(d.offices) || '<span style="color: var(--text-muted);" title="العدد لسه ماتحددش">—</span>'}</td>
+                <td style="text-align:center;">${deptVacantHtml(d)}</td>
                 <td style="text-align:center;">${deptCell(deptFamilyTotals(d, 'desk'))}</td>
                 <td style="text-align:center;">${deptCell(deptFamilyTotals(d, 'chair'))}</td>
                 <td style="text-align:center;">${deptCell(deptFamilyTotals(d, 'locker'))}</td>
@@ -14091,8 +14110,8 @@ function renderDeptsView() {
             </div>
             <div class="table-responsive">
                 <table class="data-table dept-table">
-                    <thead><tr><th>القسم / المكتب</th><th style="text-align:center;">المكاتب</th><th style="text-align:center;">مكاتب<br><small>موجود / مطلوب</small></th><th style="text-align:center;">كراسي<br><small>موجود / مطلوب</small></th><th style="text-align:center;">لوكرات<br><small>موجود / مطلوب</small></th><th>أغراض تانية</th><th style="text-align:center;">محتاج شراء</th></tr></thead>
-                    <tbody>${rows || `<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 1rem;">مفيش أقسام في الدور ده</td></tr>`}</tbody>
+                    <thead><tr><th>القسم / المكتب</th><th style="text-align:center;">إجمالي المكاتب</th><th style="text-align:center;">الموظفين<br><small>موجود / إجمالي المكاتب</small></th><th style="text-align:center;">مكاتب<br><small>موجود / مطلوب</small></th><th style="text-align:center;">كراسي<br><small>موجود / مطلوب</small></th><th style="text-align:center;">لوكرات<br><small>موجود / مطلوب</small></th><th>أغراض تانية</th><th style="text-align:center;">محتاج شراء</th></tr></thead>
+                    <tbody>${rows || `<tr><td colspan="8" style="text-align:center; color: var(--text-muted); padding: 1rem;">مفيش أقسام في الدور ده</td></tr>`}</tbody>
                 </table>
             </div>
         </div>`;
@@ -14109,6 +14128,7 @@ function openDeptModal(id, floor) {
     document.getElementById('dept-group').value = d ? (d.group || '') : '';
     document.getElementById('dept-offices').value = d ? (Number(d.offices) || 0) : 1;
     document.getElementById('dept-notes').value = d ? (d.notes || '') : '';
+    document.getElementById('dept-staff').value = d && !isUncounted(d.staff) ? d.staff : '';
     document.getElementById('dept-delete-btn').style.display = d ? '' : 'none';
     deptItemsDraft = d ? JSON.parse(JSON.stringify(d.items || [])) : DEPT_KITS.staff.map(k => ({ name: k.name, per: k.per, have: null }));
     drawDeptItemsDraft();
@@ -14182,6 +14202,7 @@ function saveDept() {
         group: document.getElementById('dept-group').value.trim(),
         offices: Math.max(0, Number(document.getElementById('dept-offices').value) || 0),
         notes: document.getElementById('dept-notes').value.trim(),
+        staff: document.getElementById('dept-staff').value === '' ? null : Math.max(0, Number(document.getElementById('dept-staff').value) || 0),
         items: deptItemsDraft.filter(it => it.name),
         updatedAt: new Date().toISOString()
     };
@@ -14209,12 +14230,12 @@ function deleteDept() {
 
 function exportDeptsToCSV() {
     const q = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
-    let csv = '﻿' + ['الدور', 'القسم / المكتب', 'تابع لقسم', 'عدد المكاتب', 'الغرض', 'لكل مكتب', 'المطلوب', 'الموجود فعلاً', 'محتاج شراء', 'ملاحظات'].map(q).join(',') + '\n';
+    let csv = '﻿' + ['الدور', 'القسم / المكتب', 'تابع لقسم', 'إجمالي مكاتب القسم', 'الموظفين الموجودين', 'مكاتب فاضية للتعاقد', 'الغرض', 'لكل مكتب', 'المطلوب', 'الموجود فعلاً', 'محتاج شراء', 'ملاحظات'].map(q).join(',') + '\n';
     DEPT_FLOORS.forEach(fl => deptLayout.filter(d => d.floor === fl).forEach(d => {
         const items = (d.items || []).length ? d.items : [{ name: '', per: '', have: null }];
         items.forEach(it => {
             const s = it.name ? deptItemShort(d, it) : null;
-            csv += [fl, d.name, d.group || '', Number(d.offices) || 0, it.name, it.per, it.name ? deptItemNeed(d, it) : '', isUncounted(it.have) ? 'لم يُعد' : it.have, s === null ? '' : s, d.notes || ''].map(q).join(',') + '\n';
+            csv += [fl, d.name, d.group || '', Number(d.offices) || 0, isUncounted(d.staff) ? '' : d.staff, deptVacant(d) === null ? '' : deptVacant(d), it.name, it.per, it.name ? deptItemNeed(d, it) : '', isUncounted(it.have) ? 'لم يُعد' : it.have, s === null ? '' : s, d.notes || ''].map(q).join(',') + '\n';
         });
     }));
     csv += '\n' + q('محتاج يتشترى') + '\n';
@@ -14227,18 +14248,19 @@ function printDeptsReport() {
     DEPT_FLOORS.forEach(fl => {
         const depts = deptLayout.filter(d => d.floor === fl);
         const flOffices = depts.reduce((s, d) => s + (Number(d.offices) || 0), 0);
-        body += `<tr><td colspan="7" style="text-align:right !important; font-weight:700; background:#fef2ce;">${fl} — ${depts.length} قسم · ${flOffices} مكتب</td></tr>`;
+        body += `<tr><td colspan="8" style="text-align:right !important; font-weight:700; background:#fef2ce;">${fl} — ${depts.length} قسم · ${flOffices} مكتب</td></tr>`;
         depts.forEach(d => {
             const c = f => { const t = deptFamilyTotals(d, f); return (!t.need && !t.counted) ? '—' : `${t.counted ? t.have : '؟'} / ${t.need}${t.short ? ` (ناقص ${t.short})` : ''}`; };
             const others = (d.items || []).filter(it => deptFamily(it.name) === 'other').map(it => { const s = deptItemShort(d, it); return `${escHtml(it.name)} ${isUncounted(it.have) ? '؟' : it.have}/${deptItemNeed(d, it)}${s ? ` (ناقص ${s})` : ''}`; }).join('، ') || '—';
             const shortAll = (d.items || []).reduce((s, it) => s + (deptItemShort(d, it) || 0), 0);
-            body += `<tr><td style="text-align:right !important;">${escHtml(d.name)}${d.notes ? ` <small>(${escHtml(d.notes)})</small>` : ''}</td><td style="text-align:center;">${Number(d.offices) || '—'}</td><td style="text-align:center;">${c('desk')}</td><td style="text-align:center;">${c('chair')}</td><td style="text-align:center;">${c('locker')}</td><td style="font-size:0.8rem;">${others}</td><td style="text-align:center;">${shortAll || '—'}</td></tr>`;
+            const vac = deptVacant(d);
+            body += `<tr><td style="text-align:right !important;">${escHtml(d.name)}${d.notes ? ` <small>(${escHtml(d.notes)})</small>` : ''}</td><td style="text-align:center;">${Number(d.offices) || '—'}</td><td style="text-align:center;">${isUncounted(d.staff) ? '؟' : d.staff} / ${deptContract(d)}${vac ? ` (فاضي ${vac})` : ''}</td><td style="text-align:center;">${c('desk')}</td><td style="text-align:center;">${c('chair')}</td><td style="text-align:center;">${c('locker')}</td><td style="font-size:0.8rem;">${others}</td><td style="text-align:center;">${shortAll || '—'}</td></tr>`;
         });
     });
     const buy = getDeptBuyList();
-    const foot = `<tr><th colspan="7" style="text-align:right !important;">محتاج يتشترى: ${buy.length ? buy.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr>`;
-    const head = `<tr><th>القسم / المكتب</th><th style="text-align:center;">المكاتب</th><th style="text-align:center;">مكاتب (موجود/مطلوب)</th><th style="text-align:center;">كراسي (موجود/مطلوب)</th><th style="text-align:center;">لوكرات (موجود/مطلوب)</th><th>أغراض تانية</th><th style="text-align:center;">محتاج شراء</th></tr>`;
-    printCgTable('تحليل الطوابق بالأقسام', `${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`, 7, head, body, foot);
+    const foot = `<tr><th colspan="8" style="text-align:right !important;">محتاج يتشترى: ${buy.length ? buy.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr>`;
+    const head = `<tr><th>القسم / المكتب</th><th style="text-align:center;">إجمالي المكاتب</th><th style="text-align:center;">الموظفين (موجود/إجمالي المكاتب)</th><th style="text-align:center;">مكاتب (موجود/مطلوب)</th><th style="text-align:center;">كراسي (موجود/مطلوب)</th><th style="text-align:center;">لوكرات (موجود/مطلوب)</th><th>أغراض تانية</th><th style="text-align:center;">محتاج شراء</th></tr>`;
+    printCgTable('تحليل الطوابق بالأقسام', `${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`, 8, head, body, foot);
 }
 
 // Detailed department breakdown for the regional manager (floor analysis stays for senior management / accounts)
@@ -14254,7 +14276,7 @@ function shareDeptsWhatsApp() {
                 const s = deptItemShort(d, it);
                 return `${it.name} ${isUncounted(it.have) ? '؟' : it.have}/${deptItemNeed(d, it)}${s ? ` (ناقص ${s})` : ''}`;
             });
-            lines.push(`• ${d.name}: ${Number(d.offices) || '—'} مكتب${parts.length ? ' — ' + parts.join('، ') : ''}${d.notes ? ` (${d.notes})` : ''}`);
+            lines.push(`• ${d.name}: ${Number(d.offices) || '—'} مكتب، موجود ${isUncounted(d.staff) ? '؟' : d.staff} موظف${deptVacant(d) > 0 ? ` (فاضي ${deptVacant(d)})` : ''}${parts.length ? ' — ' + parts.join('، ') : ''}${d.notes ? ` (${d.notes})` : ''}`);
         });
     });
     const buy = getDeptBuyList();
