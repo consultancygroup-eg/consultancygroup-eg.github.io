@@ -3035,6 +3035,11 @@ tr.elec-active td { background: var(--primary-light) !important; }
 .preq-print .preq-doc { letter-spacing: 0; }
 /* Full-module Excel button: alone at the bottom of the menu, above the cycle box */
 .sidebar-full-xlsx { width: 100%; justify-content: center; margin-bottom: 0.55rem; }
+/* Dark mode: the gold sheet header was overridden by the dark table header, leaving dark text on dark (hard to read) */
+body.dark table.cg-sheet thead th { background: var(--primary-fill) !important; color: var(--on-primary) !important; }
+/* Dark mode: light red/green fills need dark text to stay readable */
+body.dark .btn-danger, body.dark .btn-danger span { color: #1b1a17 !important; }
+body.dark table th[style*="success"], body.dark table th.th-success { color: #1b1a17 !important; }
 
 </style>
 
