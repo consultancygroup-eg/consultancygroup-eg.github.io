@@ -2970,10 +2970,9 @@ tr.elec-active td { background: var(--primary-light) !important; }
 /* Purchase order PDF: logo leads on the reading-start side and stays bigger than the title */
 .preq-print { font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif; color: #55524b; }
 .preq-print .en { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: plaintext; }
-.preq-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 10px; border-bottom: 1px solid #d9aa28; }
+.preq-head { display: flex; align-items: center; justify-content: flex-start; gap: 14px; padding-bottom: 10px; border-bottom: 1px solid #d9aa28; }
 .preq-head img { height: 58px; width: auto; object-fit: contain; display: block; }
-.preq-head-text { text-align: end; }
-.preq-head-c { border-bottom: 1px solid #d9aa28; padding-bottom: 4px; }
+.preq-head-text { text-align: start; border-inline-start: 1px solid #d9aa28; padding-inline-start: 14px; }
 .preq-doc { font-size: 17px; font-weight: 800; color: #3d3a34; letter-spacing: 0.04em; }
 .preq-dept { font-size: 12px; color: #8a8b8c; margin-top: 2px; }
 .preq-parties { display: flex; gap: 14px; margin-top: 14px; }
@@ -2995,6 +2994,8 @@ tr.elec-active td { background: var(--primary-light) !important; }
 .preq-sig-title { font-size: 14px; font-weight: 700; color: #3d3a34; padding-bottom: 4px; border-bottom: 1px solid #d9aa28; margin-bottom: 6px; }
 .preq-sig-line { display: flex; align-items: flex-end; gap: 8px; height: 34px; font-size: 13px; color: #8a8b8c; }
 .preq-sig-line i { flex: 1; border-bottom: 1px dotted #c9c1ab; height: 1px; }
+.preq-sig-line span { min-width: 70px; }
+.preq-sig-line b { flex: 1; font-weight: 700; color: #3d3a34; padding-bottom: 2px; }
 /* Purchase order PDF: one font size (12pt) everywhere; only bold or regular differ (user request 2026-11-12) */
 #official-print-viewport .preq-print, #official-print-viewport .preq-print * { font-size: 12pt !important; line-height: 1.45; }
 .preq-print .preq-doc, .preq-print .preq-party-title, .preq-print .preq-party b, .preq-print .preq-meta b,

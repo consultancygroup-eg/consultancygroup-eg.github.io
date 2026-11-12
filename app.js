@@ -10463,10 +10463,13 @@ function printPurchaseReq(id) {
                 <td class="pc en strong">${preqLineTotal(it) ? `${elecMoney2(preqLineTotal(it))} ${t.cur}` : ''}</td>
             </tr>` : `<tr class="blank"><td class="pc">&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>`;
     }
-    const sigBox = title => `<div class="preq-sig">
+    // Under each title: the name (filled in when the title is the To or From position, otherwise a line to write on), then the signature
+    const sigName = title => { const tt = String(title).trim(); const pick = (pos, nm) => pos && String(pos).trim() === tt ? nm : ''; return pick(o.toPos, o.toName) || pick(o.fromPos, o.fromName) || pick(isAr ? preqArabicOf(o.toPos) : '', o.toName) || (tt === t.director ? o.toName : ''); };
+    const sigBox = title => { const nm = sigName(title); return `<div class="preq-sig">
             <div class="preq-sig-title">${title}</div>
+            <div class="preq-sig-line"><span>${t.employee}</span>${nm ? `<b>${escHtml(isAr ? preqArabicOf(nm) : nm)}</b>` : '<i></i>'}</div>
             <div class="preq-sig-line"><span>${t.signature}</span><i></i></div>
-        </div>`;
+        </div>`; };
     const party = (title, nameLbl, name, pos) => `<div class="preq-party">
             <div class="preq-party-title">${title}</div>
             <div><span>${nameLbl}</span><b>${escHtml(name) || '&nbsp;'}</b></div>
@@ -10474,7 +10477,13 @@ function printPurchaseReq(id) {
         </div>`;
     printArea.innerHTML = `
         <div class="voucher-print-container preq-print" dir="${isAr ? 'rtl' : 'ltr'}" lang="${isAr ? 'ar' : 'en'}">
-            <div class="preq-head-c">${buildCenteredPrintHeader(t.title)}</div>
+            <div class="preq-head">
+                <img src="${getPrintLogoSrc()}" alt="المجموعة الإستشارية | Consultancy Group">
+                <div class="preq-head-text">
+                    <div class="preq-dept">${isAr ? 'إدارة المرافق - مدير المرافق' : 'Facilities Management - Facilities Manager'}</div>
+                    <div class="preq-doc">${t.title}</div>
+                </div>
+            </div>
             <div class="preq-parties">
                 ${party(t.from, t.employee, isAr ? preqArabicOf(o.fromName) : o.fromName, isAr ? preqArabicOf(o.fromPos) : o.fromPos)}
                 ${party(t.reqFrom, t.employee, isAr ? preqArabicOf(o.toName) : o.toName, isAr ? preqArabicOf(o.toPos) : o.toPos)}
