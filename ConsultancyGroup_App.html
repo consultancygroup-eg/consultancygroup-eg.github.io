@@ -3027,6 +3027,12 @@ tr.elec-active td { background: var(--primary-light) !important; }
 .preq-sig-title { font-size: 14px; font-weight: 700; color: #3d3a34; padding-bottom: 4px; border-bottom: 1px solid #d9aa28; margin-bottom: 6px; }
 .preq-sig-line { display: flex; align-items: flex-end; gap: 8px; height: 34px; font-size: 13px; color: #8a8b8c; }
 .preq-sig-line i { flex: 1; border-bottom: 1px dotted #c9c1ab; height: 1px; }
+/* Purchase order PDF: one font size (12pt) everywhere; only bold or regular differ (user request 2026-11-12) */
+#official-print-viewport .preq-print, #official-print-viewport .preq-print * { font-size: 12pt !important; line-height: 1.45; }
+.preq-print .preq-doc, .preq-print .preq-party-title, .preq-print .preq-party b, .preq-print .preq-meta b,
+.preq-print .preq-print-table th, .preq-print .preq-print-table td.strong, .preq-print .preq-print-table tr.final td, .preq-print .preq-sig-title { font-weight: 700 !important; }
+.preq-print .preq-dept, .preq-print .preq-party span, .preq-print .preq-meta span, .preq-print .preq-print-table td, .preq-print .preq-sig-line { font-weight: 400; }
+.preq-print .preq-doc { letter-spacing: 0; }
 
 </style>
 
@@ -7152,6 +7158,351 @@ const EN_EXACT_MAP = {
     'عرض صور الفواتير المرفقة عند الطباعة': 'Include attached invoice images when printing'
 };
 
+// Full English for screen texts added after the first dictionary (whole text → English)
+const EN_PHRASES = {
+    // Buffet: month comparison, history filter
+    'مقارنة الشهور': 'Month comparison',
+    'اختار الشهور اللي عايز تقارن بينها (الشهر = الدورة من يوم بدايتها)': 'Choose the months to compare (a month = the cycle from its start day)',
+    'كل الأدوار': 'All floors',
+    'أسعار الشراء لكل شهر': 'Purchase prices per month',
+    'من': 'From',
+    'إلى': 'To',
+    'فلترة الحركات بالتاريخ': 'Filter entries by date',
+    'مسح التاريخ': 'Clear date',
+    'الشهر': 'Month',
+    'اكتب سعر الوحدة لكل صنف في الشهر ده. الخانة الفاضية بتاخد آخر سعر قبلها (المكتوب بالرمادي).': 'Enter the unit price of each item for this month. An empty box takes the last earlier price (shown in grey).',
+    'Excel — كشف المخزن': 'Excel — Stock sheet',
+    'Excel — سجل الحركات': 'Excel — Issue log',
+    'Excel — استهلاك الأدوار': 'Excel — Floor consumption',
+    'سجل الحركات': 'Issue log',
+    'تعديل حركة صرف': 'Edit issue entry',
+    'الصنف': 'Item',
+    'اسم المستلم': 'Recipient',
+    'إضافة صنف نسي الموظف يسجله (نفس الدور والتاريخ والمستلم)': 'Add an item the staff member forgot to record (same floor, date and recipient)',
+    '+ إضافة الصنف': '+ Add item',
+    'المخزن الرئيسي': 'Main store',
+    'الفئة': 'Category',
+    'إجمالي الوارد (الكمية)': 'Total received (quantity)',
+    'حد الطلب': 'Reorder level',
+
+    // Assets
+    'ترتيب بالمجموعات': 'Sort by groups',
+    'PDF الدور': 'PDF floor',
+    'PDF كل الأدوار': 'PDF all floors',
+    'إعادة ترتيب أصناف الجدول تلقائياً حسب تسلسل المجموعات': 'Re-sort the table items by group order',
+    'استعادة قائمة الأصناف الافتراضية المرتبة (27 صنف)': 'Restore the default sorted item list (27 items)',
+    'حذف جميع الأصناف من جرد أصول الشركة': 'Delete all items from the company assets inventory',
+    'نقل سريع للترتيب (أدخل رقم الترتيب مباشرة)': 'Quick move (type the position number)',
+    'تحريك لأعلى (حدد عدد الخطوات 1، 2، 3...) 🔼': 'Move up (choose steps 1, 2, 3...) 🔼',
+    'تحريك لأسفل (حدد عدد الخطوات 1، 2، 3...) 🔽': 'Move down (choose steps 1, 2, 3...) 🔽',
+    'إضافة صنف جديد لجرد أصول الشركة (ترقيم وتوزيع تلقائي)': 'Add a new item to the assets inventory (automatic numbering)',
+    '1. اكتب اسم الصنف / البيان:': '1. Item name / description:',
+    'بمجرد كتابة اسم الصنف يتعرف النظام تلقائياً على مجموعته ويكتب رقم التسلسل (مثل 1.1.1 أو 1.4.4 أو 2.1.1).': 'As you type the item name, the program finds its group and writes the sequence number (e.g. 1.1.1, 1.4.4 or 2.1.1).',
+    '2. حدد المكان (الطابق):': '2. Choose the place (floor):',
+    'الدور الرابع (4)': 'Floor 4 (4)', 'الدور الخامس (5)': 'Floor 5 (5)', 'الدور السادس (6)': 'Floor 6 (6)',
+    'الدور السابع (7)': 'Floor 7 (7)', 'الدور الثامن (8)': 'Floor 8 (8)', 'الدور التاسع (9)': 'Floor 9 (9)',
+    'جميع الأدوار (4 إلى 9)': 'All floors (4 to 9)',
+    'التوزيعة / المجموعة (تلقائي):': 'Group (automatic):',
+    'الترقيم التسلسلي التلقائي (كود الحصر):': 'Automatic sequence number (WBS code):',
+    '3. المقاس (يُكتب بمعرفتك):': '3. Size (you enter it):',
+    '4. العدد (يُكتب بمعرفتك):': '4. Count (you enter it):',
+    'موضع الإدراج داخل المجموعة:': 'Position inside the group:',
+    '✨ تلقائي في نهاية المجموعة مع ترقيم متسلسل أوتوماتيك': '✨ Automatic: end of the group with sequential numbering',
+    'حفظ وإضافة بالترقيم التلقائي': 'Save and add with automatic numbering',
+    'كود الحصر (WBS):': 'WBS code:',
+    'المقاس / الأبعاد (كم في كم أو المواصفات):': 'Size / dimensions (or specifications):',
+    'سجل دفعات وتواريخ وأسعار شراء الصنف': 'Item purchase batches, dates and prices',
+    '➕ إضافة دفعة شراء جديدة (لأدوار محددة أو للشركة):': '➕ Add a new purchase batch (for certain floors or the company):',
+    'تاريخ الشراء:': 'Purchase date:',
+    'الأدوار / الجهة:': 'Floors / party:',
+    'الكمية المشتراة:': 'Quantity bought:',
+    'سعر الوحدة (ج.م):': 'Unit price (EGP):',
+    'ملاحظات / المورد:': 'Notes / supplier:',
+    'إضافة الدفعة لسجل الصنف': 'Add the batch to the item record',
+    'الأدوار / البيان': 'Floors / description',
+    'حفظ وإغلاق': 'Save and close',
+    'تعديل صنف': 'Edit item',
+    'العدد المتواجد بالفعل في كل دور': 'Actual count on each floor',
+    'فين في': 'Where on',
+    '؟ (توزيع العدد على الأقسام والبوفيه)': '? (split the count between departments and buffet)',
+    'سعر الوحدة (ج.م)': 'Unit price (EGP)',
+    'إجمالي قيمة': 'Total value',
+    'ملاحظات / حالة الصنف في': 'Notes / item condition on',
+    'حفظ': 'Save',
+    'تعديل': 'Edit',
+    'العدد': 'Count',
+    'الحالة': 'Condition',
+    'ملاحظات / تفاصيل فنية': 'Notes / technical details',
+    'مثال: مكتب مدير، كرسي موظف، ترابيزة اجتماعات، دولاب، تكييف...': 'e.g. manager desk, staff chair, meeting table, cupboard, air conditioner...',
+    'يُكتب تلقائياً (مثال: 1.1.1)': 'Filled automatically (e.g. 1.1.1)',
+    'اكتب المقاس (مثلاً: 180×80، 160×60، 1.70×2.00)...': 'Enter the size (e.g. 180×80, 160×60, 1.70×2.00)...',
+    'تلقائي أو اكتب مثلاً: 1.1.3، 2.1.2...': 'Automatic, or type e.g. 1.1.3, 2.1.2...',
+    'مثال: أنتريه سرير زاوية، ثلاجة شارب، غسالة LG...': 'e.g. corner sofa bed, Sharp fridge, LG washer...',
+    'مثال: 195×160 سم، 18 قدم، 65 بوصة 4K...': 'e.g. 195×160 cm, 18 ft, 65 inch 4K...',
+    'مثال: الدور 6 و 7': 'e.g. floors 6 and 7',
+    'اختياري': 'Optional',
+    'مثال: 160×80 سم': 'e.g. 160×80 cm',
+    'ملاحظات أو حالة الصنف بالطابق...': 'Notes or item condition on the floor...',
+
+    // Floors by department
+    'تحليل الطوابق بالأقسام': 'Floors by department',
+    'كل دور وأقسامه: عدد المكاتب، والمكاتب فيها إيه، والموجود فعلاً، والناقص اللي محتاج يتشترى. دوس على أي قسم للتعديل.': 'Each floor and its departments: number of offices, what each office has, what is actually there, and what is missing to buy. Click any department to edit.',
+    'إضافة قسم': 'Add department',
+    'إرسال التفاصيل للمدير الإقليمي (واتساب)': 'Send the details to the Regional Director (WhatsApp)',
+    'الأقسام': 'Departments',
+    'البوفيهات': 'Buffets',
+    'المكاتب': 'Offices',
+    'المكاتب الحالية': 'Current desks',
+    'الكراسي الحالية': 'Current chairs',
+    'اللوكرات الحالية': 'Current lockers',
+    'أقسام لسه ماتعدّتش': 'Departments not counted yet',
+    'محتاج يتشترى (الناقص في كل الأقسام)': 'To buy (missing in all departments)',
+    'محتاج يتشترى': 'To buy',
+    '+ قسم': '+ Department',
+    '+ بوفيه': '+ Buffet',
+    'القسم / المكتب': 'Department / office',
+    'إجمالي المكاتب': 'Total offices',
+    'المتفق عليه': 'agreed',
+    'الحالي': 'current',
+    'محتاج شراء': 'To buy',
+    'تعديل المحتويات': 'Edit contents',
+    'من الجرد': 'from inventory',
+    'المكاتب والأقسام': 'Offices and departments',
+    'البوفيه': 'Buffet',
+    'مكتمل': 'Complete',
+    'PDF للدور ده بس': 'PDF for this floor only',
+    'دوس للتعديل': 'Click to edit',
+    'لأعلى': 'Up',
+    'لأسفل': 'Down',
+    'PDF للقسم ده بس': 'PDF for this department only',
+    'PDF للجزء ده بس': 'PDF for this part only',
+    'الرقم مقروء من جرد أصول الشركة': 'Number read from the company assets inventory',
+    'لسه ماتعدّش': 'Not counted yet',
+    'العدد لسه ماتحددش': 'Number not set yet',
+    'تعديل قسم': 'Edit department',
+    'اسم القسم / المكتب / البوفيه': 'Department / office / buffet name',
+    'النوع': 'Type',
+    'مكاتب / قسم': 'Offices / department',
+    'بوفيه': 'Buffet',
+    'تابع لقسم (لو فرع)': 'Belongs to department (if a branch)',
+    'إجمالي مكاتب القسم (المتفق عليه مع الشركة)': 'Department total offices (agreed with the company)',
+    'المحتويات: العدد المطلوب والموجود فعلاً': 'Contents: required count and actual count',
+    'محتويات بوفيه': 'Buffet contents',
+    '+ غرض جديد (اكتب أي اسم)': '+ New item (type any name)',
+    'الغرض': 'Item',
+    'العدد المطلوب': 'Required',
+    'الموجود فعلاً': 'Actually there',
+    'حذف القسم': 'Delete department',
+    'مثال: قسم العروض، مكتب Technical Manager، بوفيه الدور التاسع': 'e.g. Proposals department, Technical Manager office, Floor 9 buffet',
+    'مثال: التصميم': 'e.g. Design',
+    'مثال: باقي مكاتب الدور': 'e.g. rest of the floor offices',
+    'سيبه فاضي علشان يتقري من جرد الأصول، أو اكتب الرقم بنفسك': 'Leave empty to read it from the assets inventory, or type the number',
+    'اكتب العدد المطلوب بنفسك، أو سيبه للحساب': 'Type the required number, or leave it to the calculation',
+    'رجّعه للحساب (المكاتب × لكل مكتب)': 'Back to the calculation (offices × per office)',
+    'اكتب اسم أي غرض أو اختار': 'Type any item name or choose',
+    'اكتب أي اسم (مثلاً ترابيزة مدورة) أو اختار من القايمة': 'Type any name (e.g. round table) or choose from the list',
+
+    // Custody
+    'العهدة كاملة (كل السجل)': 'Whole custody (full record)',
+    'شهر محدد': 'Specific month',
+    'فترة من ... إلى ...': 'Period from ... to ...',
+    'من تحويل / إيداع محدد': 'From a specific transfer / deposit',
+    'حركات الوارد فقط': 'Inflows only',
+    'المرفق بها فواتير فقط': 'With invoices only',
+    'الشهر:': 'Month:',
+    'الحوالة:': 'Transfer:',
+    'عرض صور الفواتير عند الطباعة': 'Show invoice images when printing',
+    'م': 'No',
+    'التاريخ': 'Date',
+    'فاتورة': 'Invoice',
+    'سكان طابعة': 'Printer scan',
+    'سكان موبايل': 'Phone scan',
+    'إرفاق (Attach)': 'Attach',
+    'إرسال واتس': 'Send WhatsApp',
+    'إرسال ميل': 'Send email',
+    'بالسالب (تغطية شخصية مؤقتة لحين تحويل الشركة)': 'Negative (personal cover until the company transfers)',
+    'سجل المشتريات والتحويلات المباشرة للموردين (دفعات 50% / 70% / 100%)': 'Purchases and direct supplier transfers (50% / 70% / 100% payments)',
+    'المشتريات التي تحولها الشركة مباشرة لحساب المورد (سواء دفعة كاملة 100% أو مقسمة 50% / 70% مقدم والباقي بعد التوريد) دون خصمها من رصيد العهدة النقدية': 'Purchases the company pays directly to the supplier (full 100% or 50% / 70% advance and the rest after delivery), not taken from the cash custody balance',
+    'إضافة أمر شراء / تحويل مباشر لمورد': 'Add purchase order / direct supplier transfer',
+    'اسم الصنف / أمر التوريد': 'Item / supply order',
+    'المورد / الجهة': 'Supplier / party',
+    'الكمية': 'Quantity',
+    'إجمالي الصفقة': 'Deal total',
+    'نظام الدفع': 'Payment terms',
+    'المدفوع للمورد': 'Paid to supplier',
+    'المتبقي بعد التوريد': 'Remaining after delivery',
+    'ملاحظات وحالة التوريد': 'Notes and delivery status',
+    'الفاتورة / إجراءات': 'Invoice / actions',
+    'دفعة 50% مقدم تحت الحساب و 50% بعد التوريد والاستلام': '50% advance and 50% after delivery and receipt',
+    'دفعة 70% مقدم عند التعاقد و 30% بعد التوريد والتركيب': '70% advance on contract and 30% after delivery and installation',
+    'المصروفات الأساسية الثابتة للشركة كل شهر': 'Fixed monthly company expenses',
+    'بيان الالتزامات والمصروفات الدورية الشهرية للمقر والمرافق (إيجار، صيانة، كهرباء، مياه، بوفيه، ضيافة)': 'Monthly recurring commitments for the office and facilities (rent, maintenance, electricity, water, buffet, hospitality)',
+    'إضافة بند شهري': 'Add monthly item',
+    'البند / البيان الشهري': 'Monthly item / description',
+    'القيمة الشهرية التقديرية (ج.م)': 'Estimated monthly amount (EGP)',
+    'ملاحظات وتفاصيل الصرف': 'Notes and spending details',
+    'بحث عن صنف: قهوة، أغراض البوفيه، فلاتر، سباك...': 'Search an item: coffee, buffet supplies, filters, plumber...',
+    'مسح البحث': 'Clear search',
+    'نطاق التصفية': 'Filter range',
+    'يمكنك تعديل وترتيب الوصف في سطرين': 'You can edit and arrange the description on two lines',
+    'تعديل البند': 'Edit entry',
+    'حذف الحركة': 'Delete entry',
+    'سجل العهدة النقدية • تحويلات الموردين والفواتير': 'Cash custody record • supplier transfers and invoices',
+    'دخول لقسم العهدة والمشتريات': 'Open custody and purchases',
+    'شحن الكهرباء': 'Electricity top-up',
+    'مراجعة وتذكير بنود الحوالة': 'Transfer items review and reminders',
+    'بنود تم شراؤها': 'Items bought',
+    'تذكير (لم تشترِ بعد)': 'Reminder (not bought yet)',
+    'مصروفات أخرى دخلت معها': 'Other expenses included',
+    'بحث سريع بالأصناف المتكررة': 'Quick search by frequent items',
+    '☕ أغراض البوفيه': '☕ Buffet supplies',
+    '🫘 قهوة وبن': '🫘 Coffee',
+    '⚡ شحن العدادات': '⚡ Meter top-ups',
+    '💧 مياه وفلاتر': '💧 Water and filters',
+    '🔧 سباكة وصيانة': '🔧 Plumbing and maintenance',
+    '🪑 كراسي ومكاتب': '🪑 Chairs and desks',
+    '🌐 إنترنت واتصالات': '🌐 Internet and phones',
+    'تسجيل حركة عهدة جديدة (ترحيل تلقائي للرصيد)': 'New custody entry (balance carried automatically)',
+    'التاريخ:': 'Date:',
+    'نوع الحركة:': 'Entry type:',
+    '📤 منصرف (شراء / مصروفات من العهدة)': '📤 Outflow (purchase / expense from custody)',
+    '📥 وارد (تحويل / تغذية للعهدة)': '📥 Inflow (transfer into custody)',
+    'اسم الصنف / البيان:': 'Item / description:',
+    '📋 البنود المخطط شراؤها من هذه الحوالة (افصل بينها بـ + أو ، ليذكرك البرنامج بما لم يُشترَ بعد):': '📋 Items planned from this transfer (separate with + or , so the program reminds you what is not bought yet):',
+    'قيمة المنصرف (ج.م):': 'Outflow amount (EGP):',
+    'قيمة الوارد للعهدة (ج.م):': 'Inflow amount (EGP):',
+    'إرفاق فاتورة فورية (اختياري):': 'Attach an invoice now (optional):',
+    'ملاحظات إضافية:': 'Extra notes:',
+    'حفظ وترحيل الرصيد': 'Save and carry the balance',
+    'الاسم التلقائي للفاتورة:': 'Automatic invoice name:',
+    'إرفاق ملف فاتورة (Attach)': 'Attach invoice file',
+    'سحب سكانر / كاميرا مباشرة': 'Scan / camera now',
+    'سحب من سكانر الطابعة': 'Scan from the printer',
+    '📸 التقاط وحفظ الفاتورة برقم التسلسل': '📸 Capture and save the invoice with its number',
+    'إغلاق الكاميرا': 'Close camera',
+    'لا توجد فاتورة مرفقة لهذا البند حالياً. اختر "إرفاق ملف" أو "سحب سكانر".': 'No invoice is attached to this entry yet. Choose "Attach file" or "Scan".',
+    'إرسال الفاتورة والبند واتساب': 'Send the invoice and entry by WhatsApp',
+    'تنزيل الفاتورة بالرقم التسلسلي': 'Download the invoice with its number',
+    'حذف المرفق': 'Delete attachment',
+    'السحب من طابعة/سكانر المكتب المتصل بالكمبيوتر': 'Scan from the office printer/scanner connected to the computer',
+    'مثال: أغراض البوفيه / شراء قهوة / حوالة لشحن الكهرباء + شهرية المهملات...': 'e.g. buffet supplies / coffee / transfer for electricity + monthly waste fee...',
+    'مثال: قهوة + حوض وجه + شهرية المهملات + فواتير الخطوط الأرضي + سباك': 'e.g. coffee + washbasin + monthly waste fee + landline bills + plumber',
+    'اسم المشتري، تفاصيل الفاتورة، أو أي ملاحظات...': 'Buyer name, invoice details, or any notes...',
+    'تسجيل أمر شراء / تحويل مباشر لمورد (دفعات 50% / 70% / 100%)': 'Record a purchase order / direct supplier transfer (50% / 70% / 100%)',
+    'اسم المورد / الشركة:': 'Supplier / company:',
+    'اسم الصنف / بيان المشتريات:': 'Item / purchase description:',
+    'الكمية:': 'Quantity:',
+    'نظام سداد المورد:': 'Supplier payment terms:',
+    '100% دفعة كاملة': '100% full payment',
+    '50% مقدم و 50% بعد التوريد': '50% advance and 50% after delivery',
+    '70% مقدم و 30% بعد التوريد': '70% advance and 30% after delivery',
+    'مبلغ مقدم مخصص': 'Custom advance amount',
+    'دفعات بتواريخ (أقساط)': 'Dated installments',
+    'إجمالي الصفقة:': 'Deal total:',
+    'المدفوع للمورد (ج.م):': 'Paid to supplier (EGP):',
+    'المتبقي بعد التوريد (ج.م):': 'Remaining after delivery (EGP):',
+    'جدول الدفعات': 'Payment schedule',
+    '(هيتم تذكيرك قبل كل دفعة بأسبوع)': '(you will be reminded a week before each payment)',
+    'عدد الدفعات': 'Number of payments',
+    'تاريخ أول دفعة': 'First payment date',
+    'كل كام شهر': 'Every how many months',
+    'توزيع الدفعات': 'Split payments',
+    '+ إضافة دفعة': '+ Add payment',
+    'ملاحظات وحالة التوريد:': 'Notes and delivery status:',
+    'حفظ أمر الشراء والتحويل': 'Save purchase order and transfer',
+    'تفاصيل أمر الشراء / التحويل المباشر': 'Purchase order / direct transfer details',
+    'مثال: مورد الأثاث / يونيون إير / ...': 'e.g. furniture supplier / Union Air / ...',
+    'مثال: كراسي مدير + مكاتب / تكييفات / ستائر...': 'e.g. manager chairs + desks / air conditioners / curtains...',
+    'اكتب الإجمالي أو يتحسب تلقائي': 'Type the total or it is calculated',
+    'مثال: تم تحويل 50% مقدم وجاري التوريد...': 'e.g. 50% advance paid, delivery in progress...',
+
+    // Electricity
+    'حساب فقط، مالوش علاقة بالعهدة. اكتب رصيد الكارت الحالي لكل عداد، والبرنامج يحسب تشحن بكام علشان يوصل للإجمالي المطلوب.': 'Calculation only, not part of custody. Enter the current card balance of each meter and the program works out how much to top up to reach the required total.',
+    'حفظ الشحنة': 'Save top-up',
+    'حفظ التعديل': 'Save changes',
+    'شحنة جديدة': 'New top-up',
+    'الشحن كل 15 يوم. احفظ أول شحنة علشان البرنامج يحسب ميعاد الشحنة الجاية.': 'Top-up every 15 days. Save the first top-up so the program can work out the next date.',
+    'تاريخ الشحن': 'Top-up date',
+    'الإجمالي المطلوب لكل عداد': 'Required total per meter',
+    'نسبة تحصيل الفيزا %': 'Visa collection fee %',
+    'أو مبلغ الرسوم الفعلي': 'Or the actual fee amount',
+    'الدور': 'Floor',
+    'رقم العداد': 'Meter number',
+    'رصيد الكارت الحالي': 'Current card balance',
+    'الرصيد الجديد': 'New balance',
+    '(اشحن بكام)': '(top-up amount)',
+    'إجمالي الرصيد بالعداد': 'Total meter balance',
+    'المديونية': 'Arrears',
+    '(الشهر ده)': '(this month)',
+    '+ عداد': '+ Meter',
+    'إجمالي الشحن': 'Total top-up',
+    'الإجمالي بعد المديونية': 'Total after arrears',
+    'رسوم تحصيل الفيزا (مبلغ فعلي)': 'Visa collection fee (actual amount)',
+    'رسوم تحصيل الدفع بالفيزا': 'Visa payment collection fee',
+    'الإجمالي المطلوب': 'Required total',
+    '"الرصيد الجديد" بيتحسب لوحده = الإجمالي المطلوب − الرصيد الحالي. لو شحنت مبلغ مختلف اكتبه بإيدك (بيظهر بخط مائل)، وزرار ↺ يرجعه للحساب. المديونية بتتكتب كل شحنة، وسيبها 0 لما تخلص.': '"New balance" is calculated = required total − current balance. If you topped up a different amount, type it (shown in italics), and ↺ returns it to the calculation. Enter the arrears each top-up and leave it 0 when paid.',
+    'الشحنات السابقة': 'Previous top-ups',
+    'الرسوم': 'Fees',
+    'الإجمالي النهائي': 'Final total',
+    'لسه مفيش شحنات محفوظة': 'No saved top-ups yet',
+    'فاضي = بالنسبة': 'Empty = use the percentage',
+    'محسوب لوحده': 'Calculated',
+    'حذف العداد': 'Delete meter',
+    'دوس لعرضها أو تعديلها': 'Click to view or edit',
+    'الشحنة الجاية': 'Next top-up',
+
+    // Portal, header, lock, roles
+    '☕ مصروفات البوفيه': '☕ Buffet expenses',
+    '🪑 جرد أصول الشركة': '🪑 Company assets',
+    '🏛️ مقر الإدارة العليا': '🏛️ Executive HQ',
+    '💰 العهدة': '💰 Custody',
+    'سريع': 'Quick',
+    'وضع المسؤول': 'Admin mode',
+    'مستخدم (للاطلاع فقط 🔒)': 'User (view only 🔒)',
+    'تبديل الصلاحية (وضع المسؤول / وضع العرض)': 'Switch role (admin / view only)',
+    'اختر الوضع المطلوب. وضع العرض مخصص للمدير أو صاحب الشركة لاستعراض الجداول والتقارير والطباعة فقط دون إمكانية تعديل أو حذف البيانات.': 'Choose the mode. View mode is for the manager or company owner to see tables, reports and print only, without editing or deleting data.',
+    '👑 وضع المسؤول (تحكم كامل)': '👑 Admin mode (full control)',
+    'إضافة وتعديل الأسماء والأعداد والمقاسات، إعادة الترتيب، الحذف، والتحكم الشامل.': 'Add and edit names, counts and sizes, re-order, delete, full control.',
+    '👁️ وضع العرض والاستعراض فقط (محمي 🔒)': '👁️ View only (protected 🔒)',
+    'للمدير وصاحب الشركة: استعراض الجداول والمصفوفات وطباعة التقارير مع قفل التعديل.': 'For the manager and company owner: view tables and print reports with editing locked.',
+    'رمز المرور:': 'Passcode:',
+    'تطبيق الصلاحية': 'Apply role',
+    'أدخل رمز المرور': 'Enter the passcode',
+    'أدخل كلمة المرور...': 'Enter the password...',
+    'إظهار / إخفاء كلمة المرور': 'Show / hide password',
+    'العودة للأقسام الرئيسية (3)': 'Back to main sections (3)',
+    'طي / توسيع القائمة': 'Collapse / expand menu',
+    'التبديل بين الوضع الليلي والنهاري': 'Switch dark / light mode',
+    'تبديل اللغة': 'Switch language',
+    'تحديث فوري لجميع البيانات والتقارير': 'Refresh all data and reports now',
+    'حالة الاتصال السحابي (Online)': 'Cloud connection status (Online)',
+    'مشاركة رابط البرنامج والباركود': 'Share the program link and QR code',
+    'تنزيل البرنامج للكمبيوتر': 'Download the program for the computer',
+    'قفل البرنامج بكلمة المرور': 'Lock the program with the password',
+    'تنبيهات الأصناف الحرجة': 'Low stock alerts',
+    'إدارة البيانات والنسخ الاحتياطي': 'Data and backup',
+    'أنت في وضع المسؤول - اضغط للتحويل إلى مستخدم': 'You are in admin mode - click to switch to user',
+    'العودة للأقسام Home (3)': 'Back to sections (3)',
+    'Share رابط البرنامج والباركود': 'Share the program link and QR code',
+    'أحمد الباز': 'Ahmed Elbaz', 'أحمد محمد الباز': 'Ahmed Mohamed Elbaz', 'أحمد يس': 'Ahmed Yassin', 'م/أحمد يس': 'Eng. Ahmed Yassin',
+    'مدير المرافق': 'Facilities Manager', 'مدير مرافق': 'Facilities Manager', 'المدير الإقليمي': 'Regional Director', 'المدير الاقليمي': 'Regional Director',
+    'السعر الرمادي معناه إن الشهر ده مالوش سعر متسجل، فاتاخد آخر سعر قبله. الأسعار بتتسجل لوحدها لما تكتب السعر في "أمر شراء للمورد"، أو من زرار "أسعار الشراء لكل شهر".': 'A grey price means this month has no saved price, so the last earlier price is used. Prices are saved by themselves when you type the price in "Supplier Purchase Order", or from the "Purchase prices per month" button.',
+    'اكتب "العدد المطلوب" لكل غرض في القسم (مثلاً: مكاتب 5، كراسي 3، لوكر 2، ترابيزة اجتماعات مدورة 1). زرارين "مكتب موظف" و"مكتب مدير" بيحطوا عدد مبدئي حسب عدد المكاتب، وتقدر تغيّره، وزرار ↺ يرجّعه. الغرض اللي مش موجود امسحه بـ ✖. "الموجود فعلاً" سيبه فاضي لو لسه ماتعدّش، ولو أقل من المطلوب البرنامج بيحسب كام محتاج يتشترى.': 'Enter the "required" count of each item in the department (e.g. desks 5, chairs 3, lockers 2, round meeting table 1). The "staff office" and "manager office" buttons fill a starting count from the number of offices; you can change it, and ↺ resets it. Remove an item that is not there with ✖. Leave "actually there" empty if not counted yet; if it is less than required, the program works out how many to buy.'
+};
+// Words inside texts with numbers (only used when the whole text becomes English)
+const EN_WORDS = {
+    'الدور الرابع': 'Floor 4', 'الدور الخامس': 'Floor 5', 'الدور السادس': 'Floor 6',
+    'الدور السابع': 'Floor 7', 'الدور الثامن': 'Floor 8', 'الدور التاسع': 'Floor 9',
+    'في جرد الأصول': 'in assets inventory', 'غير موزع': 'not allocated',
+    'المفروض': 'should be', 'ناقص': 'short', 'زيادة': 'extra', 'إجمالي': 'Total',
+    'قسم': 'dept.', 'مكتب': 'offices', 'من': 'of', 'ج.م': 'EGP', 'PDF': 'PDF',
+    'مكتوب بالإيد (الحساب:': 'Typed by hand (calculated:', 'رجّعه للحساب': 'Back to calculation',
+    'فاضي': 'free', 'للتعاقد': 'to hire', 'موظف عن المكاتب': 'staff over offices',
+    'الحالي': 'current', 'كرسي': 'chair', 'لوكر': 'locker', 'مكتب مدير': 'manager desk', 'كرسي مدير': 'manager chair', 'كرسي ضيوف': 'guest chair',
+    'مرفقات وفاتورة الحركة رقم': 'Attachments and invoice of entry No', 'فاتورة_عهدة_رقم_': 'custody_invoice_no_',
+    'لشحنة رقم': 'for top-up No', 'يوم': 'days', 'فاضل': 'left'
+};
+
 const AR_REVERSE_MAP = {};
 Object.keys(EN_EXACT_MAP).forEach(arKey => {
     AR_REVERSE_MAP[EN_EXACT_MAP[arKey]] = arKey;
@@ -7163,73 +7514,115 @@ function trText(val) {
     if (!str) return '';
     if (currentLang === 'en') {
         if (EN_EXACT_MAP[str]) return EN_EXACT_MAP[str];
-        // Translate measurement units & common dimension strings automatically
-        return str
-            .replace(/حصان/g, 'HP')
-            .replace(/بوصة/g, 'inch')
-            .replace(/قدم/g, 'ft')
-            .replace(/متر/g, 'm')
-            .replace(/سم/g, 'cm')
-            .replace(/لتر/g, 'L')
-            .replace(/كجم/g, 'kg')
-            .replace(/كيلو/g, 'kg')
-            .replace(/فرد/g, 'Place Settings')
-            .replace(/محيطي/g, 'Surround')
-            .replace(/ج\.م/g, 'EGP');
+        if (EN_PHRASES[str]) return EN_PHRASES[str];
+        // Units only right after a number (e.g. "45 لتر"); before, "مقدم" became "مft" and "التركيب" became "اLكيب"
+        const unit = (re, en) => s => s.replace(new RegExp('(\\d)\\s*' + re + '(?![\\u0600-\\u06FF])', 'g'), `$1 ${en}`);
+        return [unit('حصان', 'HP'), unit('بوصة', 'inch'), unit('قدم', 'ft'), unit('متر', 'm'), unit('سم', 'cm'), unit('لتر', 'L'),
+            unit('كجم', 'kg'), unit('كيلو', 'kg'), unit('فرد', 'place settings'), unit('محيطي', 'surround')]
+            .reduce((s, f) => f(s), str).replace(/ج\.م/g, 'EGP');
     }
     return AR_REVERSE_MAP[str] || str;
 }
 
-function translateDOMNodes(lang) {
-    const map = lang === 'en' ? EN_EXACT_MAP : AR_REVERSE_MAP;
-
-    // 1. Translate text nodes inside elements
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+// English for one Arabic text: exact phrase first, then known phrases inside a longer text
+// (floor names, currency, common labels). Returns null when nothing changes.
+const AR_CHARS = /[؀-ۿ]/;
+let __cgPhraseList = null;
+function cgPhraseList() {
+    if (__cgPhraseList) return __cgPhraseList;
+    // curated words/phrases for texts with numbers (e.g. "ناقص 2", "إجمالي الدور السابع") come first, longest first
+    const words = typeof EN_WORDS !== 'undefined' ? EN_WORDS : {};
+    __cgPhraseList = Object.keys(words).sort((a, b) => b.length - a.length).map(k => [k, words[k]]);
+    return __cgPhraseList;
+}
+const CG_AR_EDGE = '(^|[\\s\\(\\)\\[\\]:،,\\-–/|·•«»"\'.!؟?+0-9])';
+function cgTranslateText(str) {
+    const trimmed = String(str).trim();
+    if (!trimmed || !AR_CHARS.test(trimmed)) return null;
+    if (EN_EXACT_MAP[trimmed]) return String(str).replace(trimmed, EN_EXACT_MAP[trimmed]);
+    if (typeof EN_PHRASES !== 'undefined' && EN_PHRASES[trimmed]) return String(str).replace(trimmed, EN_PHRASES[trimmed]);
+    let out = String(str), changed = false;
+    for (const [ar, en] of cgPhraseList()) {
+        if (!out.includes(ar)) continue;
+        const re = new RegExp(CG_AR_EDGE + ar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=$|[\\s\\(\\)\\[\\]:،,\\-–/|·•«»"\'.!؟?+0-9])', 'g');
+        const next = out.replace(re, (m, pre) => pre + en);
+        if (next !== out) { out = next; changed = true; }
+        if (!AR_CHARS.test(out)) break;
+    }
+    // never show a half-translated mix; typed data (names, descriptions) stays exactly as written
+    return changed && !AR_CHARS.test(out) ? out : null;
+}
+const CG_TR_ATTRS = ['placeholder', 'title', 'aria-label', 'label'];
+function cgTranslateNode(root, lang) {
+    if (!root) return;
+    if (root.nodeType === 3) { cgTranslateTextNode(root, lang); return; }
+    if (root.nodeType !== 1) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
     const nodes = [];
     while (walker.nextNode()) nodes.push(walker.currentNode);
-
-    nodes.forEach(node => {
-        if (!node.parentElement) return;
-        const tag = node.parentElement.tagName;
-        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA') return;
-        const trimmed = node.nodeValue.trim();
-        if (!trimmed) return;
-        if (node.parentElement.origArText === undefined && lang === 'en' && EN_EXACT_MAP[trimmed]) {
-            node.parentElement.origArText = trimmed;
-        }
-        if (lang === 'en' && EN_EXACT_MAP[trimmed]) {
-            node.nodeValue = node.nodeValue.replace(trimmed, EN_EXACT_MAP[trimmed]);
-        } else if (lang === 'ar') {
-            if (node.parentElement.origArText) {
-                node.nodeValue = node.parentElement.origArText;
-            } else if (AR_REVERSE_MAP[trimmed]) {
-                node.nodeValue = node.nodeValue.replace(trimmed, AR_REVERSE_MAP[trimmed]);
+    nodes.forEach(n => cgTranslateTextNode(n, lang));
+    const els = [root, ...root.querySelectorAll('[placeholder],[title],[aria-label],optgroup[label],input[type=button],input[type=submit]')];
+    els.forEach(el => {
+        if (!el.getAttribute) return;
+        CG_TR_ATTRS.forEach(a => {
+            if (!el.hasAttribute(a)) return;
+            const key = 'data-ar-' + a;
+            if (lang === 'en') {
+                const v = el.getAttribute(a);
+                const t = cgTranslateText(v);
+                if (t !== null) { el.setAttribute(key, v); el.setAttribute(a, t); }
+            } else if (el.hasAttribute(key)) {
+                el.setAttribute(a, el.getAttribute(key)); el.removeAttribute(key);
             }
+        });
+        if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit')) {
+            if (lang === 'en') { const t = cgTranslateText(el.value); if (t !== null) { el.dataset.arValue = el.value; el.value = t; } }
+            else if (el.dataset.arValue) { el.value = el.dataset.arValue; delete el.dataset.arValue; }
         }
     });
-
-    // 2. Translate placeholders, titles, and optgroup labels
-    document.querySelectorAll('[placeholder]').forEach(el => {
-        const ph = el.getAttribute('placeholder').trim();
-        if (lang === 'en' && EN_EXACT_MAP[ph]) {
-            el.setAttribute('data-orig-ph', ph);
-            el.setAttribute('placeholder', EN_EXACT_MAP[ph]);
-        } else if (lang === 'ar') {
-            const orig = el.getAttribute('data-orig-ph') || AR_REVERSE_MAP[ph];
-            if (orig) el.setAttribute('placeholder', orig);
-        }
+}
+function cgTranslateTextNode(node, lang) {
+    const p = node.parentElement;
+    if (!p) return;
+    const tag = p.tagName;
+    if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || p.isContentEditable || p.closest('.no-translate')) return;
+    if (lang === 'en') {
+        const t = cgTranslateText(node.nodeValue);
+        if (t !== null && t !== node.nodeValue) { node.__cgAr = node.nodeValue; node.__cgEn = t; node.nodeValue = t; }
+    } else if (node.__cgAr !== undefined) {
+        // only restore if the program hasn't rewritten this text since
+        if (node.nodeValue === node.__cgEn) node.nodeValue = node.__cgAr;
+        delete node.__cgAr; delete node.__cgEn;
+    } else {
+        const tr = node.nodeValue.trim();
+        if (tr && AR_REVERSE_MAP[tr]) node.nodeValue = node.nodeValue.replace(tr, AR_REVERSE_MAP[tr]);
+    }
+}
+function translateDOMNodes(lang) {
+    cgTranslateNode(document.body, lang);
+    cgEnsureLangObserver();
+}
+// Everything the program draws after switching to English (tables, windows, the purchase order, PDFs)
+// is translated as it appears, so no page is left half Arabic.
+let __cgLangObserver = null, __cgLangQueue = new Set(), __cgLangScheduled = false;
+function cgEnsureLangObserver() {
+    if (__cgLangObserver || typeof MutationObserver === 'undefined') return;
+    __cgLangObserver = new MutationObserver(muts => {
+        if (currentLang !== 'en') return;
+        muts.forEach(m => {
+            if (m.type === 'characterData') __cgLangQueue.add(m.target);
+            else if (m.type === 'attributes') __cgLangQueue.add(m.target);
+            else m.addedNodes.forEach(n => __cgLangQueue.add(n));
+        });
+        if (__cgLangScheduled) return;
+        __cgLangScheduled = true;
+        Promise.resolve().then(() => {
+            __cgLangScheduled = false;
+            const q = [...__cgLangQueue]; __cgLangQueue.clear();
+            q.forEach(n => { if (n.isConnected) cgTranslateNode(n, 'en'); });
+        });
     });
-
-    document.querySelectorAll('optgroup[label]').forEach(el => {
-        const lbl = el.getAttribute('label').trim();
-        if (lang === 'en' && EN_EXACT_MAP[lbl]) {
-            el.setAttribute('data-orig-lbl', lbl);
-            el.setAttribute('label', EN_EXACT_MAP[lbl]);
-        } else if (lang === 'ar') {
-            const orig = el.getAttribute('data-orig-lbl') || AR_REVERSE_MAP[lbl];
-            if (orig) el.setAttribute('label', orig);
-        }
-    });
+    __cgLangObserver.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['placeholder', 'title'] });
 }
 
 // --- I18N DICTIONARY ---
@@ -14758,7 +15151,7 @@ function renderDeptsView() {
         // Every office item used on this floor gets its own column
         const itemCols = deptItemColumns(depts);
         const buffetCols = deptItemColumns(buffets);
-        const nameCell = d => `<td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button><span class="dept-move no-print"><button type="button" class="btn btn-sm btn-secondary" title="لأعلى" onclick="event.stopPropagation(); moveDept(${d.id}, -1)">▲</button><button type="button" class="btn btn-sm btn-secondary" title="لأسفل" onclick="event.stopPropagation(); moveDept(${d.id}, 1)">▼</button></span>`}<button type="button" class="btn btn-sm cg-dl dept-pdf-btn no-print" onclick="event.stopPropagation(); printDeptsReport({ deptId: ${d.id} })" title="PDF للجزء ده بس"><b class="cg-dl-arrow">⬇</b> PDF</button></td>`;
+        const nameCell = d => `<td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">${currentLang === 'en' ? 'Under: ' : 'تابع: '}${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button><span class="dept-move no-print"><button type="button" class="btn btn-sm btn-secondary" title="لأعلى" onclick="event.stopPropagation(); moveDept(${d.id}, -1)">▲</button><button type="button" class="btn btn-sm btn-secondary" title="لأسفل" onclick="event.stopPropagation(); moveDept(${d.id}, 1)">▼</button></span>`}<button type="button" class="btn btn-sm cg-dl dept-pdf-btn no-print" onclick="event.stopPropagation(); printDeptsReport({ deptId: ${d.id} })" title="PDF للجزء ده بس"><b class="cg-dl-arrow">⬇</b> PDF</button></td>`;
         const rowAttrs = d => `class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}`;
         const buffetRows = buffets.map(d => `<tr ${rowAttrs(d)}>${nameCell(d)}${buffetCols.map(n => `<td style="text-align:center;">${deptItemCellHtml(d, n)}</td>`).join('')}<td style="text-align:center;">${deptShortListHtml(d)}</td></tr>`).join('');
         const buffetSection = buffets.length ? `
@@ -14772,7 +15165,7 @@ function renderDeptsView() {
         const rows = depts.map(d => {
             const itemCells = itemCols.map(n => `<td style="text-align:center;">${deptItemCellHtml(d, n)}</td>`).join('');
             return `<tr class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}>
-                <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">تابع: ${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button><span class="dept-move no-print"><button type="button" class="btn btn-sm btn-secondary" title="لأعلى" onclick="event.stopPropagation(); moveDept(${d.id}, -1)">▲</button><button type="button" class="btn btn-sm btn-secondary" title="لأسفل" onclick="event.stopPropagation(); moveDept(${d.id}, 1)">▼</button></span>`}<button type="button" class="btn btn-sm cg-dl dept-pdf-btn no-print" onclick="event.stopPropagation(); printDeptsReport({ deptId: ${d.id} })" title="PDF للقسم ده بس"><b class="cg-dl-arrow">⬇</b> PDF</button></td>
+                <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">${currentLang === 'en' ? 'Under: ' : 'تابع: '}${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button><span class="dept-move no-print"><button type="button" class="btn btn-sm btn-secondary" title="لأعلى" onclick="event.stopPropagation(); moveDept(${d.id}, -1)">▲</button><button type="button" class="btn btn-sm btn-secondary" title="لأسفل" onclick="event.stopPropagation(); moveDept(${d.id}, 1)">▼</button></span>`}<button type="button" class="btn btn-sm cg-dl dept-pdf-btn no-print" onclick="event.stopPropagation(); printDeptsReport({ deptId: ${d.id} })" title="PDF للقسم ده بس"><b class="cg-dl-arrow">⬇</b> PDF</button></td>
                 <td style="text-align:center; font-weight:800; font-size:1.05rem;">${Number(d.offices) || '<span style="color: var(--text-muted);" title="العدد لسه ماتحددش">—</span>'}</td>
                 ${itemCells}
                 <td style="text-align:center;">${deptShortListHtml(d)}</td>
@@ -16243,7 +16636,7 @@ function printDeptsReport(opts) {
             const need = deptItemNeed(d, it), s = deptItemShort(d, it);
             return `<tr><td style="text-align:center;">${i + 1}</td><td style="text-align:right !important; font-weight:600;">${escHtml(it.name)}</td><td style="text-align:center; font-size:1rem !important;">${need}</td><td style="text-align:center; font-size:1rem !important;">${(() => { const h = deptItemHaveInfo(d, it); return h ? `${h.have}${h.src !== 'manual' ? ' <small style="color:#8a8b8c;">(من الجرد)</small>' : ''}` : 'لم يُعد'; })()}</td><td style="text-align:center; font-size:1rem !important;">${s ? s : (s === 0 ? '✓' : '—')}</td></tr>`;
         }).join('');
-        const info = `<tr><td colspan="5" style="text-align:right !important; background:#fef2ce; font-weight:600;">${isBuffetArea(d) ? 'بوفيه' : `إجمالي المكاتب (المتفق عليه): ${Number(d.offices) || '—'}`}${d.group ? `   ·   تابع: ${escHtml(d.group)}` : ''}${d.notes ? `   ·   ${escHtml(d.notes)}` : ''}</td></tr>`;
+        const info = `<tr><td colspan="5" style="text-align:right !important; background:#fef2ce; font-weight:600;">${isBuffetArea(d) ? 'بوفيه' : `إجمالي المكاتب (المتفق عليه): ${Number(d.offices) || '—'}`}${d.group ? `   ·   ${currentLang === 'en' ? 'Under: ' : 'تابع: '}${escHtml(d.group)}` : ''}${d.notes ? `   ·   ${escHtml(d.notes)}` : ''}</td></tr>`;
         const buy = deptShortMap(d);
         const foot = `<tr><th colspan="5" style="text-align:right !important;">محتاج يتشترى: ${buy.length ? buy.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr>`;
         const head = `<tr><th style="text-align:center; width:40px;">م</th><th>الغرض</th><th style="text-align:center;">العدد المطلوب</th><th style="text-align:center;">الموجود حالياً</th><th style="text-align:center;">محتاج شراء</th></tr>`;

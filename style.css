@@ -3007,3 +3007,9 @@ tr.elec-active td { background: var(--primary-light) !important; }
 .preq-sig-title { font-size: 14px; font-weight: 700; color: #3d3a34; padding-bottom: 4px; border-bottom: 1px solid #d9aa28; margin-bottom: 6px; }
 .preq-sig-line { display: flex; align-items: flex-end; gap: 8px; height: 34px; font-size: 13px; color: #8a8b8c; }
 .preq-sig-line i { flex: 1; border-bottom: 1px dotted #c9c1ab; height: 1px; }
+/* Purchase order PDF: one font size (12pt) everywhere; only bold or regular differ (user request 2026-11-12) */
+#official-print-viewport .preq-print, #official-print-viewport .preq-print * { font-size: 12pt !important; line-height: 1.45; }
+.preq-print .preq-doc, .preq-print .preq-party-title, .preq-print .preq-party b, .preq-print .preq-meta b,
+.preq-print .preq-print-table th, .preq-print .preq-print-table td.strong, .preq-print .preq-print-table tr.final td, .preq-print .preq-sig-title { font-weight: 700 !important; }
+.preq-print .preq-dept, .preq-print .preq-party span, .preq-print .preq-meta span, .preq-print .preq-print-table td, .preq-print .preq-sig-line { font-weight: 400; }
+.preq-print .preq-doc { letter-spacing: 0; }
