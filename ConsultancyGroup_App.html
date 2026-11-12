@@ -7248,7 +7248,7 @@ const EN_PHRASES = {
     'تحليل الطوابق بالأقسام': 'Floors by department',
     'كل دور وأقسامه: عدد المكاتب، والمكاتب فيها إيه، والموجود فعلاً، والناقص اللي محتاج يتشترى. دوس على أي قسم للتعديل.': 'Each floor and its departments: number of offices, what each office has, what is actually there, and what is missing to buy. Click any department to edit.',
     'إضافة قسم': 'Add department',
-    'إرسال التفاصيل للمدير الإقليمي (واتساب)': 'Send the details to the Regional Director (WhatsApp)',
+    'إرسال التفاصيل للمدير الإقليمي (واتساب)': 'Send the details to the Country Director (WhatsApp)',
     'الأقسام': 'Departments',
     'البوفيهات': 'Buffets',
     'المكاتب': 'Offices',
@@ -7485,7 +7485,7 @@ const EN_PHRASES = {
     'العودة للأقسام Home (3)': 'Back to sections (3)',
     'Share رابط البرنامج والباركود': 'Share the program link and QR code',
     'أحمد الباز': 'Ahmed Elbaz', 'أحمد محمد الباز': 'Ahmed Mohamed Elbaz', 'أحمد يس': 'Ahmed Yassin', 'م/أحمد يس': 'Eng. Ahmed Yassin',
-    'مدير المرافق': 'Facilities Manager', 'مدير مرافق': 'Facilities Manager', 'المدير الإقليمي': 'Regional Director', 'المدير الاقليمي': 'Regional Director',
+    'مدير المرافق': 'Facilities Manager', 'مدير مرافق': 'Facilities Manager', 'المدير الإقليمي': 'Country Director', 'المدير الاقليمي': 'Country Director',
     'السعر الرمادي معناه إن الشهر ده مالوش سعر متسجل، فاتاخد آخر سعر قبله. الأسعار بتتسجل لوحدها لما تكتب السعر في "أمر شراء للمورد"، أو من زرار "أسعار الشراء لكل شهر".': 'A grey price means this month has no saved price, so the last earlier price is used. Prices are saved by themselves when you type the price in "Supplier Purchase Order", or from the "Purchase prices per month" button.',
     'اكتب "العدد المطلوب" لكل غرض في القسم (مثلاً: مكاتب 5، كراسي 3، لوكر 2، ترابيزة اجتماعات مدورة 1). زرارين "مكتب موظف" و"مكتب مدير" بيحطوا عدد مبدئي حسب عدد المكاتب، وتقدر تغيّره، وزرار ↺ يرجّعه. الغرض اللي مش موجود امسحه بـ ✖. "الموجود فعلاً" سيبه فاضي لو لسه ماتعدّش، ولو أقل من المطلوب البرنامج بيحسب كام محتاج يتشترى.': 'Enter the "required" count of each item in the department (e.g. desks 5, chairs 3, lockers 2, round meeting table 1). The "staff office" and "manager office" buttons fill a starting count from the number of offices; you can change it, and ↺ resets it. Remove an item that is not there with ✖. Leave "actually there" empty if not counted yet; if it is less than required, the program works out how many to buy.'
 };
@@ -15825,7 +15825,7 @@ const PREQ_T = {
         orderNo: 'رقم الأمر', orderBox: 'بيانات الأمر', delivery: 'التسليم', date: 'التاريخ',
         item: 'م', qty: 'الكمية المطلوبة', desc: 'الوصف', reason: 'السبب', price: 'سعر الوحدة', total: 'الإجمالي',
         addItem: '+ صنف', grand: 'الإجمالي', cur: 'ج.م',
-        director: 'المدير الإقليمي', approver: 'المعتمد', signature: 'التوقيع',
+        director: 'المدير الإقليمي', approver: 'المعتمد', signature: 'التوقيع', sigsBox: 'مسميات التوقيعات (تقدر تغيّرها)', sig1: 'التوقيع الأول', sig2: 'التوقيع التاني',
         history: 'أوامر الشراء السابقة', items: 'الأصناف', del: 'حذف',
         none: 'مفيش أوامر شراء محفوظة لسه', saved: 'تم حفظ أمر الشراء', delAsk: n => `حذف أمر الشراء رقم ${n}؟`,
         empty: 'اكتب صنف واحد على الأقل', reasonDefault: 'احتياج عمل', editing: n => `بتعدّل أمر الشراء رقم ${n}`,
@@ -15839,7 +15839,7 @@ const PREQ_T = {
         orderNo: 'Order No', orderBox: 'Order details', delivery: 'Delivery', date: 'Date',
         item: 'Item', qty: 'Quantity Ordered', desc: 'Description', reason: 'Reason', price: 'Unit Price', total: 'Total',
         addItem: '+ Item', grand: 'Total', cur: 'L.E',
-        director: 'Regional Director', approver: 'Approver', signature: 'Signature',
+        director: 'Country Director', approver: 'Approver', signature: 'Signature', sigsBox: 'Signature titles (editable)', sig1: 'First signature', sig2: 'Second signature',
         history: 'Saved purchase orders', items: 'Items', del: 'Delete',
         none: 'No saved purchase orders yet', saved: 'Purchase order saved', delAsk: n => `Delete purchase order No ${n}?`,
         empty: 'Add at least one item', reasonDefault: 'Work Need', editing: n => `Editing purchase order No ${n}`,
@@ -15858,6 +15858,7 @@ function preqBlank() {
         id: null, no: preqNextNo(), date: elecToday(), delivery: '', place: '',
         fromName: last ? last.fromName : 'أحمد الباز', fromPos: last ? last.fromPos : 'مدير المرافق',
         toName: last ? last.toName : 'أحمد يس', toPos: last ? last.toPos : 'المدير الإقليمي',
+        sig1: last && last.sig1 ? last.sig1 : '', sig2: last && last.sig2 ? last.sig2 : '',
         items: [preqEmptyItem()]
     };
 }
@@ -15914,6 +15915,10 @@ function renderPurchaseReqView() {
                     <label class="elec-field">${t.date}<input type="date" class="form-control" value="${escHtml(d.date)}" ${ro} onchange="onPreqField('date', this.value)"></label>
                     <label class="elec-field">${t.delivery}${inp('delivery', d.delivery)}</label>
                     <label class="elec-field">${t.place}${inp('place', d.place)}</label>
+                </fieldset>
+                <fieldset class="preq-box"><legend>${t.sigsBox}</legend>
+                    <label class="elec-field">${t.sig1}<input type="text" class="form-control" value="${escHtml(d.sig1 || '')}" placeholder="${escHtml(t.director)}" ${ro} oninput="onPreqField('sig1', this.value)"></label>
+                    <label class="elec-field">${t.sig2}<input type="text" class="form-control" value="${escHtml(d.sig2 || '')}" placeholder="${escHtml(t.approver)}" ${ro} oninput="onPreqField('sig2', this.value)"></label>
                 </fieldset>
             </div>
             <div class="table-responsive">
@@ -16078,7 +16083,7 @@ function printPurchaseReq(id) {
                 <tbody>${rows}</tbody>
                 <tfoot><tr class="final"><td colspan="5">${t.grand}</td><td class="pc en">${elecMoney2(preqGrand({ items }))} ${t.cur}</td></tr></tfoot>
             </table>
-            <div class="preq-sigs">${sigBox(t.director)}${sigBox(t.approver)}</div>
+            <div class="preq-sigs">${sigBox(escHtml(String(o.sig1 || "").trim()) || t.director)}${sigBox(escHtml(String(o.sig2 || "").trim()) || t.approver)}</div>
         </div>`;
     safeWindowPrint();
 }
