@@ -1808,7 +1808,7 @@ function updateCycleDropdown() {
     const cycleSelect = document.getElementById('cycle-dropdown');
     if (!cycleSelect) return;
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = localTodayStr();
     const currentCycle = getCycleKeyForDate(todayStr);
 
     const keys = new Set([currentCycle]);
@@ -2332,7 +2332,7 @@ function submitSmartIssue(andPrint = false) {
     const recipientInput = document.getElementById('issue-recipient');
     const notesInput = document.getElementById('issue-notes');
 
-    const date = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
+    const date = dateInput ? dateInput.value : localTodayStr();
     const recipient = recipientInput ? recipientInput.value.trim() : '';
     const notes = notesInput ? notesInput.value.trim() : '';
 
@@ -2419,7 +2419,7 @@ let floorsCompareMonths = [];   // selected cycle keys, oldest first
 let floorsCompareFloor = 'الكل';
 
 function getAllCycleKeys() {
-    const keys = new Set([getCycleKeyForDate(new Date().toISOString().split('T')[0])]);
+    const keys = new Set([getCycleKeyForDate(localTodayStr())]);
     transactions.forEach(t => { if (t.date) keys.add(getCycleKeyForDate(t.date)); });
     Object.values(poPricingMap).forEach(e => { if (e && e.prices) Object.keys(e.prices).forEach(k => keys.add(k)); });
     return Array.from(keys).sort();
@@ -2597,7 +2597,7 @@ function exportFloorsCompareToCSVLegacy() {
     csv += '"الإجمالي",""';
     totals.forEach(t => { csv += `,"${t.qty}","","${t.total}"`; });
     csv += '\n';
-    downloadCSV(csv, `مقارنة_الشهور_${new Date().toISOString().split('T')[0]}.csv`);
+    downloadCSV(csv, `مقارنة_الشهور_${localTodayStr()}.csv`);
 }
 // Shared PDF layout: brand header (logo + title) repeated on each page, then the given table parts
 function printCgTable(title, sub, colCount, theadRows, tbodyRows, tfootRows, extraHtml) {
@@ -2959,7 +2959,7 @@ function updatePoPricingField(itemId, field, val) {
         poPricingMap[itemId][field] = Math.max(0, Number(val) || 0);
         // Keep each month's purchase price so months can be compared later
         if (field === 'unitPrice') {
-            const key = (activeCycleKey && activeCycleKey !== 'ALL' && activeCycleKey !== 'CURRENT') ? activeCycleKey : getCycleKeyForDate(new Date().toISOString().split('T')[0]);
+            const key = (activeCycleKey && activeCycleKey !== 'ALL' && activeCycleKey !== 'CURRENT') ? activeCycleKey : getCycleKeyForDate(localTodayStr());
             if (!poPricingMap[itemId].prices) poPricingMap[itemId].prices = {};
             poPricingMap[itemId].prices[key] = poPricingMap[itemId].unitPrice;
         }
@@ -3317,7 +3317,7 @@ function exportPurchaseOrderToCSVLegacy() {
         csvContent += `"${idx + 1}","${item.name}","${item.unit}","${rem}","${issued}","${qty}","${price}","${tot}","${entry.notes || ''}"\n`;
     });
     csvContent += `"","الإجمالي العام","","","","","","${grandTotal}",""\n`;
-    downloadCSV(csvContent, `أمر_شراء_المورد_${new Date().toISOString().split('T')[0]}.csv`);
+    downloadCSV(csvContent, `أمر_شراء_المورد_${localTodayStr()}.csv`);
     showToast(currentLang === 'ar' ? 'تم تصدير أمر الشراء بالأسعار والإجماليات إلى إكسيل!' : 'Purchase Order exported to Excel!', 'success');
 }
 
@@ -3504,7 +3504,7 @@ function openFurniturePurchasesModal(itemId) {
             ? `سجل دفعات وتواريخ وأسعار شراء: [${item.code || ''}] ${item.name}`
             : `Purchase Batches & Pricing: [${item.code || ''}] ${trText(item.name)}`;
     }
-    const today = new Date().toISOString().split('T')[0];
+    const today = localTodayStr();
     const dateInp = document.getElementById('fp-batch-date');
     const floorsInp = document.getElementById('fp-batch-floors');
     const qtyInp = document.getElementById('fp-batch-qty');
@@ -3576,7 +3576,7 @@ function addFurniturePurchaseBatch() {
     if (!item) return;
     if (!Array.isArray(item.purchases)) item.purchases = [];
 
-    const date = document.getElementById('fp-batch-date').value || new Date().toISOString().split('T')[0];
+    const date = document.getElementById('fp-batch-date').value || localTodayStr();
     const floors = document.getElementById('fp-batch-floors').value.trim() || selectedFurnitureFloor;
     const qty = Math.max(1, Number(document.getElementById('fp-batch-qty').value) || 1);
     const unitPrice = Math.max(0, Number(document.getElementById('fp-batch-price').value) || 0);
@@ -4772,7 +4772,7 @@ function exportFurnitureToCSVLegacy() {
         csvContent += row;
     });
 
-    downloadCSV(csvContent, `جرد_أثاث_الشركة_والطوابق_${new Date().toISOString().split('T')[0]}.csv`);
+    downloadCSV(csvContent, `جرد_أثاث_الشركة_والطوابق_${localTodayStr()}.csv`);
     showToast(currentLang === 'ar' ? 'تم تصدير جرد أصول الشركة وتحليل الطوابق إلى إكسيل!' : 'Furniture inventory exported to CSV!', 'success');
 }
 
@@ -5159,13 +5159,13 @@ function exportHqToCSVLegacy() {
         csvContent += `"${idx + 1}","${item.name}","${item.cat}","${item.qty || 0}","${item.status || 'ممتاز'}","${item.notes || ''}"\n`;
     });
 
-    downloadCSV(csvContent, `جرد_مقر_الإدارة_العليا_${new Date().toISOString().split('T')[0]}.csv`);
+    downloadCSV(csvContent, `جرد_مقر_الإدارة_العليا_${localTodayStr()}.csv`);
     showToast(currentLang === 'ar' ? 'تم تصدير جرد مقر الإدارة العليا إلى إكسيل!' : 'Executive HQ inventory exported to CSV!', 'success');
 }
 
 // --- STOCK SUPPLY MODAL ---
 function openSupplyModal() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localTodayStr();
     const dateInp = document.getElementById('supply-date');
     if (dateInp) dateInp.value = today;
 
@@ -5241,7 +5241,7 @@ function saveNewItem() {
     }
 
     const nextId = inventory.length > 0 ? Math.max(...inventory.map(i => i.id)) + 1 : 1;
-    const today = new Date().toISOString().split('T')[0];
+    const today = localTodayStr();
 
     inventory.push({
         id: nextId,
@@ -5354,7 +5354,7 @@ function exportInventoryToCSVLegacy() {
         csvContent += `"${idx + 1}","${item.name}","${item.cat}","${item.unit}","${item.total}","${issued}","${rem}","${item.minLimit}","${status}"\n`;
     });
 
-    downloadCSV(csvContent, `تقرير_مخزن_البوفيه_${new Date().toISOString().split('T')[0]}.csv`);
+    downloadCSV(csvContent, `تقرير_مخزن_البوفيه_${localTodayStr()}.csv`);
     showToast(currentLang === 'ar' ? 'تم تصدير كشف المخزن إلى ملف إكسيل!' : 'Inventory exported to CSV!', 'success');
 }
 
@@ -5368,7 +5368,7 @@ function exportHistoryToCSVLegacy() {
         csvContent += `"${idx + 1}","${t.date}","${t.floor}","${item ? item.name : 'صنف غير معرف'}","${item ? item.unit : ''}","${t.qty}","${t.recipient}","${t.notes || ''}"\n`;
     });
 
-    downloadCSV(csvContent, `سجل_صرف_الطوابق_${new Date().toISOString().split('T')[0]}.csv`);
+    downloadCSV(csvContent, `سجل_صرف_الطوابق_${localTodayStr()}.csv`);
     showToast(currentLang === 'ar' ? 'تم تصدير سجل الحركات إلى ملف إكسيل!' : 'Transactions exported to CSV!', 'success');
 }
 
@@ -5393,7 +5393,7 @@ function exportFloorsMatrixToCSVLegacy() {
         csvContent += line;
     });
 
-    downloadCSV(csvContent, `مصفوفة_استهلاك_الطوابق_${new Date().toISOString().split('T')[0]}.csv`);
+    downloadCSV(csvContent, `مصفوفة_استهلاك_الطوابق_${localTodayStr()}.csv`);
     showToast(currentLang === 'ar' ? 'تم تصدير مصفوفة الاستهلاك إلى إكسيل!' : 'Matrix exported to CSV!', 'success');
 }
 
@@ -5425,7 +5425,7 @@ function exportDataBackup() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `Facilities_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `Facilities_Backup_${localTodayStr()}.json`;
     link.click();
     showToast(currentLang === 'ar' ? 'تم تصدير النسخة الاحتياطية بنجاح!' : 'Backup exported successfully!', 'success');
 }
@@ -6021,9 +6021,9 @@ function connectToFirebase(config, wsId) {
                 if (cloudData.inventory && Array.isArray(cloudData.inventory)) {
                     inventory = cloudData.inventory;
                 }
-                if (cloudData.transactions && Array.isArray(cloudData.transactions)) {
-                    transactions = cloudData.transactions;
-                }
+                // Merge instead of replace: entries saved on this device but not yet in the cloud are kept
+                const syncMerged = cgMergeFromCloud(cloudData);
+                transactions = syncMerged.transactions;
                 if (cloudData.recipientsList && Array.isArray(cloudData.recipientsList)) {
                     recipientsList = cloudData.recipientsList;
                 }
@@ -6042,9 +6042,7 @@ function connectToFirebase(config, wsId) {
                 if (cloudData.hqInventory && Array.isArray(cloudData.hqInventory)) {
                     hqInventory = cloudData.hqInventory;
                 }
-                if (cloudData.custodyTransactions && Array.isArray(cloudData.custodyTransactions)) {
-                    custodyTransactions = cloudData.custodyTransactions;
-                }
+                custodyTransactions = syncMerged.custodyTransactions;
                 if (cloudData.poPricingMap && typeof cloudData.poPricingMap === 'object') {
                     poPricingMap = cloudData.poPricingMap;
                 }
@@ -6084,7 +6082,9 @@ function connectToFirebase(config, wsId) {
 
                 renderAllWhenNotTyping();
                 isSyncingFromCloud = false;
+                cgRememberSyncedIds();
                 if (fixMisdatedNov11Issues()) persistState();
+                else if (syncMerged.needsPush || cgCloudDirty()) syncToCloud();
 
                 if (needsV2CloudPush) {
                     syncToCloud();
@@ -6124,41 +6124,175 @@ function renderAllWhenNotTyping() {
     }, { once: true });
 }
 
+// ---------------------------------------------------------------------------------------------
+// SAFE SYNC for the two logs the user relies on: buffet issues (transactions) and custody rows.
+// Before: every save sent this device's whole list and every cloud update replaced the whole list,
+// so a phone or computer with an old copy could wipe entries saved on the other device, and entries
+// saved while offline were lost when the cloud copy arrived.
+// Now both directions MERGE by entry id. A deletion is remembered by id (tombstone), so a deleted entry
+// does not come back, and an edited entry keeps the newest version (updatedAt/savedAt).
+// ---------------------------------------------------------------------------------------------
+const CG_SYNC_LISTS = ['transactions', 'custodyTransactions'];
+function cgListGet(k) { return k === 'transactions' ? transactions : custodyTransactions; }
+function cgLoadJson(key, fallback) { try { const v = JSON.parse(localStorage.getItem(key)); return v && typeof v === 'object' ? v : fallback; } catch (e) { return fallback; } }
+// ids deleted anywhere: { transactions: [...], custodyTransactions: [...] }
+let cgTombs = cgLoadJson('buffet_v9_sync_tombs', { transactions: [], custodyTransactions: [] });
+// ids this device last saw in agreement with the cloud (to notice local deletions)
+let cgKnownIds = cgLoadJson('buffet_v9_sync_known', null);
+function cgCloudDirty() { try { return localStorage.getItem('buffet_v9_sync_dirty') === '1'; } catch (e) { return false; } }
+function cgSetDirty(v) { try { localStorage.setItem('buffet_v9_sync_dirty', v ? '1' : '0'); } catch (e) {} }
+function cgSaveSyncMeta() {
+    try {
+        localStorage.setItem('buffet_v9_sync_tombs', JSON.stringify(cgTombs));
+        if (cgKnownIds) localStorage.setItem('buffet_v9_sync_known', JSON.stringify(cgKnownIds));
+    } catch (e) {}
+}
+function cgIdKey(id) { return id === undefined || id === null ? null : String(id); }
+function cgStamp(x) { return String((x && (x.updatedAt || x.savedAt)) || ''); }
+// Ids that were known on this device and are now gone from it = deleted here
+function cgCollectLocalDeletions() {
+    if (!cgKnownIds) return;
+    CG_SYNC_LISTS.forEach(k => {
+        const now = new Set((cgListGet(k) || []).map(x => cgIdKey(x && x.id)).filter(Boolean));
+        const tomb = new Set((cgTombs[k] || []).map(String));
+        (cgKnownIds[k] || []).forEach(id => { if (!now.has(String(id))) tomb.add(String(id)); });
+        cgTombs[k] = [...tomb];
+    });
+    cgSaveSyncMeta();
+}
+function cgRememberSyncedIds() {
+    cgKnownIds = {};
+    CG_SYNC_LISTS.forEach(k => { cgKnownIds[k] = (cgListGet(k) || []).map(x => cgIdKey(x && x.id)).filter(Boolean); });
+    cgSaveSyncMeta();
+}
+function cgUnionTombs(cloudTombs) {
+    CG_SYNC_LISTS.forEach(k => {
+        const s = new Set((cgTombs[k] || []).map(String));
+        ((cloudTombs && cloudTombs[k]) || []).forEach(id => s.add(String(id)));
+        cgTombs[k] = [...s];
+    });
+}
+// Merge two lists by id. Order follows `primary`; entries only in `secondary` are added at the end.
+function cgMergeLists(primary, secondary, tombList, preferSecondaryOnTie) {
+    const tomb = new Set((tombList || []).map(String));
+    const secById = new Map();
+    (secondary || []).forEach(x => { const id = cgIdKey(x && x.id); if (id) secById.set(id, x); });
+    const seen = new Set();
+    const out = [];
+    (primary || []).forEach(p => {
+        const id = cgIdKey(p && p.id);
+        if (!id) { out.push(p); return; }
+        if (tomb.has(id) || seen.has(id)) return;
+        seen.add(id);
+        const s = secById.get(id);
+        if (!s) { out.push(p); return; }
+        const sp = cgStamp(p), ss = cgStamp(s);
+        out.push(ss > sp || (ss === sp && preferSecondaryOnTie) ? s : p);
+    });
+    (secondary || []).forEach(s => {
+        const id = cgIdKey(s && s.id);
+        if (!id || tomb.has(id) || seen.has(id)) return;
+        seen.add(id);
+        out.push(s);
+    });
+    return out;
+}
+function cgSameIds(a, b) {
+    const A = (a || []).map(x => cgIdKey(x && x.id)).join(','), B = (b || []).map(x => cgIdKey(x && x.id)).join(',');
+    return A === B;
+}
+// Cloud copy arrived: cloud order first, keep this device's entries the cloud does not have yet
+function cgMergeFromCloud(cloudData) {
+    cgCollectLocalDeletions();
+    cgUnionTombs(cloudData.deletedIds);
+    const res = { needsPush: false };
+    CG_SYNC_LISTS.forEach(k => {
+        const cloudList = Array.isArray(cloudData[k]) ? cloudData[k] : null;
+        const local = cgListGet(k) || [];
+        if (!cloudList) { res[k] = local; if (local.length) res.needsPush = true; return; }
+        const merged = cgMergeLists(cloudList, local, cgTombs[k], false);
+        if (!cgSameIds(merged, cloudList)) res.needsPush = true;
+        res[k] = merged;
+    });
+    const ct = cloudData.deletedIds || {};
+    if (CG_SYNC_LISTS.some(k => (cgTombs[k] || []).length !== ((ct[k] || []).length))) res.needsPush = true;
+    cgSaveSyncMeta();
+    return res;
+}
+
+let cgSyncRunning = false, cgSyncAgain = false;
 function syncToCloud(isInitial = false) {
     if (isSyncingFromCloud) return; // Ignore updates triggered by inbound cloud sync
+    cgCollectLocalDeletions();
+    cgSetDirty(true); // stays set until the cloud has this device's changes (survives closing the program)
     if (!cloudDb || !cloudWorkspaceId) return;
+    if (cgSyncRunning) { cgSyncAgain = true; return; }
+    cgSyncRunning = true;
 
     updateCloudStatusBadge('syncing', 'Online');
+    const ref = cloudDb.collection('buffet_workspaces').doc(cloudWorkspaceId);
+    let mergedLists = null;
 
-    const payload = {
-        authKey: EXPECTED_PASSWORD_HASH,
-        inventory,
-        transactions,
-        recipientsList,
-        furnitureInventory,
-        furnitureCatalogV2: true,
-        furnitureCatalogV3WBS: true,
-        hqInventory,
-        custodyTransactions,
-        poPricingMap,
-        supplierPOs,
-        monthlyCoreExpenses,
-        deptLayout,
-        elecData,
-        purchaseReqs,
-        cycleStartDay,
-        lastUpdated: new Date().toISOString()
-    };
-
-    cloudDb.collection('buffet_workspaces').doc(cloudWorkspaceId).set(payload, { merge: true })
-        .then(() => {
-            updateCloudStatusBadge('online', 'Online');
-        })
-        .catch(err => {
-            console.error('Cloud save error:', err);
-            updateCloudStatusBadge('offline', 'Offline');
+    cloudDb.runTransaction(tx => tx.get(ref).then(snap => {
+        const cloud = snap.exists ? (snap.data() || {}) : {};
+        // read the newest cloud copy and add this device's changes on top of it
+        const tombs = {};
+        CG_SYNC_LISTS.forEach(k => {
+            const s = new Set((cgTombs[k] || []).map(String));
+            (((cloud.deletedIds || {})[k]) || []).forEach(id => s.add(String(id)));
+            tombs[k] = [...s];
         });
+        mergedLists = { deletedIds: tombs };
+        CG_SYNC_LISTS.forEach(k => {
+            mergedLists[k] = cgMergeLists(cgListGet(k) || [], Array.isArray(cloud[k]) ? cloud[k] : [], tombs[k], false);
+        });
+        const payload = {
+            authKey: EXPECTED_PASSWORD_HASH,
+            inventory,
+            transactions: mergedLists.transactions,
+            recipientsList,
+            furnitureInventory,
+            furnitureCatalogV2: true,
+            furnitureCatalogV3WBS: true,
+            hqInventory,
+            custodyTransactions: mergedLists.custodyTransactions,
+            deletedIds: tombs,
+            poPricingMap,
+            supplierPOs,
+            monthlyCoreExpenses,
+            deptLayout,
+            elecData,
+            purchaseReqs,
+            cycleStartDay,
+            lastUpdated: new Date().toISOString()
+        };
+        tx.set(ref, payload, { merge: true });
+    })).then(() => {
+        // entries another device added meanwhile are now here too
+        const gotNew = CG_SYNC_LISTS.some(k => !cgSameIds(mergedLists[k], cgListGet(k)));
+        transactions = mergedLists.transactions;
+        custodyTransactions = mergedLists.custodyTransactions;
+        cgTombs = mergedLists.deletedIds;
+        cgRememberSyncedIds();
+        try {
+            localStorage.setItem('buffet_v9_trans', JSON.stringify(transactions));
+            localStorage.setItem('buffet_v9_custody', JSON.stringify(custodyTransactions));
+        } catch (e) {}
+        cgSetDirty(false);
+        updateCloudStatusBadge('online', 'Online');
+        if (gotNew) renderAllWhenNotTyping();
+    }).catch(err => {
+        // offline or refused: everything stays saved on this device and is sent on the next try
+        console.error('Cloud save error:', err);
+        updateCloudStatusBadge('offline', 'Offline');
+    }).then(() => {
+        cgSyncRunning = false;
+        if (cgSyncAgain) { cgSyncAgain = false; syncToCloud(); }
+    });
 }
+// Send anything saved while offline as soon as the connection is back
+window.addEventListener('online', () => { if (cgCloudDirty()) syncToCloud(); });
+setInterval(() => { if (cgCloudDirty() && navigator.onLine) syncToCloud(); }, 120000);
 
 function updateCloudStatusBadge(state, text) {
     const dot = document.getElementById('cloud-status-dot');
@@ -7591,7 +7725,7 @@ function openAddCustodyModal() {
 
     if (editIdEl) editIdEl.value = '';
     if (titleEl) titleEl.textContent = currentLang === 'ar' ? 'تسجيل حركة عهدة جديدة (ترحيل تلقائي للرصيد)' : 'Add Custody Transaction';
-    if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+    if (dateEl) dateEl.value = localTodayStr();
     if (typeEl) typeEl.value = 'outflow';
     if (itemEl) itemEl.value = '';
     if (plannedEl) plannedEl.value = '';
@@ -7637,7 +7771,7 @@ function openEditCustodyModal(rowId) {
 function saveCustodyTransaction() {
     if (currentUserRole === 'viewer') return;
     const editId = Number(document.getElementById('cust-edit-id')?.value || 0);
-    const date = document.getElementById('cust-input-date')?.value || new Date().toISOString().split('T')[0];
+    const date = document.getElementById('cust-input-date')?.value || localTodayStr();
     const type = document.getElementById('cust-input-type')?.value || 'outflow';
     const desc = (document.getElementById('cust-input-item')?.value || '').trim();
     const plannedStr = (document.getElementById('cust-input-planned-items')?.value || '').trim();
@@ -7664,11 +7798,13 @@ function saveCustodyTransaction() {
             existing.inflow = inflow;
             existing.outflow = outflow;
             existing.notes = notes;
+            existing.updatedAt = new Date().toISOString();
             if (plannedItems.length > 0) existing.plannedItems = plannedItems;
         }
     } else {
-        targetId = custodyTransactions.length > 0 ? Math.max(...custodyTransactions.map(r => r.id)) + 1 : 1;
-        const newObj = { id: targetId, date, desc, inflow, outflow, notes };
+        // unique id even when the phone and the computer add a row at the same time (was max+1, which could clash)
+        targetId = Math.max(Date.now(), (custodyTransactions.length > 0 ? Math.max(...custodyTransactions.map(r => Number(r.id) || 0)) : 0) + 1);
+        const newObj = { id: targetId, date, desc, inflow, outflow, notes, savedAt: new Date().toISOString() };
         if (plannedItems.length > 0) newObj.plannedItems = plannedItems;
         custodyTransactions.push(newObj);
     }
@@ -8130,7 +8266,7 @@ function exportCustodyToCSVLegacy() {
         const invName = custodyInvoicesMap[r.id] ? custodyInvoicesMap[r.id].name : '';
         csv += `"${r.serialNum}","${r.date}","${r.desc}","${r.inflow}","${r.outflow}","${r.balance}","${r.notes || ''}","${invName}"\n`;
     });
-    downloadCSV(csv, `جرد_عهدة_الشركة_${new Date().toISOString().split('T')[0]}.csv`);
+    downloadCSV(csv, `جرد_عهدة_الشركة_${localTodayStr()}.csv`);
     showToast(currentLang === 'ar' ? 'تم تصدير جرد العهدة إلى ملف إكسيل بنجاح!' : 'Custody exported to Excel!', 'success');
 }
 
@@ -8395,7 +8531,7 @@ function toggleSupPoInstallmentsUI() {
 function openAddSupplierPOModal() {
     if (currentUserRole === 'viewer') return;
     document.getElementById('sup-po-edit-id').value = '';
-    document.getElementById('sup-po-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('sup-po-date').value = localTodayStr();
     document.getElementById('sup-po-supplier').value = '';
     document.getElementById('sup-po-item').value = '';
     document.getElementById('sup-po-qty').value = '1';
@@ -8530,7 +8666,7 @@ function onSupplierPOPaidManualInput() {
 
 function saveSupplierPOItem() {
     if (currentUserRole === 'viewer') return;
-    const date = document.getElementById('sup-po-date')?.value || new Date().toISOString().split('T')[0];
+    const date = document.getElementById('sup-po-date')?.value || localTodayStr();
     const supplier = (document.getElementById('sup-po-supplier')?.value || '').trim();
     const item = (document.getElementById('sup-po-item')?.value || '').trim();
     const qty = Number(document.getElementById('sup-po-qty')?.value) || 1;
@@ -9246,7 +9382,7 @@ function exportDeptsToCSVLegacy() {
     }));
     csv += '\n' + q('محتاج يتشترى') + '\n';
     getDeptBuyList().forEach(([n, c]) => { csv += [n, c].map(q).join(',') + '\n'; });
-    downloadCSV(csv, `تحليل_الطوابق_بالأقسام_${new Date().toISOString().split('T')[0]}.csv`);
+    downloadCSV(csv, `تحليل_الطوابق_بالأقسام_${localTodayStr()}.csv`);
 }
 function printDeptsReportLegacy() {
     const isAr = currentLang === 'ar';
@@ -9320,11 +9456,11 @@ const ELEC_FLOORS = ['الدور الرابع', 'الدور الخامس', 'ال
 function elecNum(v) { const n = Number(v); return isFinite(n) ? n : 0; }
 function elecMoney(n) { return elecNum(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
 function elecMoney2(n) { return elecNum(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-function elecToday() { return new Date().toISOString().split('T')[0]; }
+function elecToday() { return localTodayStr(); }
 function elecAddDays(dateStr, days) {
     const d = new Date(dateStr + 'T00:00:00');
     d.setDate(d.getDate() + days);
-    return d.toISOString().split('T')[0];
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 function elecDaysBetween(a, b) { return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000); }
 
@@ -10154,7 +10290,7 @@ function cgCsvToXlsx(content, filename) {
             return { v, s: isTotal ? 'totLabel' : (i === 0 && r.length < header.length / 2 ? 'group' : 'text') };
         }));
     });
-    CGX.download(sh, title.replace(/ /g, '_') + '_' + new Date().toISOString().split('T')[0]);
+    CGX.download(sh, title.replace(/ /g, '_') + '_' + localTodayStr());
 }
 
 // ======================================================================
@@ -10207,7 +10343,7 @@ function exportElecToCSV() {
 }
 
 // Shared helpers for the Excel sheets below
-function cgxToday() { return new Date().toISOString().split('T')[0]; }
+function cgxToday() { return localTodayStr(); }
 function cgxTotalRow(sh, labelSpan, cells, final) {
     const st = final ? 'finLabel' : 'totLabel';
     const lab = [{ v: final ? 'الإجمالي النهائي' : 'الإجمالي', s: st }];
