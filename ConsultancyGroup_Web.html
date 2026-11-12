@@ -16130,7 +16130,7 @@ function exportPurchaseReqExcel(id) {
     if (id) { const h = (purchaseReqs.history || []).find(x => x.id === id); if (h) o = h; }
     const S = isAr ? 'R' : 'L', E = isAr ? 'L' : 'R'; // start side / end side
     const TX = isAr ? 'text' : 'textL';
-    const nm = v => isAr ? preqArabicOf(v) : (EN_PHRASES[String(v || '').trim()] || v);
+    const nm = v => isAr ? preqArabicOf(v) : preqEnglishOf(v);
     const sh = CGX.report({ name: `${t.title} ${o.no || ''}`.trim(), title: t.title, columns: [{ h: '', w: 10 }, { h: '', w: 11 }, { h: '', w: 29 }, { h: '', w: 26 }, { h: '', w: 14 }, { h: '', w: 17 }] });
     sh.rows = []; sh.merges = []; sh.heights = {}; sh.freezeRow = 0; sh.printTitles = 0; sh.ltr = !isAr;
     // header as on the brand letterhead: the logo at the start side (left in English, right in Arabic),
@@ -16138,7 +16138,7 @@ function exportPurchaseReqExcel(id) {
     sh.image = { col: 0, row: 0, w: 225, h: 54, offX: 4, offY: 8 };
     const blank = k => Array(6).fill({ v: '', s: k || 'default' });
     sh.add([...blank().slice(0, 3), { v: isAr ? 'إدارة المرافق' : 'Facilities Management', s: 'docDept' + E }, { v: '', s: 'docDept' + E }, { v: '', s: 'docDept' + E }], 36); sh.merge('D1:F1');
-    sh.add([...blank().slice(0, 3), { v: isAr ? 'مدير المرافق' : 'Facilities Manager', s: 'docPos' + E }, { v: '', s: 'docPos' + E }, { v: '', s: 'docPos' + E }], 30); sh.merge('D2:F2');
+    sh.add([...blank().slice(0, 3), { v: isAr ? 'مدير المرافق' : 'Facility Manager', s: 'docPos' + E }, { v: '', s: 'docPos' + E }, { v: '', s: 'docPos' + E }], 30); sh.merge('D2:F2');
     sh.add(blank('rule'), 6);
     sh.add([{ v: t.title, s: 'docTitleC' }, ...blank('docTitleC').slice(1)], 30); sh.merge('A4:F4');
     sh.add([], 10);
@@ -16181,6 +16181,12 @@ function exportPurchaseReqExcel(id) {
         sh.merge(`B${r}:C${r}`); sh.merge(`E${r}:F${r}`);
     });
     CGX.download(sh, `${isAr ? 'أمر_شراء' : 'Purchase_Order'}_${o.no || ''}_${o.date || cgxToday()}`);
+}
+// English purchase order: names and titles in English; the facilities manager's title reads "Facility Manager" (purchase order only)
+function preqEnglishOf(s) {
+    const v = String(s || '').trim();
+    const en = EN_PHRASES[v] || v;
+    return String(en).split('Facilities Manager').join('Facility Manager');
 }
 // Arabic print: a name or title typed in English is shown in Arabic when the program knows it
 // (e.g. "ENG. Ahmed Yassin" → "م/أحمد يس", "Country Director" → "المدير الإقليمي"), so both boxes read the same.
@@ -16233,13 +16239,13 @@ function printPurchaseReq(id) {
                 <img src="${getPrintLogoSrc()}" alt="المجموعة الإستشارية | Consultancy Group">
                 <div class="preq-head-text">
                     <div class="preq-doc">${isAr ? 'إدارة المرافق' : 'Facilities Management'}</div>
-                    <div class="preq-dept">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                    <div class="preq-dept">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
                 </div>
             </div>
             <div class="preq-title">${t.title}</div>
             <div class="preq-parties">
-                ${party(t.from, t.employee, isAr ? preqArabicOf(o.fromName) : o.fromName, isAr ? preqArabicOf(o.fromPos) : o.fromPos)}
-                ${party(t.reqFrom, t.employee, isAr ? preqArabicOf(o.toName) : o.toName, isAr ? preqArabicOf(o.toPos) : o.toPos)}
+                ${party(t.from, t.employee, isAr ? preqArabicOf(o.fromName) : preqEnglishOf(o.fromName), isAr ? preqArabicOf(o.fromPos) : preqEnglishOf(o.fromPos))}
+                ${party(t.reqFrom, t.employee, isAr ? preqArabicOf(o.toName) : preqEnglishOf(o.toName), isAr ? preqArabicOf(o.toPos) : preqEnglishOf(o.toPos))}
             </div>
             <div class="elec-meta preq-meta">
                 <div><span>${t.orderNo}</span><b class="en">${escHtml(o.no)}</b></div>
