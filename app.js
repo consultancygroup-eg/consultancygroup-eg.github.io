@@ -9511,26 +9511,17 @@ function renderDeptsView() {
         // Every office item used on this floor gets its own column
         const itemCols = deptItemColumns(depts);
         const buffetCols = deptItemColumns(buffets);
-        const nameCell = d => `<td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">${currentLang === 'en' ? 'Under: ' : 'تابع: '}${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button><span class="dept-move no-print"><button type="button" class="btn btn-sm btn-secondary" title="لأعلى" onclick="event.stopPropagation(); moveDept(${d.id}, -1)">▲</button><button type="button" class="btn btn-sm btn-secondary" title="لأسفل" onclick="event.stopPropagation(); moveDept(${d.id}, 1)">▼</button></span>`}<button type="button" class="btn btn-sm cg-dl dept-pdf-btn no-print" onclick="event.stopPropagation(); printDeptsReport({ deptId: ${d.id} })" title="PDF للجزء ده بس"><b class="cg-dl-arrow">⬇</b> PDF</button></td>`;
-        const rowAttrs = d => `class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}`;
-        const buffetRows = buffets.map(d => `<tr ${rowAttrs(d)}>${nameCell(d)}${buffetCols.map(n => `<td style="text-align:center;">${deptItemCellHtml(d, n)}</td>`).join('')}<td style="text-align:center;">${deptShortListHtml(d)}</td></tr>`).join('');
+        const nameCell = (d, span) => `<td class="dept-l-name" rowspan="${span || 1}"><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">${currentLang === 'en' ? 'Under: ' : 'تابع: '}${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button><span class="dept-move no-print"><button type="button" class="btn btn-sm btn-secondary" title="لأعلى" onclick="event.stopPropagation(); moveDept(${d.id}, -1)">▲</button><button type="button" class="btn btn-sm btn-secondary" title="لأسفل" onclick="event.stopPropagation(); moveDept(${d.id}, 1)">▼</button></span>`}<button type="button" class="btn btn-sm cg-dl dept-pdf-btn no-print" onclick="event.stopPropagation(); printDeptsReport({ deptId: ${d.id} })" title="PDF للجزء ده بس"><b class="cg-dl-arrow">⬇</b> PDF</button></td>`;
+        const head = (first, withOffices) => `<thead><tr><th class="dept-l-name">${first}</th>${withOffices ? '<th class="dept-l-off">إجمالي المكاتب<br><small>المتفق عليه</small></th>' : ''}<th class="dept-l-item">الغرض</th><th class="dept-l-num">العدد المطلوب</th><th class="dept-l-num">الموجود حالياً</th><th class="dept-l-num">محتاج شراء</th></tr></thead>`;
+        const foot = (label, list, withOffices) => { const t = deptListTotals(list); return `<tfoot><tr><th class="dept-l-name">${label}</th>${withOffices ? `<th class="dept-l-off">${flOffices}</th>` : ''}<th class="dept-l-item">${deptShortListHtml(null, list)}</th><th class="dept-l-num">${t.need}</th><th class="dept-l-num">${t.have}</th><th class="dept-l-num">${t.short ? `<b class="dept-short-inline">${t.short}</b>` : '0'}</th></tr></tfoot>`; };
         const buffetSection = buffets.length ? `
             <div class="dept-sub-head"><span class="dept-sub-title">البوفيه</span></div>
             <div class="table-responsive">
-                <table class="data-table dept-table dept-buffet-table">
-                    <thead><tr><th>البوفيه</th>${buffetCols.map(n => `<th style="text-align:center;">${escHtml(n)}<br><small>الحالي</small></th>`).join('')}<th style="text-align:center;">محتاج شراء</th></tr></thead>
-                    <tbody>${buffetRows}</tbody>
+                <table class="data-table dept-table dept-list-table dept-buffet-table">
+                    ${head('البوفيه', false)}
+                    <tbody>${deptListRowsHtml(buffets, false, isViewer, nameCell)}</tbody>
                 </table>
             </div>` : '';
-        const rows = depts.map(d => {
-            const itemCells = itemCols.map(n => `<td style="text-align:center;">${deptItemCellHtml(d, n)}</td>`).join('');
-            return `<tr class="${isViewer ? '' : 'dept-row'}" ${isViewer ? '' : `onclick="openDeptModal(${d.id})" title="دوس للتعديل"`}>
-                <td><strong>${escHtml(d.name)}</strong>${d.group ? `<div class="dept-sub">${currentLang === 'en' ? 'Under: ' : 'تابع: '}${escHtml(d.group)}</div>` : ''}${d.notes ? `<div class="dept-sub">${escHtml(d.notes)}</div>` : ''}${isViewer ? '' : `<button type="button" class="btn btn-sm btn-secondary dept-edit-btn no-print" onclick="event.stopPropagation(); openDeptModal(${d.id})"><i data-lucide="pencil" style="width:12px;height:12px;"></i> تعديل المحتويات</button><span class="dept-move no-print"><button type="button" class="btn btn-sm btn-secondary" title="لأعلى" onclick="event.stopPropagation(); moveDept(${d.id}, -1)">▲</button><button type="button" class="btn btn-sm btn-secondary" title="لأسفل" onclick="event.stopPropagation(); moveDept(${d.id}, 1)">▼</button></span>`}<button type="button" class="btn btn-sm cg-dl dept-pdf-btn no-print" onclick="event.stopPropagation(); printDeptsReport({ deptId: ${d.id} })" title="PDF للقسم ده بس"><b class="cg-dl-arrow">⬇</b> PDF</button></td>
-                <td style="text-align:center; font-weight:800; font-size:1.05rem;">${Number(d.offices) || '<span style="color: var(--text-muted);" title="العدد لسه ماتحددش">—</span>'}</td>
-                ${itemCells}
-                <td style="text-align:center;">${deptShortListHtml(d)}</td>
-            </tr>`;
-        }).join('');
         return `<div class="dept-floor">
             <div class="dept-floor-head">
                 <h3>${fl}</h3>
@@ -9540,17 +9531,58 @@ function renderDeptsView() {
             </div>
             ${buffets.length ? '<div class="dept-sub-head"><span class="dept-sub-title">المكاتب والأقسام</span></div>' : ''}
             <div class="table-responsive">
-                <table class="data-table dept-table">
-                    <thead><tr><th>القسم / المكتب</th><th style="text-align:center;">إجمالي المكاتب<br><small>المتفق عليه</small></th>${itemCols.map(n => `<th style="text-align:center;">${escHtml(n)}<br><small>الحالي</small></th>`).join('')}<th style="text-align:center;">محتاج شراء</th></tr></thead>
-                    <tbody>${rows || `<tr><td colspan="${3 + itemCols.length}" style="text-align:center; color: var(--text-muted); padding: 1rem;">مفيش أقسام في الدور ده</td></tr>`}</tbody>
-                    ${depts.length ? `<tfoot><tr><th>إجمالي ${fl}</th><th style="text-align:center;">${flOffices}</th>${itemCols.map(n => `<th style="text-align:center;">${deptItemFloorTotalHtml(depts, n, fl)}</th>`).join('')}<th style="text-align:center;">${deptShortListHtml(null, depts)}</th></tr></tfoot>` : ''}
+                <table class="data-table dept-table dept-list-table">
+                    ${head('القسم / المكتب', true)}
+                    <tbody>${depts.length ? deptListRowsHtml(depts, true, isViewer, nameCell) : `<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 1rem;">مفيش أقسام في الدور ده</td></tr>`}</tbody>
+                    ${depts.length ? foot(`إجمالي ${fl}`, depts, true) : ''}
                 </table>
             </div>
+            ${depts.length ? deptAssetCompareHtml(depts, fl) : ''}
             ${buffetSection}
         </div>`;
     }).join('');
 }
 
+// Departments page, laid out like the Excel: one row per item (required · current · to buy), department name and offices beside its items
+function deptListRowsHtml(list, withOffices, isViewer, nameCell) {
+    return list.map(d => {
+        const items = (d.items || []).filter(it => it.name);
+        const n = Math.max(items.length, 1);
+        const attrs = isViewer ? 'class="dept-first"' : `class="dept-row dept-first" onclick="openDeptModal(${d.id})" title="دوس للتعديل"`;
+        const attrs2 = isViewer ? '' : `class="dept-row" onclick="openDeptModal(${d.id})" title="دوس للتعديل"`;
+        const head = `${nameCell(d, n)}${withOffices ? `<td rowspan="${n}" class="dept-l-off">${Number(d.offices) || '<span style="color: var(--text-muted);" title="العدد لسه ماتحددش">—</span>'}</td>` : ''}`;
+        if (!items.length) return `<tr ${attrs}>${head}<td colspan="4" style="text-align:center; color: var(--text-muted);">مفيش محتويات لسه</td></tr>`;
+        return items.map((it, k) => {
+            const need = deptItemNeed(d, it);
+            const h = deptItemHaveInfo(d, it);
+            const s = deptItemShort(d, it);
+            const have = h ? `${h.src !== 'manual' ? `<span title="الرقم مقروء من جرد أصول الشركة">${h.have}</span>` : h.have}` : '<span style="color: var(--text-muted);" title="لسه ماتعدّش">؟</span>';
+            const short = s === null ? '<span style="color: var(--text-muted);">—</span>' : (s ? `<b class="dept-short-inline">${s}</b>` : '<span style="color: var(--text-muted);">0</span>');
+            return `<tr ${k === 0 ? attrs : attrs2}>${k === 0 ? head : ''}<td class="dept-l-item">${escHtml(it.name)}</td><td class="dept-l-num">${need}</td><td class="dept-l-num">${have}</td><td class="dept-l-num">${short}</td></tr>`;
+        }).join('');
+    }).join('');
+}
+// Floor totals of required / current / to buy
+function deptListTotals(list) {
+    let need = 0, have = 0, short = 0;
+    list.forEach(d => (d.items || []).filter(it => it.name).forEach(it => {
+        need += deptItemNeed(d, it);
+        const h = deptItemHaveInfo(d, it); if (h) have += h.have;
+        short += deptItemShort(d, it) || 0;
+    }));
+    return { need, have, short };
+}
+// Under each floor: what the asset inventory has on that floor vs what is placed in its departments
+function deptAssetCompareHtml(depts, fl) {
+    const chips = deptItemColumns(depts).map(name => {
+        const a = assetFloorCount(name, fl);
+        if (a === null) return '';
+        let have = 0; depts.forEach(d => { const c = deptItemCellData(d, name); if (c) have += c.have; });
+        const diff = a - have;
+        return `<span class="dept-cmp-chip">${escHtml(name)}: في الجرد <b>${a}</b>${diff > 0 ? ` · <b class="warn">غير موزع ${diff}</b>` : (diff < 0 ? ` · <b class="bad">زيادة ${-diff}</b>` : ' ✓')}</span>`;
+    }).filter(Boolean);
+    return chips.length ? `<div class="dept-cmp"><span class="dept-cmp-title">مقارنة بجرد الأصول:</span>${chips.join('')}</div>` : '';
+}
 // Item columns for a set of departments: the basic order first (desk, chairs, locker, tables…), then any new names
 function deptItemColumns(depts) {
     const used = new Set();
