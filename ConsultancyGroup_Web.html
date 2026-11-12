@@ -3252,7 +3252,7 @@ tr.elec-active td { background: var(--primary-light) !important; }
                     <span data-i18n="navPO">أمر شراء للمورد</span>
                 </button>
 
-                <button onclick="exportBuffetAllExcel()" id="nav-btn-buffet-xlsx" class="sidebar-nav-item nav-group-buffet" title="ملف Excel واحد فيه المخزن واستهلاك الأدوار وسجل الصرف وأمر شراء المورد">
+                <button onclick="exportBuffetAllExcel()" id="nav-btn-buffet-xlsx" class="sidebar-nav-item nav-group-buffet" title="ملف Excel واحد فيه المخزن واستهلاك الأدوار وصفحة لكل دور (4 لـ 9) وأمر شراء المورد، ومربوطين ببعض">
                     <i data-lucide="file-spreadsheet"></i>
                     <span>Excel كامل للبوفيه</span>
                 </button>
@@ -7494,7 +7494,7 @@ const EN_PHRASES = {
     'العودة للأقسام Home (3)': 'Back to sections (3)',
     'Share رابط البرنامج والباركود': 'Share the program link and QR code',
     'Excel كامل للبوفيه': 'Full buffet Excel', 'Excel — مصروفات البوفيه كاملة': 'Excel — Full buffet expenses',
-    'ملف Excel واحد فيه المخزن واستهلاك الأدوار وسجل الصرف وأمر شراء المورد': 'One Excel file with the store, floor consumption, issue log and supplier purchase order',
+    'ملف Excel واحد فيه المخزن واستهلاك الأدوار وصفحة لكل دور (4 لـ 9) وأمر شراء المورد، ومربوطين ببعض': 'One linked Excel file: store, floor consumption, a sheet per floor (4 to 9) and the supplier purchase order',
     'أحمد الباز': 'Ahmed Elbaz', 'أحمد محمد الباز': 'Ahmed Mohamed Elbaz', 'أحمد يس': 'Ahmed Yassin', 'م/أحمد يس': 'Eng. Ahmed Yassin',
     'مدير المرافق': 'Facilities Manager', 'مدير مرافق': 'Facilities Manager', 'المدير الإقليمي': 'Country Director', 'المدير الاقليمي': 'Country Director',
     'السعر الرمادي معناه إن الشهر ده مالوش سعر متسجل، فاتاخد آخر سعر قبله. الأسعار بتتسجل لوحدها لما تكتب السعر في "أمر شراء للمورد"، أو من زرار "أسعار الشراء لكل شهر".': 'A grey price means this month has no saved price, so the last earlier price is used. Prices are saved by themselves when you type the price in "Supplier Purchase Order", or from the "Purchase prices per month" button.',
@@ -16416,7 +16416,7 @@ function exportInventoryToCSV(only) {
         const rem = item.total - issued;
         sh.add([
             { v: i + 1, s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.cat), s: 'text' }, { v: trText(item.unit), s: 'center' },
-            { v: Number(item.total) || 0, s: 'inputInt' }, { v: issued, s: 'int' },
+            { v: Number(item.total) || 0, s: 'inputInt' }, only ? { f: `'استهلاك الأدوار'!J${r}`, v: issued, s: 'int' } : { v: issued, s: 'int' },
             { f: `E${r}-F${r}`, v: rem, s: 'totInt' }, { v: Number(item.minLimit) || 0, s: 'inputInt' },
             { f: `IF(G${r}<=0,"نفذ بالكامل",IF(G${r}<=H${r},"قارب على النفاذ","متوفر"))`, v: rem <= 0 ? 'نفذ بالكامل' : (rem <= item.minLimit ? 'قارب على النفاذ' : 'متوفر'), s: 'center' }
         ]);
@@ -16461,7 +16461,7 @@ function exportFloorsMatrixToCSV(only) {
     inventory.forEach((item, i) => {
         const r = F + i;
         const q = CGX_FLOORS.map(fl => trans.filter(t => t.itemId === item.id && t.floor === fl).reduce((s, t) => s + Number(t.qty), 0));
-        sh.add([{ v: i + 1, s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.unit), s: 'center' }, ...q.map(v => ({ v, s: 'int' })), { f: `SUM(D${r}:I${r})`, v: q.reduce((a, b) => a + b, 0), s: 'totInt' }]);
+        sh.add([{ v: i + 1, s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.unit), s: 'center' }, ...q.map((v, k) => only ? { f: `'${CGX_FLOORS[k]}'!D${r}`, v, s: 'int' } : { v, s: 'int' }), { f: `SUM(D${r}:I${r})`, v: q.reduce((a, b) => a + b, 0), s: 'totInt' }]);
     });
     const L = F + inventory.length - 1;
     cgxTotalRow(sh, 3, ['D', 'E', 'F', 'G', 'H', 'I', 'J'].map(c => ({ f: `SUM(${c}${F}:${c}${L})`, s: 'totInt' })));
@@ -16484,7 +16484,7 @@ function exportPurchaseOrderToCSV(only) {
         const e = poPricingMap[item.id] || {};
         const qty = e.qty !== undefined ? Number(e.qty) : issued;
         const price = Number(e.unitPrice) || 0;
-        sh.add([{ v: i + 1, s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.unit), s: 'center' }, { v: item.total - issued, s: 'int' }, { v: issued, s: 'int' }, { v: qty, s: 'inputInt' }, { v: price, s: 'input' }, { f: `F${r}*G${r}`, v: +(qty * price).toFixed(2), s: 'gold' }, { v: e.notes || '', s: 'text' }]);
+        sh.add([{ v: i + 1, s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.unit), s: 'center' }, only ? { f: `'المخزن الرئيسي'!G${r}`, v: item.total - issued, s: 'int' } : { v: item.total - issued, s: 'int' }, only ? { f: `'استهلاك الأدوار'!J${r}`, v: issued, s: 'int' } : { v: issued, s: 'int' }, (only && e.qty === undefined) ? { f: `E${r}`, v: qty, s: 'inputInt' } : { v: qty, s: 'inputInt' }, { v: price, s: 'input' }, { f: `F${r}*G${r}`, v: +(qty * price).toFixed(2), s: 'gold' }, { v: e.notes || '', s: 'text' }]);
     });
     const L = F + inventory.length - 1;
     cgxTotalRow(sh, 7, [{ f: `SUM(H${F}:H${L})`, s: 'finMoney' }, { v: '', s: 'finLabel' }], true);
@@ -16492,13 +16492,33 @@ function exportPurchaseOrderToCSV(only) {
     CGX.download(sh, `أمر_شراء_المورد_${cgxToday()}`);
 }
 
+// One floor's issues for the cycle: the user types what the floor took, and it flows by formula into
+// "استهلاك الأدوار" (that floor's column), then "المخزن الرئيسي" (issued, balance) and the supplier order (issued, qty)
+function cgxFloorIssueSheet(fl) {
+    const trans = getCycleTransactions();
+    const F = CGX.FIRST;
+    const sh = CGX.report({
+        name: fl, title: `صرف ${fl}`,
+        subtitle: `الدورة: ${activeCycleKey}   |   اكتب الكمية اللي الدور أخدها، وهتتسمّع في المخزن واستهلاك الأدوار وأمر الشراء`,
+        columns: [{ h: 'م', w: 6 }, { h: 'اسم الصنف', w: 26 }, { h: 'الوحدة', w: 10 }, { h: 'الكمية المنصرفة خلال الدورة', w: 22 }, { h: 'ملاحظات', w: 26 }]
+    });
+    inventory.forEach((item, i) => {
+        const q = trans.filter(t => t.itemId === item.id && t.floor === fl).reduce((s, t) => s + Number(t.qty), 0);
+        sh.add([{ v: i + 1, s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.unit), s: 'center' }, { v: q, s: 'inputInt' }, { v: '', s: 'text' }]);
+    });
+    const L = F + inventory.length - 1;
+    cgxTotalRow(sh, 3, [{ f: `SUM(D${F}:D${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }]);
+    return sh;
+}
+
 // One Excel for the whole buffet section (same brand look and live formulas as the single files):
-// main store · floor consumption · issue log (every entry) · supplier purchase order
+// main store · floor consumption · one sheet per floor (4 → 9) · supplier purchase order. All linked:
+// a number typed on a floor sheet updates consumption, the store balance and the purchase order.
 function exportBuffetAllExcel() {
     CGX.download([
         exportInventoryToCSV(true),
         exportFloorsMatrixToCSV(true),
-        exportHistoryToCSV(true),
+        ...CGX_FLOORS.map(cgxFloorIssueSheet),
         exportPurchaseOrderToCSV(true)
     ], `مصروفات_البوفيه_كاملة_${cgxToday()}`);
 }
