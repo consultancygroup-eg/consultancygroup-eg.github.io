@@ -10491,6 +10491,7 @@ const CGX = (() => {
     xf('finLabel', 5, 4, 2, 0, 'right', 'center');
     xf('finMoney', 5, 4, 2, 164, 'center', 'center');
     xf('group', 8, 3, 1, 0, 'right', 'center');
+    xf('groupMain', 4, 4, 1, 0, 'right', 'center');
     xf('note', 7, 0, 0, 0, 'right', 'center', 1);
     xf('gold', 8, 0, 1, 164, 'center', 'center');
 
@@ -10968,18 +10969,32 @@ function cgxPurchaseReqSheet() {
 }
 // ---- Full assets Excel: inventory (floors 4-9) · one sheet per floor · floors by department.
 // A count typed on a floor sheet flows into that floor's column, the company total and the value.
+// Same layout as the on-screen inventory: a main-group row (1 - الأثاث المكتبي), a sub-group row (1.1 المكاتب), then the items.
+// The floor sheets use the same rows, so row r on a floor sheet is the same item as row r on the inventory sheet.
+function cgxFurnitureRows(sh, nCols, itemCells) {
+    let lastMain = '', lastSub = '';
+    const band = (text, style) => {
+        const r = sh.add([{ v: text, s: style }, ...Array(nCols - 1).fill({ v: '', s: style })], 22);
+        sh.merge(`A${r}:${CGX.colName(nCols - 1)}${r}`);
+    };
+    furnitureInventory.forEach((item, i) => {
+        const sub = normalizeFurnitureCategory(item.cat, item.name);
+        const main = getMainGroupForSubcat(sub);
+        if (main !== lastMain) { lastMain = main; band(trText(main), 'groupMain'); }
+        if (sub !== lastSub) { lastSub = sub; band(trText(sub), 'group'); }
+        sh.add(itemCells(item, i, sh.row()));
+    });
+    return sh.rows.length; // last data row
+}
 function cgxAssetFloorSheet(fl) {
     const F = CGX.FIRST;
     const sh = CGX.report({
         name: fl, title: `جرد أصول ${fl}`,
         subtitle: `تاريخ التقرير: ${cgxToday()}   |   اكتب العدد الموجود في الدور، وهيتسمّع في جرد أصول الشركة`,
-        columns: [{ h: 'الكود', w: 8 }, { h: 'اسم الصنف', w: 28 }, { h: 'المجموعة', w: 18 }, { h: 'العدد الموجود في الدور', w: 20 }, { h: 'ملاحظات', w: 28 }]
+        columns: [{ h: 'الكود', w: 8 }, { h: 'اسم الصنف / البيان', w: 28 }, { h: 'المقاس', w: 13 }, { h: 'العدد الموجود في الدور', w: 18 }, { h: 'ملاحظات', w: 30 }]
     });
-    furnitureInventory.forEach((item, i) => {
-        sh.add([{ v: item.code || String(i + 1), s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.cat || ''), s: 'text' },
-            { v: Number((item.floors || {})[fl]) || 0, s: 'inputInt' }, { v: (item.notes || {})[fl] || '', s: 'text' }]);
-    });
-    const L = F + furnitureInventory.length - 1;
+    const L = cgxFurnitureRows(sh, 5, (item, i) => [{ v: item.code || String(i + 1), s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.size) || '—', s: 'center' },
+        { v: Number((item.floors || {})[fl]) || 0, s: 'inputInt' }, { v: (item.notes || {})[fl] || '', s: 'text' }]);
     cgxTotalRow(sh, 3, [{ f: `SUM(D${F}:D${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }]);
     return sh;
 }
@@ -11081,24 +11096,24 @@ function exportFurnitureToCSV(only) {
     const sh = CGX.report({
         name: 'جرد أصول الشركة', title: 'جرد أصول الشركة (الأدوار 4 - 9)',
         subtitle: `تاريخ التقرير: ${cgxToday()}`,
-        columns: [{ h: 'الكود', w: 8 }, { h: 'اسم الصنف', w: 26 }, { h: 'المجموعة', w: 18 }, ...CGX_FLOORS.map(f => ({ h: f, w: 11 })), { h: 'إجمالي الشركة', w: 13 }, { h: 'سعر الوحدة', w: 12 }, { h: 'إجمالي القيمة', w: 15 }],
+        columns: [{ h: 'الكود', w: 8 }, { h: 'اسم الصنف / البيان', w: 26 }, { h: 'المقاس', w: 12 }, ...CGX_FLOORS.map(f => ({ h: f, w: 9 })), { h: 'الإجمالي', w: 10 }, { h: 'تاريخ الشراء', w: 13 }, { h: 'السعر', w: 11 }, { h: 'القيمة', w: 13 }, { h: 'ملاحظات', w: 24 }],
         landscape: true
     });
-    furnitureInventory.forEach((item, i) => {
-        const r = sh.row();
+    const L = cgxFurnitureRows(sh, 14, (item, i, r) => {
         const q = CGX_FLOORS.map(fl => Number((item.floors || {})[fl]) || 0);
         const sum = q.reduce((a, b) => a + b, 0);
         const fin = getFurnitureItemFinancials(item, sum);
-        sh.add([
-            { v: item.code || String(i + 1), s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.cat || ''), s: 'text' },
+        return [
+            { v: item.code || String(i + 1), s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.size) || '—', s: 'center' },
             ...q.map((v, k) => only ? { f: `'${CGX_FLOORS[k]}'!D${r}`, v, s: 'int' } : { v, s: 'inputInt' }),
             { f: `SUM(D${r}:I${r})`, v: sum, s: 'totInt' },
-            fin.hasBatches ? { v: fin.priceDisplay, s: 'center' } : { v: fin.unitPrice || 0, s: 'input' },
-            fin.hasBatches ? { v: fin.totalCost, s: 'money' } : { f: `J${r}*K${r}`, v: fin.totalCost, s: 'gold' }
-        ]);
+            { v: fin.dateDisplay || '—', s: 'center' },
+            fin.hasBatches ? { v: fin.priceDisplay, s: 'center' } : (fin.unitPrice > 0 ? { v: fin.unitPrice, s: 'input' } : { v: '', s: 'input' }),
+            fin.hasBatches ? { v: fin.totalCost, s: 'money' } : { f: `IF(L${r}="","",J${r}*L${r})`, v: fin.totalCost || '', s: 'gold' },
+            { v: getFurnitureMatrixNoteText(item) || '', s: 'text' }
+        ];
     });
-    const L = F + furnitureInventory.length - 1;
-    cgxTotalRow(sh, 3, [...['D', 'E', 'F', 'G', 'H', 'I', 'J'].map(c => ({ f: `SUM(${c}${F}:${c}${L})`, s: 'totInt' })), { v: '', s: 'totLabel' }, { f: `SUM(L${F}:L${L})`, s: 'totMoney' }]);
+    cgxTotalRow(sh, 3, [...['D', 'E', 'F', 'G', 'H', 'I', 'J'].map(c => ({ f: `SUM(${c}${F}:${c}${L})`, s: 'totInt' })), { v: '', s: 'totLabel' }, { v: '', s: 'totLabel' }, { f: `SUM(M${F}:M${L})`, s: 'totMoney' }, { v: '', s: 'totLabel' }]);
     if (only) return sh;
     CGX.download(sh, `جرد_أصول_الشركة_${cgxToday()}`);
 }
