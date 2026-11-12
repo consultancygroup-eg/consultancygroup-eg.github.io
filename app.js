@@ -9615,11 +9615,11 @@ const PREQ_T = {
         nav: 'أمر شراء', title: 'أمر شراء', doc: 'أمر شراء',
         hint: 'اكتب البيانات والأصناف، والإجمالي بيتحسب لوحده. الـ PDF بيطلع بنفس لغة البرنامج.',
         save: 'حفظ أمر الشراء', saveEdit: 'حفظ التعديل', newOrder: 'أمر شراء جديد',
-        from: 'من', employee: 'الموظف', position: 'الوظيفة', reqFrom: 'مطلوب من',
+        from: 'من', employee: 'الاسم', position: 'الوظيفة', reqFrom: 'إلى', place: 'مكان الشراء',
         orderNo: 'رقم الأمر', orderBox: 'بيانات الأمر', delivery: 'التسليم', date: 'التاريخ',
         item: 'م', qty: 'الكمية المطلوبة', desc: 'الوصف', reason: 'السبب', price: 'سعر الوحدة', total: 'الإجمالي',
         addItem: '+ صنف', grand: 'الإجمالي', cur: 'ج.م',
-        director: 'مدير الدولة', approver: 'المعتمد', signature: 'التوقيع', note: 'ملاحظات',
+        director: 'المدير الإقليمي', approver: 'المعتمد', signature: 'التوقيع',
         history: 'أوامر الشراء السابقة', items: 'الأصناف', del: 'حذف',
         none: 'مفيش أوامر شراء محفوظة لسه', saved: 'تم حفظ أمر الشراء', delAsk: n => `حذف أمر الشراء رقم ${n}؟`,
         empty: 'اكتب صنف واحد على الأقل', reasonDefault: 'احتياج عمل', editing: n => `بتعدّل أمر الشراء رقم ${n}`,
@@ -9629,11 +9629,11 @@ const PREQ_T = {
         nav: 'Purchase Order', title: 'Purchase Order', doc: 'PURCHASE ORDER',
         hint: 'Fill in the details and items; totals are calculated. The PDF comes out in the program language.',
         save: 'Save order', saveEdit: 'Save changes', newOrder: 'New order',
-        from: 'From', employee: 'Employee', position: 'Position', reqFrom: 'Requested from',
+        from: 'From', employee: 'Name', position: 'Position', reqFrom: 'To', place: 'Place of purchase',
         orderNo: 'Order No', orderBox: 'Order details', delivery: 'Delivery', date: 'Date',
         item: 'Item', qty: 'Quantity Ordered', desc: 'Description', reason: 'Reason', price: 'Unit Price', total: 'Total',
         addItem: '+ Item', grand: 'Total', cur: 'L.E',
-        director: 'Country Director', approver: 'Approver', signature: 'Signature', note: 'Note',
+        director: 'Regional Director', approver: 'Approver', signature: 'Signature',
         history: 'Saved purchase orders', items: 'Items', del: 'Delete',
         none: 'No saved purchase orders yet', saved: 'Purchase order saved', delAsk: n => `Delete purchase order No ${n}?`,
         empty: 'Add at least one item', reasonDefault: 'Work Need', editing: n => `Editing purchase order No ${n}`,
@@ -9649,9 +9649,9 @@ function preqEmptyItem() { return { qty: '', desc: '', reason: '', price: '' }; 
 function preqBlank() {
     const last = (purchaseReqs.history || [])[0];
     return {
-        id: null, no: preqNextNo(), date: elecToday(), delivery: '',
-        fromName: last ? last.fromName : '', fromPos: last ? last.fromPos : '',
-        toName: last ? last.toName : '', toPos: last ? last.toPos : '',
+        id: null, no: preqNextNo(), date: elecToday(), delivery: '', place: '',
+        fromName: last ? last.fromName : 'أحمد الباز', fromPos: last ? last.fromPos : 'مدير المرافق',
+        toName: last ? last.toName : 'أحمد يس', toPos: last ? last.toPos : 'المدير الإقليمي',
         items: [preqEmptyItem()]
     };
 }
@@ -9700,13 +9700,14 @@ function renderPurchaseReqView() {
                     <label class="elec-field">${t.position}${inp('fromPos', d.fromPos)}</label>
                 </fieldset>
                 <fieldset class="preq-box"><legend>${t.reqFrom}</legend>
-                    <label class="elec-field">${t.reqFrom}${inp('toName', d.toName)}</label>
+                    <label class="elec-field">${t.employee}${inp('toName', d.toName)}</label>
                     <label class="elec-field">${t.position}${inp('toPos', d.toPos)}</label>
                 </fieldset>
                 <fieldset class="preq-box"><legend>${t.orderBox}</legend>
                     <label class="elec-field">${t.orderNo}<input type="number" class="form-control" min="1" value="${escHtml(d.no)}" ${ro} oninput="onPreqField('no', this.value)"></label>
                     <label class="elec-field">${t.date}<input type="date" class="form-control" value="${escHtml(d.date)}" ${ro} onchange="onPreqField('date', this.value)"></label>
                     <label class="elec-field">${t.delivery}${inp('delivery', d.delivery)}</label>
+                    <label class="elec-field">${t.place}${inp('place', d.place)}</label>
                 </fieldset>
             </div>
             <div class="table-responsive">
@@ -9790,7 +9791,7 @@ function renderPurchaseReqHistory() {
     const th = document.getElementById('preq-history-head');
     if (!tb) return;
     const t = preqT();
-    if (th) th.innerHTML = `<tr><th style="text-align:center;">${t.orderNo}</th><th style="text-align:center;">${t.date}</th><th>${t.employee}</th><th>${t.reqFrom}</th><th style="text-align:center;">${t.items}</th><th style="text-align:center;">${t.total}</th><th></th></tr>`;
+    if (th) th.innerHTML = `<tr><th style="text-align:center;">${t.orderNo}</th><th style="text-align:center;">${t.date}</th><th>${t.from}</th><th>${t.reqFrom}</th><th>${t.place}</th><th style="text-align:center;">${t.items}</th><th style="text-align:center;">${t.total}</th><th></th></tr>`;
     const list = purchaseReqs.history || [];
     const cur = purchaseReqs.draft && purchaseReqs.draft.id;
     tb.innerHTML = list.length ? list.map(h => `<tr class="cg-sheet-row ${cur === h.id ? 'elec-active' : ''}" onclick="openPurchaseReq(${h.id})">
@@ -9798,13 +9799,14 @@ function renderPurchaseReqHistory() {
             <td style="text-align:center;">${escHtml(h.date)}</td>
             <td>${escHtml(h.fromName)}${h.fromPos ? `<div class="dept-sub">${escHtml(h.fromPos)}</div>` : ''}</td>
             <td>${escHtml(h.toName)}${h.toPos ? `<div class="dept-sub">${escHtml(h.toPos)}</div>` : ''}</td>
+            <td>${escHtml(h.place || '')}</td>
             <td style="text-align:center;">${(h.items || []).length}</td>
             <td style="text-align:center; font-weight:800; white-space:nowrap;">${elecMoney2(h.total != null ? h.total : preqGrand(h))} ${t.cur}</td>
             <td style="white-space:nowrap; text-align:center;" onclick="event.stopPropagation();">
                 <button type="button" class="btn cg-dl btn-sm" onclick="printPurchaseReq(${h.id})"><span><b class="cg-dl-arrow">⬇</b> PDF</span></button>
                 <button type="button" class="btn btn-sm btn-danger-outline admin-only" onclick="deletePurchaseReq(${h.id})">${t.del}</button>
             </td>
-        </tr>`).join('') : `<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 1rem;">${t.none}</td></tr>`;
+        </tr>`).join('') : `<tr><td colspan="8" style="text-align:center; color: var(--text-muted); padding: 1rem;">${t.none}</td></tr>`;
 }
 
 // PDF: logo at the top on the reading-start side, dominant over the title (brand guide p.12),
@@ -9834,7 +9836,6 @@ function printPurchaseReq(id) {
             <div class="preq-sig-title">${title}</div>
             <div class="preq-sig-line"><span>${t.date}</span><i></i></div>
             <div class="preq-sig-line"><span>${t.signature}</span><i></i></div>
-            <div class="preq-sig-line"><span>${t.note}</span><i></i></div>
         </div>`;
     const party = (title, nameLbl, name, pos) => `<div class="preq-party">
             <div class="preq-party-title">${title}</div>
@@ -9852,11 +9853,12 @@ function printPurchaseReq(id) {
             </div>
             <div class="preq-parties">
                 ${party(t.from, t.employee, o.fromName, o.fromPos)}
-                ${party(t.reqFrom, t.reqFrom, o.toName, o.toPos)}
+                ${party(t.reqFrom, t.employee, o.toName, o.toPos)}
             </div>
             <div class="elec-meta preq-meta">
                 <div><span>${t.orderNo}</span><b class="en">${escHtml(o.no)}</b></div>
                 <div><span>${t.delivery}</span><b>${escHtml(o.delivery) || '&nbsp;'}</b></div>
+                <div><span>${t.place}</span><b>${escHtml(o.place) || '&nbsp;'}</b></div>
                 <div><span>${t.date}</span><b class="en">${escHtml(o.date)}</b></div>
             </div>
             <table class="preq-print-table">
