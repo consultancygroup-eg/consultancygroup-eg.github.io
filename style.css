@@ -3039,3 +3039,5 @@ table.data-table.dept-list-table thead th { background: var(--primary-fill) !imp
 table.data-table.dept-list-table thead th small { opacity: 0.85; }
 table.data-table.dept-list-table tfoot th { background: var(--brand-cream, #fef2ce); color: var(--text-primary); font-weight: 800; }
 body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170, 40, 0.14); }
+/* Invoice menu: opens upward when there is no room below (last rows) */
+.custody-inv-dropdown.up .custody-inv-menu { top: auto; bottom: 100%; }

@@ -7840,13 +7840,29 @@ function renderCustodyView() {
     }
 }
 
+// The invoice menu opens upward when there isn't room below it (e.g. the last rows, where the table would cut it off)
+function placeRowInvoiceMenu(dd) {
+    if (!dd) return;
+    const menu = dd.querySelector('.custody-inv-menu');
+    if (!menu) return;
+    dd.classList.remove('up');
+    const r = dd.getBoundingClientRect();
+    let bottom = window.innerHeight;
+    for (let p = dd.parentElement; p && p !== document.body; p = p.parentElement) {
+        const o = getComputedStyle(p).overflowY;
+        if (o === 'auto' || o === 'scroll' || o === 'hidden') { bottom = Math.min(bottom, p.getBoundingClientRect().bottom); break; }
+    }
+    const need = menu.scrollHeight || 190;
+    if (r.bottom + need + 8 > bottom && r.top - need - 8 > 0) dd.classList.add('up');
+}
+document.addEventListener('mouseover', e => { const dd = e.target.closest && e.target.closest('.custody-inv-dropdown'); if (dd && !dd.contains(e.relatedTarget)) placeRowInvoiceMenu(dd); });
 function toggleRowInvoiceDropdown(event, rowId) {
     event.stopPropagation();
     const targetDd = document.getElementById(`cust-inv-dd-${rowId}`);
     document.querySelectorAll('.custody-inv-dropdown.open').forEach(dd => {
         if (dd !== targetDd) dd.classList.remove('open');
     });
-    if (targetDd) targetDd.classList.toggle('open');
+    if (targetDd) { if (!targetDd.classList.contains('open')) placeRowInvoiceMenu(targetDd); targetDd.classList.toggle('open'); }
 }
 
 document.addEventListener('click', () => {
