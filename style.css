@@ -3013,3 +3013,5 @@ tr.elec-active td { background: var(--primary-light) !important; }
 .preq-print .preq-print-table th, .preq-print .preq-print-table td.strong, .preq-print .preq-print-table tr.final td, .preq-print .preq-sig-title { font-weight: 700 !important; }
 .preq-print .preq-dept, .preq-print .preq-party span, .preq-print .preq-meta span, .preq-print .preq-print-table td, .preq-print .preq-sig-line { font-weight: 400; }
 .preq-print .preq-doc { letter-spacing: 0; }
+/* Full-module Excel button: alone at the bottom of the menu, above the cycle box */
+.sidebar-full-xlsx { width: 100%; justify-content: center; margin-bottom: 0.55rem; }

@@ -235,11 +235,6 @@
                     <span data-i18n="navPO">أمر شراء للمورد</span>
                 </button>
 
-                <button onclick="exportBuffetAllExcel()" id="nav-btn-buffet-xlsx" class="sidebar-nav-item nav-group-buffet" title="ملف Excel واحد فيه المخزن واستهلاك الأدوار وصفحة لكل دور (4 لـ 9) وأمر شراء المورد، ومربوطين ببعض">
-                    <i data-lucide="file-spreadsheet"></i>
-                    <span>Excel كامل للبوفيه</span>
-                </button>
-
                 <!-- ==================== MODULE 2 NAV: COMPANY ASSETS INVENTORY ONLY ==================== -->
                 <span class="nav-section-label nav-group-furniture" style="display: none;">جرد أصول الشركة</span>
 
@@ -324,6 +319,10 @@
             </nav>
 
             <div class="sidebar-footer">
+                <!-- Full Excel for the module (kept apart from the menu, right above the cycle box) -->
+                <button onclick="exportBuffetAllExcel()" id="sidebar-buffet-xlsx" class="btn cg-dl sidebar-full-xlsx nav-group-buffet" title="ملف Excel واحد فيه المخزن واستهلاك الأدوار وصفحة لكل دور (4 لـ 9) وأمر شراء المورد، ومربوطين ببعض"><span><b class="cg-dl-arrow">⬇</b> Excel كامل للبوفيه</span></button>
+                <button onclick="exportCustodyAllExcel()" id="sidebar-custody-xlsx" class="btn cg-dl sidebar-full-xlsx nav-group-custody" style="display: none;" title="ملف Excel واحد فيه العهدة والتحويلات المباشرة والمصروفات الشهرية والملخص وشحن الكهرباء وأوامر الشراء"><span><b class="cg-dl-arrow">⬇</b> Excel كامل للعهدة</span></button>
+                <button onclick="exportAssetsAllExcel()" id="sidebar-assets-xlsx" class="btn cg-dl sidebar-full-xlsx nav-group-furniture" style="display: none;" title="ملف Excel واحد فيه جرد أصول الشركة وصفحة لكل دور (4 لـ 9) وتحليل الطوابق بالأقسام، ومربوطين ببعض"><span><b class="cg-dl-arrow">⬇</b> Excel كامل لجرد الأصول</span></button>
                 <div class="cycle-mini-card nav-group-buffet" id="sidebar-cycle-card">
                     <div class="cycle-mini-card-title">
                         <i data-lucide="calendar" style="width:13px;height:13px;color:var(--primary);"></i>

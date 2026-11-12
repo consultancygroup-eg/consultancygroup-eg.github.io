@@ -3033,6 +3033,8 @@ tr.elec-active td { background: var(--primary-light) !important; }
 .preq-print .preq-print-table th, .preq-print .preq-print-table td.strong, .preq-print .preq-print-table tr.final td, .preq-print .preq-sig-title { font-weight: 700 !important; }
 .preq-print .preq-dept, .preq-print .preq-party span, .preq-print .preq-meta span, .preq-print .preq-print-table td, .preq-print .preq-sig-line { font-weight: 400; }
 .preq-print .preq-doc { letter-spacing: 0; }
+/* Full-module Excel button: alone at the bottom of the menu, above the cycle box */
+.sidebar-full-xlsx { width: 100%; justify-content: center; margin-bottom: 0.55rem; }
 
 </style>
 
@@ -3252,11 +3254,6 @@ tr.elec-active td { background: var(--primary-light) !important; }
                     <span data-i18n="navPO">أمر شراء للمورد</span>
                 </button>
 
-                <button onclick="exportBuffetAllExcel()" id="nav-btn-buffet-xlsx" class="sidebar-nav-item nav-group-buffet" title="ملف Excel واحد فيه المخزن واستهلاك الأدوار وصفحة لكل دور (4 لـ 9) وأمر شراء المورد، ومربوطين ببعض">
-                    <i data-lucide="file-spreadsheet"></i>
-                    <span>Excel كامل للبوفيه</span>
-                </button>
-
                 <!-- ==================== MODULE 2 NAV: COMPANY ASSETS INVENTORY ONLY ==================== -->
                 <span class="nav-section-label nav-group-furniture" style="display: none;">جرد أصول الشركة</span>
 
@@ -3341,6 +3338,10 @@ tr.elec-active td { background: var(--primary-light) !important; }
             </nav>
 
             <div class="sidebar-footer">
+                <!-- Full Excel for the module (kept apart from the menu, right above the cycle box) -->
+                <button onclick="exportBuffetAllExcel()" id="sidebar-buffet-xlsx" class="btn cg-dl sidebar-full-xlsx nav-group-buffet" title="ملف Excel واحد فيه المخزن واستهلاك الأدوار وصفحة لكل دور (4 لـ 9) وأمر شراء المورد، ومربوطين ببعض"><span><b class="cg-dl-arrow">⬇</b> Excel كامل للبوفيه</span></button>
+                <button onclick="exportCustodyAllExcel()" id="sidebar-custody-xlsx" class="btn cg-dl sidebar-full-xlsx nav-group-custody" style="display: none;" title="ملف Excel واحد فيه العهدة والتحويلات المباشرة والمصروفات الشهرية والملخص وشحن الكهرباء وأوامر الشراء"><span><b class="cg-dl-arrow">⬇</b> Excel كامل للعهدة</span></button>
+                <button onclick="exportAssetsAllExcel()" id="sidebar-assets-xlsx" class="btn cg-dl sidebar-full-xlsx nav-group-furniture" style="display: none;" title="ملف Excel واحد فيه جرد أصول الشركة وصفحة لكل دور (4 لـ 9) وتحليل الطوابق بالأقسام، ومربوطين ببعض"><span><b class="cg-dl-arrow">⬇</b> Excel كامل لجرد الأصول</span></button>
                 <div class="cycle-mini-card nav-group-buffet" id="sidebar-cycle-card">
                     <div class="cycle-mini-card-title">
                         <i data-lucide="calendar" style="width:13px;height:13px;color:var(--primary);"></i>
@@ -7494,6 +7495,9 @@ const EN_PHRASES = {
     'العودة للأقسام Home (3)': 'Back to sections (3)',
     'Share رابط البرنامج والباركود': 'Share the program link and QR code',
     'Excel كامل للبوفيه': 'Full buffet Excel', 'Excel — مصروفات البوفيه كاملة': 'Excel — Full buffet expenses',
+    'Excel كامل للعهدة': 'Full custody Excel', 'Excel كامل لجرد الأصول': 'Full assets Excel',
+    'ملف Excel واحد فيه العهدة والتحويلات المباشرة والمصروفات الشهرية والملخص وشحن الكهرباء وأوامر الشراء': 'One Excel file: custody, direct transfers, monthly expenses, summary, electricity and purchase orders',
+    'ملف Excel واحد فيه جرد أصول الشركة وصفحة لكل دور (4 لـ 9) وتحليل الطوابق بالأقسام، ومربوطين ببعض': 'One linked Excel file: assets inventory, a sheet per floor (4 to 9) and floors by department',
     'ملف Excel واحد فيه المخزن واستهلاك الأدوار وصفحة لكل دور (4 لـ 9) وأمر شراء المورد، ومربوطين ببعض': 'One linked Excel file: store, floor consumption, a sheet per floor (4 to 9) and the supplier purchase order',
     'أحمد الباز': 'Ahmed Elbaz', 'أحمد محمد الباز': 'Ahmed Mohamed Elbaz', 'أحمد يس': 'Ahmed Yassin', 'م/أحمد يس': 'Eng. Ahmed Yassin',
     'مدير المرافق': 'Facilities Manager', 'مدير مرافق': 'Facilities Manager', 'المدير الإقليمي': 'Country Director', 'المدير الاقليمي': 'Country Director',
@@ -16345,7 +16349,7 @@ function cgCsvToXlsx(content, filename) {
 // ======================================================================
 
 // Electricity sheet: change a current balance or the target and every total updates
-function exportElecToCSV() {
+function exportElecToCSV(only) {
     const d = elecData.draft;
     const c = computeElec(d);
     const F = CGX.FIRST;
@@ -16386,6 +16390,7 @@ function exportElecToCSV() {
     sh.add([]);
     const nr = sh.add([{ v: 'الخانات بالخلفية الفاتحة بتتكتب بالإيد (الرصيد الحالي، المديونية، الإجمالي المطلوب، النسبة). الرصيد الجديد = الإجمالي المطلوب − الرصيد الحالي، وكل الإجماليات بتتحسب لوحدها.', s: 'note' }], 34);
     sh.merge(`A${nr}:G${nr}`);
+    if (only) return sh;
     CGX.download(sh, `شحن_عدادات_الكهرباء_${d.date || elecToday()}`);
 }
 
@@ -16524,9 +16529,10 @@ function exportBuffetAllExcel() {
 }
 
 // Custody ledger: running balance = previous balance + in − out (formula on every row)
-function exportCustodyToCSV() {
+function exportCustodyToCSV(only) {
     const calculated = recalculateCustodyBalances();
-    const { rows, rawSearch } = getFilteredCustodyRows(calculated);
+    // in the full custody file: the whole record from the start (screen filters ignored)
+    const { rows, rawSearch } = only ? { rows: calculated, rawSearch: '' } : getFilteredCustodyRows(calculated);
     const F = CGX.FIRST;
     const first = rows[0], lastR = rows[rows.length - 1];
     const sh = CGX.report({
@@ -16546,7 +16552,110 @@ function exportCustodyToCSV() {
     });
     const L = F + Math.max(rows.length, 1) - 1;
     cgxTotalRow(sh, 3, [{ f: `SUM(D${F}:D${L})`, s: 'finMoney' }, { f: `SUM(E${F}:E${L})`, s: 'finMoney' }, { f: `F${L}`, s: 'finMoney' }, { v: '', s: 'finLabel' }, { v: '', s: 'finLabel' }], true);
+    if (only) { sh.dataLast = L; sh.totIn = rows.reduce((s, x) => s + (x.inflow || 0), 0); sh.totOut = rows.reduce((s, x) => s + (x.outflow || 0), 0); return sh; }
     CGX.download(sh, `جرد_عهدة_الشركة_${cgxToday()}`);
+}
+
+// ---- Full custody Excel: 1 custody · 2 direct supplier transfers · 3 monthly expenses · 4 summary · 5 electricity · 6 purchase orders
+function cgxSupplierSheet() {
+    const F = CGX.FIRST;
+    const sh = CGX.report({
+        name: 'التحويلات المباشرة', title: 'المشتريات والتحويلات المباشرة للموردين',
+        subtitle: `تاريخ التقرير: ${cgxToday()}`,
+        columns: [{ h: 'م', w: 6 }, { h: 'التاريخ', w: 12 }, { h: 'اسم الصنف / البيان', w: 28 }, { h: 'المورد / الجهة', w: 20 }, { h: 'الكمية', w: 9 }, { h: 'إجمالي الصفقة', w: 15 }, { h: 'نظام الدفع', w: 22 }, { h: 'المدفوع للمورد', w: 15 }, { h: 'المتبقي', w: 14 }, { h: 'ملاحظات', w: 24 }],
+        landscape: true
+    });
+    supplierPOs.forEach((po, i) => {
+        const r = F + i;
+        const total = Number(po.total) || 0, paid = Number(po.paid) || 0;
+        sh.add([{ v: i + 1, s: 'center' }, { v: po.date || '', s: 'center' }, { v: trText(po.item), s: 'textBold' }, { v: trText(po.supplier || ''), s: 'text' }, { v: Number(po.qty) || 0, s: 'int' },
+            { v: total, s: 'input' }, { v: String(supplierSchemePrintText(po) || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), s: 'text' }, { v: paid, s: 'input' },
+            { f: `F${r}-H${r}`, v: +(total - paid).toFixed(2), s: total - paid > 0 ? 'moneyBad' : 'totMoney' }, { v: po.notes || '', s: 'text' }]);
+    });
+    const L = F + Math.max(supplierPOs.length, 1) - 1;
+    cgxTotalRow(sh, 5, [{ f: `SUM(F${F}:F${L})`, s: 'finMoney' }, { v: '', s: 'finLabel' }, { f: `SUM(H${F}:H${L})`, s: 'finMoney' }, { f: `SUM(I${F}:I${L})`, s: 'finMoney' }, { v: '', s: 'finLabel' }], true);
+    return sh;
+}
+function cgxMonthlySheet() {
+    const F = CGX.FIRST;
+    const sh = CGX.report({
+        name: 'المصروفات الشهرية', title: 'المصروفات الأساسية الثابتة للشركة كل شهر',
+        subtitle: `تاريخ التقرير: ${cgxToday()}`,
+        columns: [{ h: 'م', w: 6 }, { h: 'البند / البيان الشهري', w: 40 }, { h: 'القيمة الشهرية (ج.م)', w: 20 }, { h: 'ملاحظات', w: 30 }]
+    });
+    monthlyCoreExpenses.forEach((e, i) => sh.add([{ v: i + 1, s: 'center' }, { v: trText(e.title), s: 'textBold' }, { v: Number(e.amount) || 0, s: 'input' }, { v: e.notes || '', s: 'text' }]));
+    const L = F + Math.max(monthlyCoreExpenses.length, 1) - 1;
+    cgxTotalRow(sh, 2, [{ f: `SUM(C${F}:C${L})`, s: 'finMoney' }, { v: '', s: 'finLabel' }], true);
+    return sh;
+}
+function cgxCustodySummarySheet(cust) {
+    const F = CGX.FIRST, L = cust.dataLast;
+    const ref = `'${cust.name}'!`;
+    const sh = CGX.report({
+        name: 'الملخص', title: 'ملخص العهدة من بدايتها حتى تاريخه',
+        subtitle: `حتى تاريخ: ${cgxToday()}   |   الأرقام مربوطة بشيت "${cust.name}"`,
+        columns: [{ h: 'البيان', w: 46 }, { h: 'القيمة (ج.م)', w: 22 }]
+    });
+    sh.add([{ v: 'إجمالي ما تم تحويله من بداية العهدة حتى تاريخه', s: 'textBold' }, { f: `SUM(${ref}D${F}:D${L})`, v: cust.totIn, s: 'totMoney' }], 28);
+    sh.add([{ v: 'إجمالي المنصرف', s: 'textBold' }, { f: `SUM(${ref}E${F}:E${L})`, v: cust.totOut, s: 'totMoney' }], 28);
+    sh.add([{ v: 'المتبقي', s: 'finLabel' }, { f: `B${F}-B${F + 1}`, v: +(cust.totIn - cust.totOut).toFixed(2), s: 'finMoney' }], 32);
+    return sh;
+}
+function cgxPurchaseReqSheet() {
+    const F = CGX.FIRST;
+    const list = (purchaseReqs.history || []).length ? purchaseReqs.history : [preqDraft()];
+    const sh = CGX.report({
+        name: 'أوامر الشراء', title: 'أوامر الشراء',
+        subtitle: `تاريخ التقرير: ${cgxToday()}`,
+        columns: [{ h: 'رقم الأمر', w: 10 }, { h: 'التاريخ', w: 12 }, { h: 'من', w: 18 }, { h: 'إلى', w: 18 }, { h: 'مكان الشراء', w: 18 }, { h: 'الوصف', w: 26 }, { h: 'السبب', w: 22 }, { h: 'الكمية', w: 9 }, { h: 'سعر الوحدة', w: 13 }, { h: 'الإجمالي', w: 15 }],
+        landscape: true
+    });
+    let n = 0;
+    list.forEach(o => preqFilled(o).forEach(it => {
+        const r = F + n++;
+        sh.add([{ v: Number(o.no) || o.no || '', s: 'center' }, { v: o.date || '', s: 'center' }, { v: o.fromName || '', s: 'text' }, { v: o.toName || '', s: 'text' }, { v: o.place || '', s: 'text' },
+            { v: it.desc || '', s: 'textBold' }, { v: String(it.reason || '').trim() || 'احتياج عمل', s: 'text' }, { v: Number(it.qty) || 0, s: 'inputInt' }, { v: Number(it.price) || 0, s: 'input' },
+            { f: `H${r}*I${r}`, v: +(preqLineTotal(it)).toFixed(2), s: 'gold' }]);
+    }));
+    const L = F + Math.max(n, 1) - 1;
+    cgxTotalRow(sh, 9, [{ f: `SUM(J${F}:J${L})`, s: 'finMoney' }], true);
+    return sh;
+}
+// ---- Full assets Excel: inventory (floors 4-9) · one sheet per floor · floors by department.
+// A count typed on a floor sheet flows into that floor's column, the company total and the value.
+function cgxAssetFloorSheet(fl) {
+    const F = CGX.FIRST;
+    const sh = CGX.report({
+        name: fl, title: `جرد أصول ${fl}`,
+        subtitle: `تاريخ التقرير: ${cgxToday()}   |   اكتب العدد الموجود في الدور، وهيتسمّع في جرد أصول الشركة`,
+        columns: [{ h: 'الكود', w: 8 }, { h: 'اسم الصنف', w: 28 }, { h: 'المجموعة', w: 18 }, { h: 'العدد الموجود في الدور', w: 20 }, { h: 'ملاحظات', w: 28 }]
+    });
+    furnitureInventory.forEach((item, i) => {
+        sh.add([{ v: item.code || String(i + 1), s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.cat || ''), s: 'text' },
+            { v: Number((item.floors || {})[fl]) || 0, s: 'inputInt' }, { v: (item.notes || {})[fl] || '', s: 'text' }]);
+    });
+    const L = F + furnitureInventory.length - 1;
+    cgxTotalRow(sh, 3, [{ f: `SUM(D${F}:D${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }]);
+    return sh;
+}
+function exportAssetsAllExcel() {
+    CGX.download([
+        exportFurnitureToCSV(true),
+        ...CGX_FLOORS.map(cgxAssetFloorSheet),
+        exportDeptsToCSV(true)
+    ], `جرد_أصول_الشركة_كامل_${cgxToday()}`);
+}
+
+function exportCustodyAllExcel() {
+    const cust = exportCustodyToCSV(true);
+    CGX.download([
+        cust,
+        cgxSupplierSheet(),
+        cgxMonthlySheet(),
+        cgxCustodySummarySheet(cust),
+        exportElecToCSV(true),
+        cgxPurchaseReqSheet()
+    ], `العهدة_كاملة_${cgxToday()}`);
 }
 
 // Month comparison: offer total = consumption × price for each month, change columns by formula
@@ -16582,7 +16691,7 @@ function exportFloorsCompareToCSV() {
 }
 
 // Floors by department: needed = offices × per office, missing = MAX(0, needed − counted), free offices = offices − staff
-function exportDeptsToCSV() {
+function exportDeptsToCSV(only) {
     const F = CGX.FIRST;
     const sh = CGX.report({
         name: 'الأقسام', title: 'تحليل الطوابق بالأقسام',
@@ -16617,11 +16726,12 @@ function exportDeptsToCSV() {
     const L = sh.rows.length;
     sh.add([]);
     cgxTotalRow(sh, 2, [{ f: `SUM(C${F}:C${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }, { f: `SUM(E${F}:E${L})`, s: 'totInt' }, { f: `SUM(F${F}:F${L})`, s: 'totInt' }, { f: `SUM(G${F}:G${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }]);
+    if (only) return sh;
     CGX.download(sh, `تحليل_الطوابق_بالأقسام_${cgxToday()}`);
 }
 
 // Company assets: per-floor counts, company total = SUM, value = total × unit price
-function exportFurnitureToCSV() {
+function exportFurnitureToCSV(only) {
     const F = CGX.FIRST;
     const sh = CGX.report({
         name: 'جرد أصول الشركة', title: 'جرد أصول الشركة (الأدوار 4 - 9)',
@@ -16636,7 +16746,7 @@ function exportFurnitureToCSV() {
         const fin = getFurnitureItemFinancials(item, sum);
         sh.add([
             { v: item.code || String(i + 1), s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.cat || ''), s: 'text' },
-            ...q.map(v => ({ v, s: 'inputInt' })),
+            ...q.map((v, k) => only ? { f: `'${CGX_FLOORS[k]}'!D${r}`, v, s: 'int' } : { v, s: 'inputInt' }),
             { f: `SUM(D${r}:I${r})`, v: sum, s: 'totInt' },
             fin.hasBatches ? { v: fin.priceDisplay, s: 'center' } : { v: fin.unitPrice || 0, s: 'input' },
             fin.hasBatches ? { v: fin.totalCost, s: 'money' } : { f: `J${r}*K${r}`, v: fin.totalCost, s: 'gold' }
@@ -16644,6 +16754,7 @@ function exportFurnitureToCSV() {
     });
     const L = F + furnitureInventory.length - 1;
     cgxTotalRow(sh, 3, [...['D', 'E', 'F', 'G', 'H', 'I', 'J'].map(c => ({ f: `SUM(${c}${F}:${c}${L})`, s: 'totInt' })), { v: '', s: 'totLabel' }, { f: `SUM(L${F}:L${L})`, s: 'totMoney' }]);
+    if (only) return sh;
     CGX.download(sh, `جرد_أصول_الشركة_${cgxToday()}`);
 }
 
