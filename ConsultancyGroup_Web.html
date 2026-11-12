@@ -6655,15 +6655,15 @@ const EN_EXACT_MAP = {
     // Lock Screen, Portal & Branding
     'المجموعة الإستشارية': 'Consultancy Group',
     'المجموعة الإستشارية | Consultancy Group': 'Consultancy Group',
-    'إدارة المرافق - مدير المرافق': 'Facilities Management - Facilities Manager',
+    'إدارة المرافق - مدير المرافق': 'Facilities Management - Facility Manager',
     'منظومة إدارة المرافق والأصول — منطقة محمية 🔒': 'Facilities & Asset Management System — Protected Area 🔒',
     'نظام إدارة البوفيه والنظافة — منطقة محمية 🔒': 'Facilities Management System — Protected Area 🔒',
     'أدخل كلمة المرور للفتح...': 'Enter password to unlock...',
     '❌ كلمة المرور غير صحيحة، حاول مرة أخرى': '❌ Incorrect password, please try again',
     'فتح النظام والمزامنة': 'Unlock & Sync System',
     'محمي بتشفير SHA-256 ومزامنة Google Firebase': 'Protected by SHA-256 Encryption & Google Firebase Sync',
-    'المجموعة الإستشارية | البوفيه والنظافة': 'Facilities Management - Facilities Manager',
-    'Consultancy Group - إدارة البوفيه والنظافة': 'Facilities Management - Facilities Manager',
+    'المجموعة الإستشارية | البوفيه والنظافة': 'Facilities Management - Facility Manager',
+    'Consultancy Group - إدارة البوفيه والنظافة': 'Facilities Management - Facility Manager',
     'اختر القسم المراد إدارته أو استعراض تقاريره الآن:': 'Select the department or inventory module to manage:',
     'مصروفات البوفيه': 'Buffet Expenses',
     'إدارة المخزن الرئيسي والأرصدة، تسجيل صرف الطوابق (4 إلى 9)، سجل الحركات، تحليل الطوابق، وأمر شراء للمورد.': 'Manage main warehouse stock, floor dispensing (Floors 4-9), transaction audit logs, floor analysis, and supplier purchase orders.',
@@ -7529,7 +7529,7 @@ const EN_PHRASES = {
     'ملف Excel واحد فيه جرد أصول الشركة وصفحة لكل دور (4 لـ 9) وتحليل الطوابق بالأقسام، ومربوطين ببعض': 'One linked Excel file: assets inventory, a sheet per floor (4 to 9) and floors by department',
     'ملف Excel واحد فيه المخزن واستهلاك الأدوار وصفحة لكل دور (4 لـ 9) وأمر شراء المورد، ومربوطين ببعض': 'One linked Excel file: store, floor consumption, a sheet per floor (4 to 9) and the supplier purchase order',
     'أحمد الباز': 'Ahmed Elbaz', 'أحمد محمد الباز': 'Ahmed Mohamed Elbaz', 'أحمد يس': 'Ahmed Yassin', 'م/أحمد يس': 'Eng. Ahmed Yassin',
-    'مدير المرافق': 'Facilities Manager', 'مدير مرافق': 'Facilities Manager', 'المدير الإقليمي': 'Country Director', 'المدير الاقليمي': 'Country Director',
+    'مدير المرافق': 'Facility Manager', 'مدير مرافق': 'Facility Manager', 'المدير الإقليمي': 'Country Director', 'المدير الاقليمي': 'Country Director',
     'السعر الرمادي معناه إن الشهر ده مالوش سعر متسجل، فاتاخد آخر سعر قبله. الأسعار بتتسجل لوحدها لما تكتب السعر في "أمر شراء للمورد"، أو من زرار "أسعار الشراء لكل شهر".': 'A grey price means this month has no saved price, so the last earlier price is used. Prices are saved by themselves when you type the price in "Supplier Purchase Order", or from the "Purchase prices per month" button.',
     'اكتب "العدد المطلوب" لكل غرض في القسم (مثلاً: مكاتب 5، كراسي 3، لوكر 2، ترابيزة اجتماعات مدورة 1). زرارين "مكتب موظف" و"مكتب مدير" بيحطوا عدد مبدئي حسب عدد المكاتب، وتقدر تغيّره، وزرار ↺ يرجّعه. الغرض اللي مش موجود امسحه بـ ✖. "الموجود فعلاً" سيبه فاضي لو لسه ماتعدّش، ولو أقل من المطلوب البرنامج بيحسب كام محتاج يتشترى.': 'Enter the "required" count of each item in the department (e.g. desks 5, chairs 3, lockers 2, round meeting table 1). The "staff office" and "manager office" buttons fill a starting count from the number of offices; you can change it, and ↺ resets it. Remove an item that is not there with ✖. Leave "actually there" empty if not counted yet; if it is less than required, the program works out how many to buy.'
 };
@@ -7732,8 +7732,8 @@ const I18N = {
     },
     en: {
         appTitle: 'Consultancy Group',
-        appSubtitle: 'Consultancy Group - Facilities Management - Facilities Manager',
-        desktopStatus: 'Facilities Management - Facilities Manager',
+        appSubtitle: 'Consultancy Group - Facilities Management - Facility Manager',
+        desktopStatus: 'Facilities Management - Facility Manager',
 
         // Navigation
         navDashboard: 'Analytics Dashboard',
@@ -8704,7 +8704,7 @@ function printCgTable(title, sub, colCount, theadRows, tbodyRows, tfootRows, ext
                 ${tfootRows ? `<tfoot>${tfootRows}</tfoot>` : ''}
             </table>
             ${extraHtml || ''}
-            <div class="voucher-signatures"><div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div></div>
+            <div class="voucher-signatures"><div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div></div>
         </div>`;
     safeWindowPrint();
 }
@@ -9178,7 +9178,7 @@ function buildCenteredPrintHeader(reportTitle, itemOrSubDef = '') {
     return `
         <div class="voucher-header" style="border:none; margin:0; padding:6px 0 0.45rem 0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
             <img src="${logoSrc}" alt="المجموعة الإستشارية | Consultancy Group" style="height:58px; width:auto; object-fit:contain; display:block; margin:4px auto 0.25rem auto;">
-            <p style="margin:0 0 0.25rem 0; font-size:0.86rem; font-weight:800; color:#2a2722; text-align:center;">${isAr ? 'إدارة المرافق - مدير المرافق' : 'Facilities Management - Facilities Manager'}</p>
+            <p style="margin:0 0 0.25rem 0; font-size:0.86rem; font-weight:800; color:#2a2722; text-align:center;">${isAr ? 'إدارة المرافق - مدير المرافق' : 'Facilities Management - Facility Manager'}</p>
             <h3 style="margin:0; font-size:1.12rem; font-weight:900; color:#1f1d19; text-align:center;">${reportTitle}</h3>
             ${itemOrSubDef ? `<p style="margin:0.18rem 0 0 0; font-size:0.82rem; font-weight:700; color:#55524b; text-align:center;">${itemOrSubDef}</p>` : ''}
         </div>
@@ -9261,7 +9261,7 @@ function printFloorsReport() {
             </table>
 
             <div class="voucher-signatures">
-                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
             </div>
         </div>
     `;
@@ -9345,7 +9345,7 @@ function printPurchaseOrder() {
             </table>
 
             <div class="voucher-signatures">
-                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
             </div>
         </div>
     `;
@@ -9486,7 +9486,7 @@ function printIssueVoucherBatch(batchItems, floor, date, recipient, notes) {
             </table>
 
             <div class="voucher-signatures">
-                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
             </div>
         </div>
     `;
@@ -10456,7 +10456,7 @@ function printSingleFurnitureItemReport(itemId) {
             </table>
 
             <div class="voucher-signatures">
-                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
             </div>
         </div>
     `;
@@ -10704,7 +10704,7 @@ function printSingleFloorFurnitureReport() {
             </table>
 
             <div class="voucher-signatures">
-                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
             </div>
         </div>
     `;
@@ -10814,7 +10814,7 @@ function printFurnitureMatrixReport() {
             </table>
 
             <div class="voucher-signatures">
-                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
             </div>
         </div>
     `;
@@ -11227,7 +11227,7 @@ function printHqReport() {
             </table>
 
             <div class="voucher-signatures">
-                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
             </div>
         </div>
     `;
@@ -11649,35 +11649,35 @@ function getTabTitles() {
     return {
         dash: {
             title: I18N[currentLang].navDashboard,
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | نظرة شمولية على مؤشرات الأداء والأرصدة' : 'Facilities Management - Facilities Manager | Comprehensive KPIs & Stock'
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | نظرة شمولية على مؤشرات الأداء والأرصدة' : 'Facilities Management - Facility Manager | Comprehensive KPIs & Stock'
         },
         inventory: {
             title: I18N[currentLang].navInventory,
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | إدارة وتعديل الأصناف والأرصدة الافتتاحية' : 'Facilities Management - Facilities Manager | Manage Items & Balances'
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | إدارة وتعديل الأصناف والأرصدة الافتتاحية' : 'Facilities Management - Facility Manager | Manage Items & Balances'
         },
         terminal: {
             title: I18N[currentLang].navTerminal,
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | محطة الصرف السريع والمباشر للطوابق' : 'Facilities Management - Facilities Manager | Floor Dispensing Terminal'
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | محطة الصرف السريع والمباشر للطوابق' : 'Facilities Management - Facility Manager | Floor Dispensing Terminal'
         },
         floors: {
             title: I18N[currentLang].navFloors,
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | مصفوفة مقارنة الاستهلاك للأدوار 4 إلى 9' : 'Facilities Management - Facilities Manager | Floors Consumption Matrix (4-9)'
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | مصفوفة مقارنة الاستهلاك للأدوار 4 إلى 9' : 'Facilities Management - Facility Manager | Floors Consumption Matrix (4-9)'
         },
         history: {
             title: I18N[currentLang].navHistory,
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | سجل تدقيق حركات الصرف وطباعة السندات' : 'Facilities Management - Facilities Manager | Issue Audit Log & Vouchers'
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | سجل تدقيق حركات الصرف وطباعة السندات' : 'Facilities Management - Facility Manager | Issue Audit Log & Vouchers'
         },
         po: {
             title: I18N[currentLang].navPO,
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | أمر شراء للمورد بناءً على الاستهلاك' : 'Facilities Management - Facilities Manager | Supplier Purchase Order'
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | أمر شراء للمورد بناءً على الاستهلاك' : 'Facilities Management - Facility Manager | Supplier Purchase Order'
         },
         furniture: {
             title: isAr ? 'جرد أصول الشركة (الأدوار 4 - 9)' : 'Company Assets Inventory (Floors 4 - 9)',
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | تسجيل ومراجعة الأعداد المتواجدة بالفعل في كل طابق' : 'Facilities Management - Facilities Manager | Actual Furniture Counts per Floor'
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | تسجيل ومراجعة الأعداد المتواجدة بالفعل في كل طابق' : 'Facilities Management - Facility Manager | Actual Furniture Counts per Floor'
         },
         'furniture-matrix': {
             title: isAr ? 'تحليل الطوابق الشامل للأثاث (4 - 9)' : 'Comprehensive Furniture Floors Analysis (4 - 9)',
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | بيان تحليلي مقارن جاهز للعرض والإرسال للإدارة العليا' : 'Facilities Management - Facilities Manager | Executive Floors Comparison Report'
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | بيان تحليلي مقارن جاهز للعرض والإرسال للإدارة العليا' : 'Facilities Management - Facility Manager | Executive Floors Comparison Report'
         },
         'furniture-depts': {
             title: isAr ? 'تحليل الطوابق بالأقسام' : 'Floors by Department',
@@ -11693,11 +11693,11 @@ function getTabTitles() {
         },
         hq: {
             title: isAr ? 'جرد وتجهيزات مقر الإدارة العليا' : 'Executive Management HQ Inventory',
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | بيان الأعداد الفعلية والحالة الفنية لتجهيزات مقر الإدارة العليا' : 'Facilities Management - Facilities Manager | Executive HQ Assets & Appliances'
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | بيان الأعداد الفعلية والحالة الفنية لتجهيزات مقر الإدارة العليا' : 'Facilities Management - Facility Manager | Executive HQ Assets & Appliances'
         },
         custody: {
             title: isAr ? 'العهدة والفواتير وتحويلات الموردين' : 'Company Custody, Invoices & Supplier Transfers',
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | ترحيل تراكمي للعهدة، تنبيه بنود الحوالات، إرفاق الفواتير بالسكانر، والدفعات المباشرة' : 'Facilities Management - Facilities Manager | Custody Ledger, Transfer Variance Alerts, Scanner & Direct Supplier Payments'
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | ترحيل تراكمي للعهدة، تنبيه بنود الحوالات، إرفاق الفواتير بالسكانر، والدفعات المباشرة' : 'Facilities Management - Facility Manager | Custody Ledger, Transfer Variance Alerts, Scanner & Direct Supplier Payments'
         }
     };
 }
@@ -14160,7 +14160,7 @@ function printSingleCustodyInvoice() {
                 </div>
             ` : ''}
             <div class="voucher-signatures">
-                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
             </div>
         </div>
     `;
@@ -14349,7 +14349,7 @@ function printCustodyReport() {
             ` : ''}
 
             <div class="voucher-signatures">
-                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
             </div>
         </div>
     `;
@@ -14914,7 +14914,7 @@ function printSupplierPOsReport() {
                 </tfoot>
             </table>
             <div class="voucher-signatures">
-                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
             </div>
         </div>
     `;
@@ -15035,7 +15035,7 @@ function printMonthlyCoreExpenses() {
                 </tfoot>
             </table>
             <div class="voucher-signatures">
-                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
             </div>
         </div>
     `;
@@ -16200,11 +16200,11 @@ function exportPurchaseReqExcel(id) {
     });
     CGX.download(sh, `${isAr ? 'أمر_شراء' : 'Purchase_Order'}_${o.no || ''}_${o.date || cgxToday()}`);
 }
-// English purchase order: names and titles in English; the facilities manager's title reads "Facility Manager" (purchase order only)
+// English purchase order: names and titles in English (the job title is the singular "Facility Manager" everywhere)
 function preqEnglishOf(s) {
     const v = String(s || '').trim();
     const en = EN_PHRASES[v] || v;
-    return String(en).split('Facilities Manager').join('Facility Manager');
+    return String(en).split('Facility Manager').join('Facility Manager');
 }
 // Arabic print: a name or title typed in English is shown in Arabic when the program knows it
 // (e.g. "ENG. Ahmed Yassin" → "م/أحمد يس", "Country Director" → "المدير الإقليمي"), so both boxes read the same.
