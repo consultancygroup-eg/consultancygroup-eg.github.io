@@ -10430,6 +10430,18 @@ function renderPurchaseReqHistory() {
 
 // PDF: logo at the top on the reading-start side, dominant over the title (brand guide p.12),
 // light brand ink, cream header row, thin gold rules
+// Arabic print: a name or title typed in English is shown in Arabic when the program knows it
+// (e.g. "ENG. Ahmed Yassin" → "م/أحمد يس", "Country Director" → "المدير الإقليمي"), so both boxes read the same.
+function preqArabicOf(s) {
+    const v = String(s || '').trim();
+    if (!v || /[؀-ۿ]/.test(v)) return s;
+    const norm = x => String(x).toLowerCase().replace(/^eng\.?\s*/, 'eng ').replace(/\s+/g, ' ').trim();
+    const want = norm(v);
+    const hit = Object.keys(EN_PHRASES).find(ar => norm(EN_PHRASES[ar]) === want);
+    if (hit) return hit;
+    if (/^eng\.?\s/i.test(v)) { const base = preqArabicOf(v.replace(/^eng\.?\s*/i, '')); if (base !== v.replace(/^eng\.?\s*/i, '')) return `م/${base}`; }
+    return s;
+}
 function printPurchaseReq(id) {
     const printArea = document.getElementById('official-print-viewport');
     if (!printArea) return;
@@ -10462,21 +10474,15 @@ function printPurchaseReq(id) {
         </div>`;
     printArea.innerHTML = `
         <div class="voucher-print-container preq-print" dir="${isAr ? 'rtl' : 'ltr'}" lang="${isAr ? 'ar' : 'en'}">
-            <div class="preq-head">
-                <img src="${getPrintLogoSrc()}" alt="المجموعة الإستشارية | Consultancy Group">
-                <div class="preq-head-text">
-                    <div class="preq-doc">${t.doc}</div>
-                    <div class="preq-dept">${t.dept}</div>
-                </div>
-            </div>
+            <div class="preq-head-c">${buildCenteredPrintHeader(t.title)}</div>
             <div class="preq-parties">
-                ${party(t.from, t.employee, o.fromName, o.fromPos)}
-                ${party(t.reqFrom, t.employee, o.toName, o.toPos)}
+                ${party(t.from, t.employee, isAr ? preqArabicOf(o.fromName) : o.fromName, isAr ? preqArabicOf(o.fromPos) : o.fromPos)}
+                ${party(t.reqFrom, t.employee, isAr ? preqArabicOf(o.toName) : o.toName, isAr ? preqArabicOf(o.toPos) : o.toPos)}
             </div>
             <div class="elec-meta preq-meta">
                 <div><span>${t.orderNo}</span><b class="en">${escHtml(o.no)}</b></div>
-                <div><span>${t.delivery}</span><b>${escHtml(o.delivery) || '&nbsp;'}</b></div>
-                <div><span>${t.place}</span><b>${escHtml(o.place) || '&nbsp;'}</b></div>
+                <div><span>${t.delivery}</span><b>${escHtml(o.delivery) || '—'}</b></div>
+                <div><span>${t.place}</span><b>${escHtml(o.place) || '—'}</b></div>
                 <div><span>${t.date}</span><b class="en">${escHtml(o.date)}</b></div>
             </div>
             <table class="preq-print-table">
