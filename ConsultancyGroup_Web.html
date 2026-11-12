@@ -11738,6 +11738,34 @@ function applyModuleIsolation(mod) {
     });
 }
 
+// Switching sections redraws only the section being opened (it used to redraw all ~20 sections every time,
+// which made each click take seconds). Every section is still redrawn when it is opened, so it always shows
+// the latest data; data changes elsewhere still go through renderAll().
+const TAB_RENDERERS = {
+    dash: () => { renderKPIs(); renderCharts(); renderDashboardTable(); },
+    inventory: () => renderInventoryTable(),
+    terminal: () => renderSmartTerminal(),
+    floors: () => { renderFloorsMatrix(); const c = document.getElementById('floors-compare-card'); if (c && c.style.display !== 'none') renderFloorsCompare(); },
+    history: () => renderHistoryTable(),
+    po: () => renderPurchaseOrder(),
+    furniture: () => renderFurnitureView(),
+    'furniture-matrix': () => renderFurnitureMatrix(),
+    'furniture-depts': () => renderDeptsView(),
+    hq: () => renderHqView(),
+    elec: () => renderElecView(),
+    preq: () => renderPurchaseReqView(),
+    custody: () => { if (typeof renderCustodyModule === 'function') renderCustodyModule(); }
+};
+function renderTab(tabId) {
+    const fn = TAB_RENDERERS[tabId];
+    if (!fn) { renderAll(); return; }
+    updateCycleDropdown();
+    fn();
+    renderAlertCenter();
+    const pane = document.getElementById(`pane-${tabId}`);
+    if (window.lucide) window.lucide.createIcons(pane ? { root: pane } : undefined);
+}
+
 function switchTab(tabId) {
     activeTab = tabId;
 
@@ -11770,7 +11798,7 @@ function switchTab(tabId) {
 
     updateViewHeaderTitles();
 
-    renderAll();
+    renderTab(tabId);
 }
 
 function filterFurnitureCategory(cat) {
