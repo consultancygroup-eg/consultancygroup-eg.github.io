@@ -9574,12 +9574,28 @@ function deptListTotals(list) {
 }
 // Under each floor: what the asset inventory has on that floor vs what is placed in its departments
 function deptAssetCompareHtml(depts, fl) {
-    const chips = deptItemColumns(depts).map(name => {
-        const a = assetFloorCount(name, fl);
-        if (a === null) return '';
-        let have = 0; depts.forEach(d => { const c = deptItemCellData(d, name); if (c) have += c.have; });
+    // Desks are compared as one group (staff + manager desks), and so are office chairs (staff + manager chairs):
+    // a manager office may list its desk as "مكتب" while the inventory has it under "مكتب مدير".
+    const familyOf = n => /^مكتب(\s|$)/.test(n) ? 'desk' : (/^كرسي(\s|$)/.test(n) && !/ضيوف|انتظار|بوفيه/.test(n) ? 'chair' : null);
+    const FAM_LABEL = { desk: 'المكاتب (موظفين + مديرين)', chair: 'الكراسي (موظفين + مديرين)' };
+    const FAM_ASSETS = { desk: ['مكتب', 'مكتب مدير'], chair: ['كرسي', 'كرسي مدير'] };
+    const groups = [];
+    deptItemColumns(depts).forEach(name => {
+        const fam = familyOf(name);
+        const key = fam || name;
+        let g = groups.find(x => x.key === key);
+        if (!g) { g = { key, names: [], fam, label: fam ? FAM_LABEL[fam] : name }; groups.push(g); }
+        g.names.push(name);
+    });
+    const chips = groups.map(g => {
+        const assets = new Map();
+        [...g.names, ...(g.fam ? FAM_ASSETS[g.fam] : [])].forEach(n => assetItemsFor(n).forEach(f => assets.set(f.id != null ? f.id : f.name, f)));
+        if (!assets.size) return '';
+        const a = [...assets.values()].reduce((s, f) => s + (Number((f.floors || {})[fl]) || 0), 0);
+        let have = 0; depts.forEach(d => g.names.forEach(n => { const c = deptItemCellData(d, n); if (c) have += c.have; }));
+        const label = g.fam ? g.label : g.names[0];
         const diff = a - have;
-        return `<span class="dept-cmp-chip">${escHtml(name)}: في الجرد <b>${a}</b>${diff > 0 ? ` · <b class="warn">غير موزع ${diff}</b>` : (diff < 0 ? ` · <b class="bad">زيادة ${-diff}</b>` : ' ✓')}</span>`;
+        return `<span class="dept-cmp-chip">${escHtml(label)}: في الجرد <b>${a}</b> · موزّع <b>${have}</b>${diff > 0 ? ` · <b class="warn">غير موزع ${diff}</b>` : (diff < 0 ? ` · <b class="bad">زيادة ${-diff}</b>` : ' ✓')}</span>`;
     }).filter(Boolean);
     return chips.length ? `<div class="dept-cmp"><span class="dept-cmp-title">مقارنة بجرد الأصول:</span>${chips.join('')}</div>` : '';
 }
