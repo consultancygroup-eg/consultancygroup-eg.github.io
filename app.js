@@ -10453,16 +10453,14 @@ function exportPurchaseReqExcel(id) {
     const nm = v => isAr ? preqArabicOf(v) : (EN_PHRASES[String(v || '').trim()] || v);
     const sh = CGX.report({ name: `${t.title} ${o.no || ''}`.trim(), title: t.title, columns: [{ h: '', w: 10 }, { h: '', w: 11 }, { h: '', w: 29 }, { h: '', w: 26 }, { h: '', w: 14 }, { h: '', w: 17 }] });
     sh.rows = []; sh.merges = []; sh.heights = {}; sh.freezeRow = 0; sh.printTitles = 0; sh.ltr = !isAr;
-    // header as on the brand letterhead: the logo alone at the top centre, then the department line and the title centred under it
-    const px = sh.cols.map(w => Math.round(w * 7 + 5));
-    let x = Math.max(0, Math.round((px.reduce((s, v) => s + v, 0) - 225) / 2)), col = 0;
-    while (col < px.length - 1 && x >= px[col]) { x -= px[col]; col++; }
-    sh.image = { col, row: 0, w: 225, h: 54, offX: x, offY: 6 };
+    // header as on the brand letterhead: the logo at the start side (left in English, right in Arabic),
+    // the department and position stacked at the other side above the gold line, the title centred under the line
+    sh.image = { col: 0, row: 0, w: 225, h: 54, offX: 4, offY: 8 };
     const blank = k => Array(6).fill({ v: '', s: k || 'default' });
-    sh.add([], 50);
-    sh.add([{ v: isAr ? 'إدارة المرافق - مدير المرافق' : 'Facilities Management - Facilities Manager', s: 'sub' }, ...blank('sub').slice(1)], 18); sh.merge('A2:F2');
-    sh.add([{ v: t.title, s: 'docTitleC' }, ...blank('docTitleC').slice(1)], 24); sh.merge('A3:F3');
+    sh.add([...blank().slice(0, 3), { v: isAr ? 'إدارة المرافق' : 'Facilities Management', s: 'docDept' + E }, { v: '', s: 'docDept' + E }, { v: '', s: 'docDept' + E }], 36); sh.merge('D1:F1');
+    sh.add([...blank().slice(0, 3), { v: isAr ? 'مدير المرافق' : 'Facilities Manager', s: 'docPos' + E }, { v: '', s: 'docPos' + E }, { v: '', s: 'docPos' + E }], 30); sh.merge('D2:F2');
     sh.add(blank('rule'), 6);
+    sh.add([{ v: t.title, s: 'docTitleC' }, ...blank('docTitleC').slice(1)], 30); sh.merge('A4:F4');
     sh.add([], 10);
     // From / To
     const r5 = sh.add([{ v: t.from, s: 'partyHead' + S }, { v: '', s: 'partyHead' + S }, { v: '', s: 'partyHead' + S }, { v: t.reqFrom, s: 'partyHead' + S }, { v: '', s: 'partyHead' + S }, { v: '', s: 'partyHead' + S }], 22);
@@ -10551,7 +10549,14 @@ function printPurchaseReq(id) {
         </div>`;
     printArea.innerHTML = `
         <div class="voucher-print-container preq-print" dir="${isAr ? 'rtl' : 'ltr'}" lang="${isAr ? 'ar' : 'en'}">
-            <div class="preq-head-c">${buildCenteredPrintHeader(t.title)}</div>
+            <div class="preq-head">
+                <img src="${getPrintLogoSrc()}" alt="المجموعة الإستشارية | Consultancy Group">
+                <div class="preq-head-text">
+                    <div class="preq-doc">${isAr ? 'إدارة المرافق' : 'Facilities Management'}</div>
+                    <div class="preq-dept">${isAr ? 'مدير المرافق' : 'Facilities Manager'}</div>
+                </div>
+            </div>
+            <div class="preq-title">${t.title}</div>
             <div class="preq-parties">
                 ${party(t.from, t.employee, isAr ? preqArabicOf(o.fromName) : o.fromName, isAr ? preqArabicOf(o.fromPos) : o.fromPos)}
                 ${party(t.reqFrom, t.employee, isAr ? preqArabicOf(o.toName) : o.toName, isAr ? preqArabicOf(o.toPos) : o.toPos)}
@@ -10635,6 +10640,7 @@ const CGX = (() => {
     xf('rule', 0, 0, 3, 0, null, 'center');
     xf('docTitleC', 5, 0, 0, 0, 'center', 'center');
     xf('textL', 0, 0, 1, 0, 'left', 'center', 1);
+    xf('docDeptL', 4, 0, 0, 0, 'left', 'bottom'); xf('docDeptR', 4, 0, 0, 0, 'right', 'bottom'); xf('docPosL', 2, 0, 0, 0, 'left', 'top'); xf('docPosR', 2, 0, 0, 0, 'right', 'top');
     xf('headCream', 9, 3, 1, 0, 'center', 'center', 1); xf('headCreamL', 9, 3, 1, 0, 'left', 'center', 1); xf('headCreamR', 9, 3, 1, 0, 'right', 'center', 1);
     xf('moneyLE', 0, 0, 1, 165, 'center', 'center'); xf('moneyLEB', 4, 0, 1, 165, 'center', 'center'); xf('totLE', 5, 3, 2, 165, 'center', 'center');
     xf('moneyAR', 0, 0, 1, 166, 'center', 'center'); xf('moneyARB', 4, 0, 1, 166, 'center', 'center'); xf('totAR', 5, 3, 2, 166, 'center', 'center');
