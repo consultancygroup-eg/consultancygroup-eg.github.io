@@ -2,3 +2,4 @@
 app_data/
 *.tmp
 .claude/
+_preview/
