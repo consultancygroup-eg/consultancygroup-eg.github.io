@@ -3252,6 +3252,11 @@ tr.elec-active td { background: var(--primary-light) !important; }
                     <span data-i18n="navPO">أمر شراء للمورد</span>
                 </button>
 
+                <button onclick="exportBuffetAllExcel()" id="nav-btn-buffet-xlsx" class="sidebar-nav-item nav-group-buffet" title="ملف Excel واحد فيه المخزن واستهلاك الأدوار وسجل الصرف وأمر شراء المورد">
+                    <i data-lucide="file-spreadsheet"></i>
+                    <span>Excel كامل للبوفيه</span>
+                </button>
+
                 <!-- ==================== MODULE 2 NAV: COMPANY ASSETS INVENTORY ONLY ==================== -->
                 <span class="nav-section-label nav-group-furniture" style="display: none;">جرد أصول الشركة</span>
 
@@ -3444,6 +3449,10 @@ tr.elec-active td { background: var(--primary-light) !important; }
                                 <span data-i18n="btnImportBackup">استعادة من ملف</span>
                             </button>
                             <div class="dropdown-divider"></div>
+                            <button onclick="exportBuffetAllExcel()" class="dropdown-item">
+                                <i data-lucide="file-spreadsheet"></i>
+                                <span>Excel — مصروفات البوفيه كاملة</span>
+                            </button>
                             <button onclick="exportInventoryToCSV()" class="dropdown-item">
                                 <i data-lucide="file-spreadsheet"></i>
                                 <span>Excel — كشف المخزن</span>
@@ -7484,6 +7493,8 @@ const EN_PHRASES = {
     'أنت في وضع المسؤول - اضغط للتحويل إلى مستخدم': 'You are in admin mode - click to switch to user',
     'العودة للأقسام Home (3)': 'Back to sections (3)',
     'Share رابط البرنامج والباركود': 'Share the program link and QR code',
+    'Excel كامل للبوفيه': 'Full buffet Excel', 'Excel — مصروفات البوفيه كاملة': 'Excel — Full buffet expenses',
+    'ملف Excel واحد فيه المخزن واستهلاك الأدوار وسجل الصرف وأمر شراء المورد': 'One Excel file with the store, floor consumption, issue log and supplier purchase order',
     'أحمد الباز': 'Ahmed Elbaz', 'أحمد محمد الباز': 'Ahmed Mohamed Elbaz', 'أحمد يس': 'Ahmed Yassin', 'م/أحمد يس': 'Eng. Ahmed Yassin',
     'مدير المرافق': 'Facilities Manager', 'مدير مرافق': 'Facilities Manager', 'المدير الإقليمي': 'Country Director', 'المدير الاقليمي': 'Country Director',
     'السعر الرمادي معناه إن الشهر ده مالوش سعر متسجل، فاتاخد آخر سعر قبله. الأسعار بتتسجل لوحدها لما تكتب السعر في "أمر شراء للمورد"، أو من زرار "أسعار الشراء لكل شهر".': 'A grey price means this month has no saved price, so the last earlier price is used. Prices are saved by themselves when you type the price in "Supplier Purchase Order", or from the "Purchase prices per month" button.',
@@ -16391,7 +16402,7 @@ function cgxTotalRow(sh, labelSpan, cells, final) {
 const CGX_FLOORS = ['الدور الرابع', 'الدور الخامس', 'الدور السادس', 'الدور السابع', 'الدور الثامن', 'الدور التاسع'];
 
 // Main store: balance = total in − issued (formula), low stock flagged by formula too
-function exportInventoryToCSV() {
+function exportInventoryToCSV(only) {
     const trans = getCycleTransactions();
     const F = CGX.FIRST;
     const sh = CGX.report({
@@ -16412,17 +16423,19 @@ function exportInventoryToCSV() {
     });
     const L = F + inventory.length - 1;
     cgxTotalRow(sh, 4, [{ f: `SUM(E${F}:E${L})`, s: 'totInt' }, { f: `SUM(F${F}:F${L})`, s: 'totInt' }, { f: `SUM(G${F}:G${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }, { v: '', s: 'totLabel' }]);
+    if (only) return sh;
     CGX.download(sh, `كشف_المخزن_الرئيسي_${cgxToday()}`);
 }
 
 // Issue log (filtered like the screen): total quantity by formula
-function exportHistoryToCSV() {
-    const logs = getHistoryRangeLogs();
+function exportHistoryToCSV(only) {
+    // in the full buffet file: the current cycle (month), all floors, oldest first (the screen filters are ignored)
+    const logs = only ? [...getCycleTransactions()].sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.id || 0) - (b.id || 0)) : getHistoryRangeLogs();
     const F = CGX.FIRST;
-    const range = (historyDateFrom || historyDateTo) ? `من ${historyDateFrom || '...'} إلى ${historyDateTo || '...'}` : `الدورة: ${activeCycleKey}`;
+    const range = only ? `الدورة الحالية: ${activeCycleKey}` : ((historyDateFrom || historyDateTo) ? `من ${historyDateFrom || '...'} إلى ${historyDateTo || '...'}` : `الدورة: ${activeCycleKey}`);
     const sh = CGX.report({
         name: 'سجل الحركات', title: 'سجل حركات الصرف والتدقيق',
-        subtitle: `${range}   |   الدور: ${activeFloorFilter === 'الكل' ? 'كل الأدوار' : activeFloorFilter}   |   تاريخ التقرير: ${cgxToday()}`,
+        subtitle: `${range}   |   الدور: ${only || activeFloorFilter === 'الكل' ? 'كل الأدوار' : activeFloorFilter}   |   تاريخ التقرير: ${cgxToday()}`,
         columns: [{ h: 'م', w: 6 }, { h: 'التاريخ', w: 13 }, { h: 'الطابق', w: 15 }, { h: 'اسم الصنف', w: 24 }, { h: 'الوحدة', w: 10 }, { h: 'الكمية المنصرفة', w: 15 }, { h: 'اسم المستلم', w: 20 }, { h: 'ملاحظات', w: 24 }]
     });
     logs.forEach((t, i) => {
@@ -16431,11 +16444,12 @@ function exportHistoryToCSV() {
     });
     const L = F + Math.max(logs.length, 1) - 1;
     cgxTotalRow(sh, 5, [{ f: `SUM(F${F}:F${L})`, s: 'totInt' }, { v: '', s: 'totLabel' }, { v: '', s: 'totLabel' }]);
+    if (only) return sh;
     CGX.download(sh, `سجل_حركات_الصرف_${cgxToday()}`);
 }
 
 // Floors consumption: row totals and floor totals are SUM formulas
-function exportFloorsMatrixToCSV() {
+function exportFloorsMatrixToCSV(only) {
     const trans = getCycleTransactions();
     const F = CGX.FIRST;
     const sh = CGX.report({
@@ -16451,11 +16465,12 @@ function exportFloorsMatrixToCSV() {
     });
     const L = F + inventory.length - 1;
     cgxTotalRow(sh, 3, ['D', 'E', 'F', 'G', 'H', 'I', 'J'].map(c => ({ f: `SUM(${c}${F}:${c}${L})`, s: 'totInt' })));
+    if (only) return sh;
     CGX.download(sh, `تحليل_استهلاك_الطوابق_${cgxToday()}`);
 }
 
 // Buffet supplier purchase order: line total = qty × price, grand total = SUM
-function exportPurchaseOrderToCSV() {
+function exportPurchaseOrderToCSV(only) {
     const trans = getCycleTransactions();
     const F = CGX.FIRST;
     const sh = CGX.report({
@@ -16473,7 +16488,19 @@ function exportPurchaseOrderToCSV() {
     });
     const L = F + inventory.length - 1;
     cgxTotalRow(sh, 7, [{ f: `SUM(H${F}:H${L})`, s: 'finMoney' }, { v: '', s: 'finLabel' }], true);
+    if (only) return sh;
     CGX.download(sh, `أمر_شراء_المورد_${cgxToday()}`);
+}
+
+// One Excel for the whole buffet section (same brand look and live formulas as the single files):
+// main store · floor consumption · issue log (every entry) · supplier purchase order
+function exportBuffetAllExcel() {
+    CGX.download([
+        exportInventoryToCSV(true),
+        exportFloorsMatrixToCSV(true),
+        exportHistoryToCSV(true),
+        exportPurchaseOrderToCSV(true)
+    ], `مصروفات_البوفيه_كاملة_${cgxToday()}`);
 }
 
 // Custody ledger: running balance = previous balance + in − out (formula on every row)

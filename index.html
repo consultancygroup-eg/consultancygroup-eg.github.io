@@ -235,6 +235,11 @@
                     <span data-i18n="navPO">أمر شراء للمورد</span>
                 </button>
 
+                <button onclick="exportBuffetAllExcel()" id="nav-btn-buffet-xlsx" class="sidebar-nav-item nav-group-buffet" title="ملف Excel واحد فيه المخزن واستهلاك الأدوار وسجل الصرف وأمر شراء المورد">
+                    <i data-lucide="file-spreadsheet"></i>
+                    <span>Excel كامل للبوفيه</span>
+                </button>
+
                 <!-- ==================== MODULE 2 NAV: COMPANY ASSETS INVENTORY ONLY ==================== -->
                 <span class="nav-section-label nav-group-furniture" style="display: none;">جرد أصول الشركة</span>
 
@@ -427,6 +432,10 @@
                                 <span data-i18n="btnImportBackup">استعادة من ملف</span>
                             </button>
                             <div class="dropdown-divider"></div>
+                            <button onclick="exportBuffetAllExcel()" class="dropdown-item">
+                                <i data-lucide="file-spreadsheet"></i>
+                                <span>Excel — مصروفات البوفيه كاملة</span>
+                            </button>
                             <button onclick="exportInventoryToCSV()" class="dropdown-item">
                                 <i data-lucide="file-spreadsheet"></i>
                                 <span>Excel — كشف المخزن</span>
