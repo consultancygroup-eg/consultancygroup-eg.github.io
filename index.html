@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="dark theme-gold">
+<html lang="ar" dir="rtl" class="theme-gold">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +9,7 @@
     <meta property="og:title" content="المجموعة الاستشارية - إدارة المرافق | Consultancy Group">
     <meta property="og:site_name" content="المجموعة الاستشارية - Consultancy Group">
     <meta name="theme-color" content="#1f1d19">
+    <meta name="color-scheme" content="light only">
 
     <!-- Google Fonts for High-End Arabic Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -272,6 +273,11 @@
                     <i data-lucide="zap"></i>
                     <span>شحن الكهرباء</span>
                     <span class="sidebar-nav-badge" id="badge-elec-due" style="display:none;"></span>
+                </button>
+
+                <button onclick="switchTab('preq')" id="nav-btn-preq" class="sidebar-nav-item nav-group-custody" style="display: none;">
+                    <i data-lucide="file-text"></i>
+                    <span id="nav-preq-label">أمر شراء</span>
                 </button>
 
                 <!-- Collapsible Transfer Audit & Reminders in Right Sidebar under Custody -->
@@ -1324,6 +1330,36 @@
                             <table class="data-table cg-sheet">
                                 <thead><tr><th>التاريخ</th><th style="text-align:center;">إجمالي الشحن</th><th style="text-align:center;">المديونية</th><th style="text-align:center;">الرسوم</th><th style="text-align:center;">الإجمالي النهائي</th><th></th></tr></thead>
                                 <tbody id="elec-history"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Purchase order (form like the company's Word purchase order, in the CG brand; Arabic or English with the program) -->
+                <section id="pane-preq" class="tab-pane">
+                    <div class="card" style="margin-bottom: 1.25rem;">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <i data-lucide="file-text" style="color: var(--primary);"></i>
+                                <div>
+                                    <h2 id="preq-title"></h2>
+                                    <span id="preq-hint" style="font-size: 0.78rem; color: var(--text-muted);"></span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                                <button onclick="savePurchaseReq()" class="btn btn-primary btn-sm admin-only"><i data-lucide="save"></i><span id="preq-save-label"></span></button>
+                                <button onclick="newPurchaseReq()" class="btn btn-secondary btn-sm admin-only"><i data-lucide="plus"></i><span id="preq-new-label"></span></button>
+                                <button onclick="printPurchaseReq()" class="btn cg-dl btn-sm"><span><b class="cg-dl-arrow">⬇</b> PDF</span></button>
+                            </div>
+                        </div>
+                        <div id="preq-editor" style="padding: 1rem 1.4rem 1.4rem; display: flex; flex-direction: column; gap: 1rem;"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><div class="card-title-group"><i data-lucide="history" style="color: var(--primary);"></i><h2 id="preq-history-title"></h2></div></div>
+                        <div class="table-responsive">
+                            <table class="data-table cg-sheet">
+                                <thead id="preq-history-head"></thead>
+                                <tbody id="preq-history"></tbody>
                             </table>
                         </div>
                     </div>

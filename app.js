@@ -454,7 +454,10 @@ function migrateHqListToWbs(oldList) {
 
 // --- APP STATE ---
 let currentLang = localStorage.getItem('buffet_v9_lang') || 'ar';
-let currentTheme = localStorage.getItem('buffet_v9_theme') || 'dark';
+// Light (brand paper) is the standard look on every device, same as the desktop program.
+// One-time reset: phones had opened in dark by default, so their colors looked different.
+try { if (!localStorage.getItem('buffet_v9_theme_same_v1')) { localStorage.setItem('buffet_v9_theme', 'light'); localStorage.setItem('buffet_v9_theme_same_v1', '1'); } } catch (e) {}
+let currentTheme = localStorage.getItem('buffet_v9_theme') || 'light';
 let currentPalette = 'gold'; // brand gold only (other color themes removed)
 let currentUserRole = localStorage.getItem('buffet_v9_role') || 'admin'; // 'admin' | 'viewer'
 
@@ -935,6 +938,8 @@ const SEED_ELEC = {
     history: []
 };
 let elecData = JSON.parse(localStorage.getItem('buffet_v9_elec')) || JSON.parse(JSON.stringify(SEED_ELEC));
+// Purchase orders (custody → أمر شراء): { draft, history: [] }
+let purchaseReqs = (() => { try { return JSON.parse(localStorage.getItem('buffet_v9_preq')) || null; } catch (e) { return null; } })() || { draft: null, history: [] };
 let activeCustodySubtab = 'ledger';
 let custodyCameraStream = null;
 
@@ -1760,6 +1765,7 @@ function persistState() {
     localStorage.setItem('buffet_v9_monthly_core', JSON.stringify(monthlyCoreExpenses));
     localStorage.setItem('buffet_v9_depts', JSON.stringify(deptLayout));
     localStorage.setItem('buffet_v9_elec', JSON.stringify(elecData));
+    localStorage.setItem('buffet_v9_preq', JSON.stringify(purchaseReqs));
     localStorage.setItem('buffet_v9_cycle_day', cycleStartDay);
     renderAll();
 
@@ -1853,6 +1859,7 @@ function renderAll() {
     if (cmpCard && cmpCard.style.display !== 'none') renderFloorsCompare();
     renderDeptsView();
     renderElecView();
+    renderPurchaseReqView();
     renderHqView();
     if (typeof renderCustodyModule === 'function') {
         renderCustodyModule();
@@ -5373,6 +5380,7 @@ function exportDataBackup() {
         monthlyCoreExpenses,
         deptLayout,
         elecData,
+        purchaseReqs,
         cycleStartDay,
         exportDate: new Date().toISOString()
     };
@@ -5405,6 +5413,7 @@ function importDataBackup(e) {
                 if (data.monthlyCoreExpenses) monthlyCoreExpenses = data.monthlyCoreExpenses;
                 if (data.deptLayout) deptLayout = data.deptLayout;
                 if (data.elecData) elecData = data.elecData;
+                if (data.purchaseReqs) purchaseReqs = data.purchaseReqs;
                 if (data.cycleStartDay) cycleStartDay = data.cycleStartDay;
 
                 persistState();
@@ -5557,6 +5566,10 @@ function getTabTitles() {
             title: isAr ? 'شحن الكهرباء' : 'Electricity Top-up',
             sub: isAr ? 'إدارة المرافق - مدير المرافق | حساب شحن عدادات الكهرباء للأدوار كل 15 يوم والمديونيات' : 'Facilities Management | Floor meter top-ups every 15 days and arrears'
         },
+        preq: {
+            title: isAr ? 'أمر شراء' : 'Purchase Order',
+            sub: isAr ? 'إدارة المرافق - مدير المرافق | أمر شراء بنموذج الشركة، يطبع عربي أو إنجليزي حسب لغة البرنامج' : 'Facilities Management | Company purchase order form, printed in the program language'
+        },
         hq: {
             title: isAr ? 'جرد وتجهيزات مقر الإدارة العليا' : 'Executive Management HQ Inventory',
             sub: isAr ? 'إدارة المرافق - مدير المرافق | بيان الأعداد الفعلية والحالة الفنية لتجهيزات مقر الإدارة العليا' : 'Facilities Management - Facilities Manager | Executive HQ Assets & Appliances'
@@ -5611,7 +5624,7 @@ function switchTab(tabId) {
         applyModuleIsolation('furniture');
     } else if (tabId === 'hq') {
         applyModuleIsolation('hq');
-    } else if (tabId === 'custody' || tabId === 'elec') {
+    } else if (tabId === 'custody' || tabId === 'elec' || tabId === 'preq') {
         applyModuleIsolation('custody');
     } else {
         applyModuleIsolation('buffet');
@@ -5629,7 +5642,7 @@ function switchTab(tabId) {
     // Show cycle banner only on Buffet tabs
     const cycleBanner = document.querySelector('.cycle-banner');
     if (cycleBanner) {
-        const isAssetTab = (tabId === 'furniture' || tabId === 'furniture-matrix' || tabId === 'furniture-depts' || tabId === 'hq' || tabId === 'custody' || tabId === 'elec');
+        const isAssetTab = (tabId === 'furniture' || tabId === 'furniture-matrix' || tabId === 'furniture-depts' || tabId === 'hq' || tabId === 'custody' || tabId === 'elec' || tabId === 'preq');
         cycleBanner.style.display = isAssetTab ? 'none' : '';
     }
 
@@ -6007,6 +6020,9 @@ function connectToFirebase(config, wsId) {
                 if (cloudData.deptLayout && Array.isArray(cloudData.deptLayout)) {
                     deptLayout = cloudData.deptLayout;
                 }
+                if (cloudData.purchaseReqs && typeof cloudData.purchaseReqs === 'object' && Array.isArray(cloudData.purchaseReqs.history)) {
+                    purchaseReqs = cloudData.purchaseReqs;
+                }
                 if (cloudData.elecData && typeof cloudData.elecData === 'object' && Array.isArray(cloudData.elecData.meters)) {
                     elecData = cloudData.elecData;
                 }
@@ -6026,6 +6042,7 @@ function connectToFirebase(config, wsId) {
                 localStorage.setItem('buffet_v9_monthly_core', JSON.stringify(monthlyCoreExpenses));
                 localStorage.setItem('buffet_v9_depts', JSON.stringify(deptLayout));
                 localStorage.setItem('buffet_v9_elec', JSON.stringify(elecData));
+                localStorage.setItem('buffet_v9_preq', JSON.stringify(purchaseReqs));
                 localStorage.setItem('buffet_v9_cycle_day', cycleStartDay);
 
                 renderAllWhenNotTyping();
@@ -6090,6 +6107,7 @@ function syncToCloud(isInitial = false) {
         monthlyCoreExpenses,
         deptLayout,
         elecData,
+        purchaseReqs,
         cycleStartDay,
         lastUpdated: new Date().toISOString()
     };
@@ -8797,16 +8815,32 @@ function assetAllocFor(name, deptId) {
 }
 // The current count of a department item and where it comes from:
 // typed in the department > allocated in the asset inventory > the whole floor count when only this place on the floor has the item
+// The asset inventory's floor total comes over in full: whatever is not typed/allocated to other
+// departments stays with the first department on the floor that has that item (the user then moves
+// e.g. 3 desks to another department, and they come off that department automatically).
+function deptExplicitHave(x, it) {
+    if (!isUncounted(it.have)) return Number(it.have) || 0;
+    return assetAllocFor(it.name, x.id);
+}
+function assetKey(name) { return assetItemsFor(name).map(f => f.id != null ? f.id : f.name).sort().join('|'); }
 function deptItemHaveInfo(d, it) {
     if (!isUncounted(it.have)) return { have: Number(it.have) || 0, src: 'manual' };
     const al = assetAllocFor(it.name, d.id);
     if (al !== null) return { have: al, src: 'alloc' };
-    const sharers = deptLayout.filter(x => x.floor === d.floor && (x.items || []).some(y => y.name === it.name));
-    if (sharers.length === 1) {
-        const a = assetFloorCount(it.name, d.floor);
-        if (a !== null) return { have: a, src: 'asset' };
-    }
-    return null;
+    const a = assetFloorCount(it.name, d.floor);
+    if (a === null) return null;
+    const key = assetKey(it.name);
+    // every (department, item) on this floor that reads the same asset item
+    const pairs = [];
+    deptLayout.filter(x => x.floor === d.floor).forEach(x => (x.items || []).forEach(y => { if (y.name && assetKey(y.name) === key) pairs.push({ x, y }); }));
+    let taken = 0;
+    const open = [];
+    pairs.forEach(p => { const e = deptExplicitHave(p.x, p.y); if (e !== null) taken += e; else open.push(p); });
+    if (!open.length) return null;
+    // the holder of the remainder: the first department on the floor (order set with the ▲▼ arrows)
+    const holder = open[0];
+    if (holder.x === d && (holder.y === it || holder.y.name === it.name)) return { have: Math.max(0, a - taken), src: 'asset' };
+    return null; // the rest wait for the user to move their count
 }
 function deptItemShort(dept, it) {
     const h = deptItemHaveInfo(dept, it);
@@ -9567,6 +9601,277 @@ function printElecCharge(historyId) {
                 <div class="sig-line">مدير المرافق</div>
                 <div class="sig-line">اعتماد الإدارة</div>
             </div>
+        </div>`;
+    safeWindowPrint();
+}
+
+// ======================================================================
+// PURCHASE ORDER (العهدة ← أمر شراء)
+// Same fields as the company's Word purchase order, laid out in the CG brand.
+// Screen and PDF follow the program language: Arabic → Arabic order, English → English order.
+// ======================================================================
+const PREQ_T = {
+    ar: {
+        nav: 'أمر شراء', title: 'أمر شراء', doc: 'أمر شراء',
+        hint: 'اكتب البيانات والأصناف، والإجمالي بيتحسب لوحده. الـ PDF بيطلع بنفس لغة البرنامج.',
+        save: 'حفظ أمر الشراء', saveEdit: 'حفظ التعديل', newOrder: 'أمر شراء جديد',
+        from: 'من', employee: 'الموظف', position: 'الوظيفة', reqFrom: 'مطلوب من',
+        orderNo: 'رقم الأمر', orderBox: 'بيانات الأمر', delivery: 'التسليم', date: 'التاريخ',
+        item: 'م', qty: 'الكمية المطلوبة', desc: 'الوصف', reason: 'السبب', price: 'سعر الوحدة', total: 'الإجمالي',
+        addItem: '+ صنف', grand: 'الإجمالي', cur: 'ج.م',
+        director: 'مدير الدولة', approver: 'المعتمد', signature: 'التوقيع', note: 'ملاحظات',
+        history: 'أوامر الشراء السابقة', items: 'الأصناف', del: 'حذف',
+        none: 'مفيش أوامر شراء محفوظة لسه', saved: 'تم حفظ أمر الشراء', delAsk: n => `حذف أمر الشراء رقم ${n}؟`,
+        empty: 'اكتب صنف واحد على الأقل', reasonDefault: 'احتياج عمل', editing: n => `بتعدّل أمر الشراء رقم ${n}`,
+        dept: 'إدارة المرافق'
+    },
+    en: {
+        nav: 'Purchase Order', title: 'Purchase Order', doc: 'PURCHASE ORDER',
+        hint: 'Fill in the details and items; totals are calculated. The PDF comes out in the program language.',
+        save: 'Save order', saveEdit: 'Save changes', newOrder: 'New order',
+        from: 'From', employee: 'Employee', position: 'Position', reqFrom: 'Requested from',
+        orderNo: 'Order No', orderBox: 'Order details', delivery: 'Delivery', date: 'Date',
+        item: 'Item', qty: 'Quantity Ordered', desc: 'Description', reason: 'Reason', price: 'Unit Price', total: 'Total',
+        addItem: '+ Item', grand: 'Total', cur: 'L.E',
+        director: 'Country Director', approver: 'Approver', signature: 'Signature', note: 'Note',
+        history: 'Saved purchase orders', items: 'Items', del: 'Delete',
+        none: 'No saved purchase orders yet', saved: 'Purchase order saved', delAsk: n => `Delete purchase order No ${n}?`,
+        empty: 'Add at least one item', reasonDefault: 'Work Need', editing: n => `Editing purchase order No ${n}`,
+        dept: 'Facilities Management'
+    }
+};
+function preqT() { return PREQ_T[currentLang === 'en' ? 'en' : 'ar']; }
+function preqNextNo() {
+    const nums = (purchaseReqs.history || []).map(h => Number(h.no)).filter(n => isFinite(n) && n > 0);
+    return nums.length ? Math.max(...nums) + 1 : 71; // the last paper order was No 70
+}
+function preqEmptyItem() { return { qty: '', desc: '', reason: '', price: '' }; }
+function preqBlank() {
+    const last = (purchaseReqs.history || [])[0];
+    return {
+        id: null, no: preqNextNo(), date: elecToday(), delivery: '',
+        fromName: last ? last.fromName : '', fromPos: last ? last.fromPos : '',
+        toName: last ? last.toName : '', toPos: last ? last.toPos : '',
+        items: [preqEmptyItem()]
+    };
+}
+function preqDraft() {
+    if (!purchaseReqs || typeof purchaseReqs !== 'object') purchaseReqs = { draft: null, history: [] };
+    if (!Array.isArray(purchaseReqs.history)) purchaseReqs.history = [];
+    if (!purchaseReqs.draft) purchaseReqs.draft = preqBlank();
+    if (!Array.isArray(purchaseReqs.draft.items) || !purchaseReqs.draft.items.length) purchaseReqs.draft.items = [preqEmptyItem()];
+    return purchaseReqs.draft;
+}
+function preqLineTotal(it) { return elecNum(it.qty) * elecNum(it.price); }
+function preqGrand(o) { return (o.items || []).reduce((s, it) => s + preqLineTotal(it), 0); }
+function preqFilled(o) { return (o.items || []).filter(it => String(it.desc || '').trim() || elecNum(it.qty) || elecNum(it.price)); }
+function preqSaveLocal() { try { localStorage.setItem('buffet_v9_preq', JSON.stringify(purchaseReqs)); } catch (e) {} }
+
+function renderPurchaseReqView() {
+    const t = preqT();
+    const navLbl = document.getElementById('nav-preq-label');
+    if (navLbl) navLbl.textContent = t.nav;
+    const ed = document.getElementById('preq-editor');
+    if (!ed) return;
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const d = preqDraft();
+    set('preq-title', t.title); set('preq-hint', t.hint); set('preq-new-label', t.newOrder); set('preq-history-title', t.history);
+    set('preq-save-label', d.id ? t.saveEdit : t.save);
+    // don't redraw the form under the user's fingers
+    const ae = document.activeElement;
+    const typing = ae && ae.closest && ae.closest('#preq-editor') && /INPUT|SELECT|TEXTAREA/.test(ae.tagName);
+    if (!typing) {
+        const ro = currentUserRole === 'viewer' ? 'readonly' : '';
+        const inp = (field, val) => `<input type="text" class="form-control" value="${escHtml(val)}" ${ro} oninput="onPreqField('${field}', this.value)">`;
+        const rows = d.items.map((it, i) => `<tr>
+                <td style="text-align:center; font-weight:700;">${i + 1}</td>
+                <td><input type="number" class="form-control preq-in" min="0" step="1" value="${it.qty === '' || it.qty == null ? '' : it.qty}" ${ro} oninput="onPreqItem(${i}, 'qty', this.value)"></td>
+                <td><input type="text" class="form-control" style="min-width:200px;" value="${escHtml(it.desc)}" ${ro} oninput="onPreqItem(${i}, 'desc', this.value)"></td>
+                <td><input type="text" class="form-control" style="min-width:120px;" value="${escHtml(it.reason)}" placeholder="${escHtml(t.reasonDefault)}" ${ro} oninput="onPreqItem(${i}, 'reason', this.value)"></td>
+                <td><input type="number" class="form-control preq-in" min="0" step="0.01" value="${it.price === '' || it.price == null ? '' : it.price}" ${ro} oninput="onPreqItem(${i}, 'price', this.value)"></td>
+                <td style="text-align:center; font-weight:800; white-space:nowrap;" id="preq-line-${i}"></td>
+                <td class="admin-only" style="text-align:center;"><button type="button" class="cg-x" title="${t.del}" onclick="removePreqItem(${i})">✖</button></td>
+            </tr>`).join('');
+        ed.innerHTML = `
+            ${d.id ? `<div class="elec-due">${escHtml(t.editing(d.no))}</div>` : ''}
+            <div class="preq-grid">
+                <fieldset class="preq-box"><legend>${t.from}</legend>
+                    <label class="elec-field">${t.employee}${inp('fromName', d.fromName)}</label>
+                    <label class="elec-field">${t.position}${inp('fromPos', d.fromPos)}</label>
+                </fieldset>
+                <fieldset class="preq-box"><legend>${t.reqFrom}</legend>
+                    <label class="elec-field">${t.reqFrom}${inp('toName', d.toName)}</label>
+                    <label class="elec-field">${t.position}${inp('toPos', d.toPos)}</label>
+                </fieldset>
+                <fieldset class="preq-box"><legend>${t.orderBox}</legend>
+                    <label class="elec-field">${t.orderNo}<input type="number" class="form-control" min="1" value="${escHtml(d.no)}" ${ro} oninput="onPreqField('no', this.value)"></label>
+                    <label class="elec-field">${t.date}<input type="date" class="form-control" value="${escHtml(d.date)}" ${ro} onchange="onPreqField('date', this.value)"></label>
+                    <label class="elec-field">${t.delivery}${inp('delivery', d.delivery)}</label>
+                </fieldset>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table cg-sheet preq-table">
+                    <thead><tr>
+                        <th style="text-align:center; width:48px;">${t.item}</th>
+                        <th style="text-align:center; width:120px;">${t.qty}</th>
+                        <th>${t.desc}</th>
+                        <th>${t.reason}</th>
+                        <th style="text-align:center; width:140px;">${t.price}</th>
+                        <th style="text-align:center; width:150px;">${t.total}</th>
+                        <th class="admin-only" style="width:40px;"></th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+            <div class="admin-only"><button type="button" class="btn btn-secondary btn-sm" onclick="addPreqItem()">${t.addItem}</button></div>
+            <div class="elec-summary"><div class="elec-final"><span>${t.grand}</span><b id="preq-grand"></b></div></div>`;
+    }
+    refreshPreqTotals();
+    renderPurchaseReqHistory();
+}
+function refreshPreqTotals() {
+    const d = preqDraft(), t = preqT();
+    d.items.forEach((it, i) => { const c = document.getElementById(`preq-line-${i}`); if (c) c.textContent = preqLineTotal(it) ? `${elecMoney2(preqLineTotal(it))} ${t.cur}` : '—'; });
+    const g = document.getElementById('preq-grand');
+    if (g) g.textContent = `${elecMoney2(preqGrand(d))} ${t.cur}`;
+}
+function onPreqField(field, val) { if (currentUserRole === 'viewer') return; preqDraft()[field] = val; preqSaveLocal(); }
+function onPreqItem(i, field, val) {
+    if (currentUserRole === 'viewer') return;
+    const it = preqDraft().items[i];
+    if (!it) return;
+    it[field] = (field === 'qty' || field === 'price') ? (val === '' ? '' : Number(val)) : val;
+    preqSaveLocal();
+    refreshPreqTotals();
+}
+function addPreqItem() { preqDraft().items.push(preqEmptyItem()); preqSaveLocal(); renderPurchaseReqView(); }
+function removePreqItem(i) {
+    const d = preqDraft();
+    d.items.splice(i, 1);
+    if (!d.items.length) d.items.push(preqEmptyItem());
+    preqSaveLocal(); renderPurchaseReqView();
+}
+function newPurchaseReq() { purchaseReqs.draft = preqBlank(); preqSaveLocal(); renderPurchaseReqView(); }
+function savePurchaseReq() {
+    if (currentUserRole === 'viewer') return;
+    const t = preqT(), d = preqDraft();
+    const items = preqFilled(d);
+    if (!items.length) { showToast(t.empty, 'warning'); return; }
+    const rec = JSON.parse(JSON.stringify(d));
+    rec.items = items.map(it => ({ ...it, reason: String(it.reason || '').trim() || t.reasonDefault }));
+    rec.total = preqGrand(rec);
+    if (!rec.id) rec.id = Date.now();
+    purchaseReqs.history = (purchaseReqs.history || []).filter(h => h.id !== rec.id);
+    purchaseReqs.history.unshift(rec);
+    purchaseReqs.history.sort((a, b) => (Number(b.no) || 0) - (Number(a.no) || 0));
+    purchaseReqs.draft = JSON.parse(JSON.stringify(rec));
+    persistState();
+    showToast(t.saved, 'success');
+}
+function openPurchaseReq(id) {
+    const h = (purchaseReqs.history || []).find(x => x.id === id);
+    if (!h) return;
+    purchaseReqs.draft = JSON.parse(JSON.stringify(h));
+    preqSaveLocal();
+    renderPurchaseReqView();
+    document.getElementById('pane-preq').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function deletePurchaseReq(id) {
+    if (currentUserRole === 'viewer') return;
+    const t = preqT();
+    const h = (purchaseReqs.history || []).find(x => x.id === id);
+    if (!h || !confirm(t.delAsk(h.no))) return;
+    purchaseReqs.history = purchaseReqs.history.filter(x => x.id !== id);
+    if (purchaseReqs.draft && purchaseReqs.draft.id === id) purchaseReqs.draft.id = null;
+    persistState();
+}
+function renderPurchaseReqHistory() {
+    const tb = document.getElementById('preq-history');
+    const th = document.getElementById('preq-history-head');
+    if (!tb) return;
+    const t = preqT();
+    if (th) th.innerHTML = `<tr><th style="text-align:center;">${t.orderNo}</th><th style="text-align:center;">${t.date}</th><th>${t.employee}</th><th>${t.reqFrom}</th><th style="text-align:center;">${t.items}</th><th style="text-align:center;">${t.total}</th><th></th></tr>`;
+    const list = purchaseReqs.history || [];
+    const cur = purchaseReqs.draft && purchaseReqs.draft.id;
+    tb.innerHTML = list.length ? list.map(h => `<tr class="cg-sheet-row ${cur === h.id ? 'elec-active' : ''}" onclick="openPurchaseReq(${h.id})">
+            <td style="text-align:center; font-weight:800;">${escHtml(h.no)}</td>
+            <td style="text-align:center;">${escHtml(h.date)}</td>
+            <td>${escHtml(h.fromName)}${h.fromPos ? `<div class="dept-sub">${escHtml(h.fromPos)}</div>` : ''}</td>
+            <td>${escHtml(h.toName)}${h.toPos ? `<div class="dept-sub">${escHtml(h.toPos)}</div>` : ''}</td>
+            <td style="text-align:center;">${(h.items || []).length}</td>
+            <td style="text-align:center; font-weight:800; white-space:nowrap;">${elecMoney2(h.total != null ? h.total : preqGrand(h))} ${t.cur}</td>
+            <td style="white-space:nowrap; text-align:center;" onclick="event.stopPropagation();">
+                <button type="button" class="btn cg-dl btn-sm" onclick="printPurchaseReq(${h.id})"><span><b class="cg-dl-arrow">⬇</b> PDF</span></button>
+                <button type="button" class="btn btn-sm btn-danger-outline admin-only" onclick="deletePurchaseReq(${h.id})">${t.del}</button>
+            </td>
+        </tr>`).join('') : `<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 1rem;">${t.none}</td></tr>`;
+}
+
+// PDF: logo at the top on the reading-start side, dominant over the title (brand guide p.12),
+// light brand ink, cream header row, thin gold rules
+function printPurchaseReq(id) {
+    const printArea = document.getElementById('official-print-viewport');
+    if (!printArea) return;
+    const isAr = currentLang !== 'en';
+    const t = preqT();
+    let o = preqDraft();
+    if (id) { const h = (purchaseReqs.history || []).find(x => x.id === id); if (h) o = h; }
+    const items = preqFilled(o);
+    const minRows = Math.max(items.length, 7); // the paper form keeps empty lines to write in
+    let rows = '';
+    for (let i = 0; i < minRows; i++) {
+        const it = items[i];
+        rows += it ? `<tr>
+                <td class="pc">${i + 1}</td>
+                <td class="pc en">${elecMoney(it.qty)}</td>
+                <td>${escHtml(it.desc)}</td>
+                <td>${escHtml(String(it.reason || '').trim() || t.reasonDefault)}</td>
+                <td class="pc en">${it.price === '' || it.price == null ? '' : `${elecMoney2(it.price)} ${t.cur}`}</td>
+                <td class="pc en strong">${preqLineTotal(it) ? `${elecMoney2(preqLineTotal(it))} ${t.cur}` : ''}</td>
+            </tr>` : `<tr class="blank"><td class="pc">&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>`;
+    }
+    const sigBox = title => `<div class="preq-sig">
+            <div class="preq-sig-title">${title}</div>
+            <div class="preq-sig-line"><span>${t.date}</span><i></i></div>
+            <div class="preq-sig-line"><span>${t.signature}</span><i></i></div>
+            <div class="preq-sig-line"><span>${t.note}</span><i></i></div>
+        </div>`;
+    const party = (title, nameLbl, name, pos) => `<div class="preq-party">
+            <div class="preq-party-title">${title}</div>
+            <div><span>${nameLbl}</span><b>${escHtml(name) || '&nbsp;'}</b></div>
+            <div><span>${t.position}</span><b>${escHtml(pos) || '&nbsp;'}</b></div>
+        </div>`;
+    printArea.innerHTML = `
+        <div class="voucher-print-container preq-print" dir="${isAr ? 'rtl' : 'ltr'}" lang="${isAr ? 'ar' : 'en'}">
+            <div class="preq-head">
+                <img src="${getPrintLogoSrc()}" alt="المجموعة الإستشارية | Consultancy Group">
+                <div class="preq-head-text">
+                    <div class="preq-doc">${t.doc}</div>
+                    <div class="preq-dept">${t.dept}</div>
+                </div>
+            </div>
+            <div class="preq-parties">
+                ${party(t.from, t.employee, o.fromName, o.fromPos)}
+                ${party(t.reqFrom, t.reqFrom, o.toName, o.toPos)}
+            </div>
+            <div class="elec-meta preq-meta">
+                <div><span>${t.orderNo}</span><b class="en">${escHtml(o.no)}</b></div>
+                <div><span>${t.delivery}</span><b>${escHtml(o.delivery) || '&nbsp;'}</b></div>
+                <div><span>${t.date}</span><b class="en">${escHtml(o.date)}</b></div>
+            </div>
+            <table class="preq-print-table">
+                <thead><tr>
+                    <th class="pc" style="width:6%;">${t.item}</th>
+                    <th class="pc" style="width:12%;">${t.qty}</th>
+                    <th style="width:32%;">${t.desc}</th>
+                    <th style="width:16%;">${t.reason}</th>
+                    <th class="pc" style="width:16%;">${t.price}</th>
+                    <th class="pc" style="width:18%;">${t.total}</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+                <tfoot><tr class="final"><td colspan="5">${t.grand}</td><td class="pc en">${elecMoney2(preqGrand({ items }))} ${t.cur}</td></tr></tfoot>
+            </table>
+            <div class="preq-sigs">${sigBox(t.director)}${sigBox(t.approver)}</div>
         </div>`;
     safeWindowPrint();
 }
