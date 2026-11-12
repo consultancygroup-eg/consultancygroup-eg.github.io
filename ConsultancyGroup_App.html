@@ -7372,6 +7372,7 @@ function initApp() {
 
     // Set today's date in forms (and keep it on today when the program stays open past midnight)
     refreshIssueDateToToday(true);
+    if (fixMisdatedNov11Issues()) { try { localStorage.setItem('buffet_v9_trans', JSON.stringify(transactions)); } catch (e) {} }
     setInterval(() => refreshIssueDateToToday(false), 60000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshIssueDateToToday(false); });
     window.addEventListener('focus', () => refreshIssueDateToToday(false));
@@ -7928,6 +7929,22 @@ function calculateTerminalSummary() {
 
     if (itemsCountEl) itemsCountEl.textContent = totalItemsSelected;
     if (piecesCountEl) piecesCountEl.textContent = totalPieces;
+}
+
+// One-time correction (approved by the facilities manager, 12 Nov 2026): these issues were recorded on the
+// morning of 11 Nov (floors 4, 5, 6) while the program had been open since the 10th, so they were saved
+// as 10 Nov. Only these exact entries move, and only while they still say 10 Nov.
+const MISDATED_NOV11_IDS = new Set([
+    1794381666036, 1794381666037, 1794381666050, 1794381666051, 1794381915741,   // floor 6
+    1794382264156, 1794382264157, 1794382278498, 1794382278499,                  // floor 5
+    1794383393465, 1794383393466, 1794383393479, 1794383393489                   // floor 4
+]);
+function fixMisdatedNov11Issues() {
+    let changed = false;
+    (transactions || []).forEach(t => {
+        if (MISDATED_NOV11_IDS.has(Number(t.id)) && t.date === '2026-11-10') { t.date = '2026-11-11'; changed = true; }
+    });
+    return changed;
 }
 
 // Today's date on this computer's clock (toISOString() is UTC: between 00:00 and 02:00 Cairo it gave yesterday)
@@ -11706,6 +11723,7 @@ function connectToFirebase(config, wsId) {
 
                 renderAllWhenNotTyping();
                 isSyncingFromCloud = false;
+                if (fixMisdatedNov11Issues()) persistState();
 
                 if (needsV2CloudPush) {
                     syncToCloud();
