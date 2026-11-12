@@ -16890,55 +16890,56 @@ function printDeptsReport(opts) {
         return;
     }
 
-    // Floor(s): offices in the main table (same item columns on every row), the buffet in its own table below
+    // Floor(s): same layout as the program and the Excel — one row per item (required · current · to buy),
+    // department name and agreed offices beside its items; floor total and asset comparison under each floor; buffet in its own table
     const buffetList = list.filter(isBuffetArea);
     list = list.filter(d => !isBuffetArea(d));
-    const cols = deptItemColumns(list);
-    const N = 3 + cols.length;
-    const cs = 'text-align:center; font-size:0.74rem !important; white-space:nowrap;';
-    const cellTxt = (c) => {
-        if (!c || (!c.need && !c.counted)) return '—';
-        if (!c.need) return `<b style="font-size:0.9rem;">${c.have}</b><br><span style="font-size:0.64rem; color:#8a8b8c;">الحالي</span>`;
-        const num = c.counted ? c.have : '؟';
-        const sub = c.short ? `من ${c.need} · ناقص ${c.short}` : (c.counted ? `من ${c.need} ✓` : `المفروض ${c.need}`);
-        return `<b style="font-size:0.9rem;">${num}</b><br><span style="font-size:0.64rem; color:#8a8b8c;">${sub}</span>`;
+    const c = 'text-align:center;';
+    const itemRows = (d, withOffices, nameExtra) => {
+        const items = (d.items || []).filter(it => it.name);
+        const n = Math.max(items.length, 1);
+        const lead = `<td rowspan="${n}" style="text-align:right !important; vertical-align:top; font-weight:700; border-top:1.5px solid #e8e0cb;">${escHtml(d.name)}${nameExtra || ''}${d.group ? `<br><small style="font-weight:400; color:#8a8b8c;">${currentLang === 'en' ? 'Under: ' : 'تابع: '}${escHtml(d.group)}</small>` : ''}${d.notes ? `<br><small style="font-weight:400; color:#8a8b8c;">${escHtml(d.notes)}</small>` : ''}</td>${withOffices ? `<td rowspan="${n}" style="${c} font-weight:700; border-top:1.5px solid #e8e0cb;">${Number(d.offices) || '—'}</td>` : ''}`;
+        if (!items.length) return `<tr>${lead}<td colspan="4" style="${c} color:#8a8b8c;">—</td></tr>`;
+        return items.map((it, k) => {
+            const h = deptItemHaveInfo(d, it), s = deptItemShort(d, it);
+            const top = k === 0 ? ' border-top:1.5px solid #e8e0cb;' : '';
+            return `<tr>${k === 0 ? lead : ''}<td style="text-align:right !important;${top}">${escHtml(it.name)}</td><td style="${c}${top}">${deptItemNeed(d, it)}</td><td style="${c}${top}">${h ? h.have : '؟'}</td><td style="${c}${top}${s ? ' color:#b3261e; font-weight:700;' : ''}">${s === null ? '—' : s}</td></tr>`;
+        }).join('');
     };
+    const totRow = (label, ds, withOffices, offices) => {
+        const t = deptListTotals(ds);
+        return `<tr><td style="text-align:right !important; font-weight:700; background:#fef2ce;">${label}</td>${withOffices ? `<td style="${c} font-weight:700; background:#fef2ce;">${offices}</td>` : ''}<td style="background:#fef2ce;"></td><td style="${c} font-weight:700; background:#fef2ce;">${t.need}</td><td style="${c} font-weight:700; background:#fef2ce;">${t.have}</td><td style="${c} font-weight:700; background:#fef2ce;${t.short ? ' color:#b3261e;' : ''}">${t.short}</td></tr>`;
+    };
+    const N = 6;
     let body = '';
     floors.forEach(fl => {
         const depts = list.filter(d => d.floor === fl);
         if (!depts.length) return;
         const flOffices = depts.reduce((s, d) => s + (Number(d.offices) || 0), 0);
-        body += `<tr><td colspan="${N}" style="text-align:right !important; font-weight:700; background:#fef2ce;">${fl} — ${depts.length} قسم · ${flOffices} مكتب</td></tr>`;
-        depts.forEach(d => {
-            const buy = deptShortMap(d);
-            body += `<tr><td style="text-align:right !important; font-size:0.78rem !important;">${escHtml(d.name)}${d.notes ? ` <small>(${escHtml(d.notes)})</small>` : ''}</td><td style="${cs} font-size:0.9rem !important; font-weight:700;">${Number(d.offices) || '—'}</td>${cols.map(n => `<td style="${cs}">${cellTxt(deptItemCellData(d, n))}</td>`).join('')}<td style="${cs}">${buy.length ? buy.map(([n, q]) => `${escHtml(n)} ${q}`).join('<br>') : '—'}</td></tr>`;
-        });
+        if (floors.length > 1) body += `<tr><td colspan="${N}" style="text-align:right !important; font-weight:700; color:#94700f; background:#fbf8f1;">${fl} — ${depts.length} قسم · ${flOffices} مكتب</td></tr>`;
+        depts.forEach(d => { body += itemRows(d, true); });
+        body += totRow(`إجمالي ${fl}`, depts, true, flOffices);
+        const cmp = deptAssetCompareHtml(depts, fl);
+        if (cmp) body += `<tr><td colspan="${N}" style="text-align:right !important; font-size:0.72rem !important; color:#55524b;">${cmp.replace(/<\/span><span class="dept-cmp-chip">/g, '</span>   ·   <span>').replace(/class="warn"/g, 'style="color:#b26a00;"').replace(/class="bad"/g, 'style="color:#b3261e;"')}</td></tr>`;
     });
     const buyAll = deptShortMap(null, list);
     const foot = `<tr><th colspan="${N}" style="text-align:right !important;">محتاج يتشترى: ${buyAll.length ? buyAll.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr>`;
-    const hs = 'text-align:center; font-size:0.72rem !important;';
-    const head = `<tr><th style="font-size:0.74rem !important;">القسم / المكتب</th><th style="${hs}">إجمالي المكاتب<br><small>المتفق عليه</small></th>${cols.map(n => `<th style="${hs}">${escHtml(n)}<br><small>الحالي</small></th>`).join('')}<th style="${hs}">محتاج شراء</th></tr>`;
+    const head = `<tr><th style="width:24%;">القسم / المكتب</th><th style="${c} width:12%;">إجمالي المكاتب<br><small>المتفق عليه</small></th><th style="width:22%;">الغرض</th><th style="${c} width:14%;">العدد المطلوب</th><th style="${c} width:14%;">الموجود حالياً</th><th style="${c} width:14%;">محتاج شراء</th></tr>`;
 
-    // Buffet table (own columns), printed under the offices with its own heading
+    // Buffet table (same item rows, no offices column), printed under the offices with its own heading
     let extra = '';
     if (buffetList.length) {
-        const bcols = deptItemColumns(buffetList);
-        const BN = 2 + bcols.length;
         let bbody = '';
         DEPT_FLOORS.forEach(fl => {
-            buffetList.filter(d => d.floor === fl).forEach(d => {
-                const buy = deptShortMap(d);
-                bbody += `<tr><td style="text-align:right !important; font-size:0.78rem !important;">${escHtml(d.name)}${opts.floor || String(d.name).includes(fl) ? '' : ` <small>(${fl})</small>`}</td>${bcols.map(n => `<td style="${cs}">${cellTxt(deptItemCellData(d, n))}</td>`).join('')}<td style="${cs}">${buy.length ? buy.map(([n, q]) => `${escHtml(n)} ${q}`).join('<br>') : '—'}</td></tr>`;
-            });
+            buffetList.filter(d => d.floor === fl).forEach(d => { bbody += itemRows(d, false, opts.floor || String(d.name).includes(fl) ? '' : ` <small>(${fl})</small>`); });
         });
         const bbuy = deptShortMap(null, buffetList);
         extra = `
             <div class="cg-print-section-title">البوفيه</div>
             <table class="print-table cg-fit-table" style="margin-top:4px;">
-                <colgroup><col style="width:${BN > 6 ? 16 : 24}%">${'<col>'.repeat(BN - 1)}</colgroup>
-                <thead><tr><th style="font-size:0.74rem !important;">البوفيه</th>${bcols.map(n => `<th style="${hs}">${escHtml(n)}<br><small>الحالي</small></th>`).join('')}<th style="${hs}">محتاج شراء</th></tr></thead>
+                <thead><tr><th style="width:30%;">البوفيه</th><th style="width:28%;">الغرض</th><th style="${c} width:14%;">العدد المطلوب</th><th style="${c} width:14%;">الموجود حالياً</th><th style="${c} width:14%;">محتاج شراء</th></tr></thead>
                 <tbody>${bbody}</tbody>
-                <tfoot><tr><th colspan="${BN}" style="text-align:right !important;">محتاج يتشترى للبوفيه: ${bbuy.length ? bbuy.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr></tfoot>
+                <tfoot><tr><th colspan="5" style="text-align:right !important;">محتاج يتشترى للبوفيه: ${bbuy.length ? bbuy.map(([n, q]) => `${escHtml(n)} ${q}`).join(' · ') : 'لا يوجد'}</th></tr></tfoot>
             </table>`;
     }
     const subtitle = `${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`;
