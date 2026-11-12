@@ -7810,6 +7810,7 @@ function initApp() {
     // Set today's date in forms (and keep it on today when the program stays open past midnight)
     refreshIssueDateToToday(true);
     if (fixMisdatedNov11Issues()) { try { localStorage.setItem('buffet_v9_trans', JSON.stringify(transactions)); } catch (e) {} }
+    cgInvoicesInit(); // invoice photos: move to device storage and share between devices
     setInterval(() => refreshIssueDateToToday(false), 60000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshIssueDateToToday(false); });
     window.addEventListener('focus', () => refreshIssueDateToToday(false));
@@ -7837,7 +7838,7 @@ function persistState() {
     localStorage.setItem('buffet_v9_furniture', JSON.stringify(furnitureInventory));
     localStorage.setItem('buffet_v9_hq', JSON.stringify(hqInventory));
     localStorage.setItem('buffet_v9_custody', JSON.stringify(custodyTransactions));
-    localStorage.setItem('buffet_v9_custody_invoices', JSON.stringify(custodyInvoicesMap));
+    cgInvoicesOnPersist(); // invoice photos: device storage (IndexedDB) + shared with the other devices
     localStorage.setItem('buffet_v9_po_pricing', JSON.stringify(poPricingMap));
     localStorage.setItem('buffet_v9_supplier_pos', JSON.stringify(supplierPOs));
     localStorage.setItem('buffet_v9_monthly_core', JSON.stringify(monthlyCoreExpenses));
@@ -12087,6 +12088,7 @@ function connectToFirebase(config, wsId) {
         }
 
         cloudDb = firebase.firestore();
+        cgInvoicesStartCloud(); // invoice photos shared between devices
         updateCloudStatusBadge('syncing', 'Online...');
 
         // Real-time listener on the workspace document
@@ -12193,6 +12195,191 @@ function connectToFirebase(config, wsId) {
 // If a change arrives from another device while the user is typing in a field, wait until they leave
 // the field before redrawing, so the cursor isn't kicked out mid-number.
 let deferredCloudRender = false;
+// ==========================================================================
+// INVOICE PHOTOS: device storage (IndexedDB) + sharing between devices (cloud)
+// An invoice attached on one device (phone, work computer, home laptop) appears on the others.
+// - On the device: kept in IndexedDB (much larger than localStorage, which could fill up and stop saving).
+// - In the cloud: one document per custody row in buffet_workspaces/{workspace}/invoices/{rowId},
+//   holding a reduced copy (images ~1600px JPEG, so each fits the 1 MB document limit).
+// - Each invoice carries a version (_v). Higher version wins; a deletion is a document with deleted:true.
+// - Only documents newer than the last one this device has seen are downloaded (no re-download on every start).
+// ==========================================================================
+var CG_INV_DB = 'cg_facilities', CG_INV_STORE = 'kv', CG_INV_KEY = 'custody_invoices';
+var CG_INV_META = 'buffet_v9_inv_sync'; // { synced: {rowId: v}, tombs: {rowId: v}, seen: v }
+var CG_INV_MAX_CHARS = 950000;          // Firestore document limit is 1 MiB
+var cgInvDbP = null, cgInvReady = false, cgInvSnapshot = Object.assign({}, custodyInvoicesMap), cgInvPushTimer = null, cgInvUnsub = null, cgInvPushing = false;
+
+function cgInvMeta() {
+    try { const m = JSON.parse(localStorage.getItem(CG_INV_META) || '{}'); return { synced: m.synced || {}, tombs: m.tombs || {}, seen: Number(m.seen) || 0, tooBig: m.tooBig || {} }; }
+    catch (e) { return { synced: {}, tombs: {}, seen: 0, tooBig: {} }; }
+}
+function cgInvSaveMeta(m) { try { m.seen = Math.max(Number(m.seen) || 0, cgInvMeta().seen); localStorage.setItem(CG_INV_META, JSON.stringify(m)); } catch (e) {} } // "seen" only moves forward
+
+function cgInvDb() {
+    if (cgInvDbP) return cgInvDbP;
+    cgInvDbP = new Promise((resolve, reject) => {
+        try {
+            const req = indexedDB.open(CG_INV_DB, 1);
+            req.onupgradeneeded = () => { req.result.createObjectStore(CG_INV_STORE); };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        } catch (e) { reject(e); }
+    });
+    return cgInvDbP;
+}
+async function cgInvIdbGet() {
+    const db = await cgInvDb();
+    return new Promise((resolve, reject) => { const r = db.transaction(CG_INV_STORE, 'readonly').objectStore(CG_INV_STORE).get(CG_INV_KEY); r.onsuccess = () => resolve(r.result || null); r.onerror = () => reject(r.error); });
+}
+async function cgInvIdbPut(map) {
+    const db = await cgInvDb();
+    return new Promise((resolve, reject) => { const tx = db.transaction(CG_INV_STORE, 'readwrite'); tx.objectStore(CG_INV_STORE).put(map, CG_INV_KEY); tx.oncomplete = () => resolve(true); tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error); });
+}
+
+// Startup: load from IndexedDB, bring over the old localStorage copy once, then free localStorage
+async function cgInvoicesInit() {
+    let legacy = {};
+    try { legacy = JSON.parse(localStorage.getItem('buffet_v9_custody_invoices') || '{}') || {}; } catch (e) { legacy = {}; }
+    try {
+        const stored = (await cgInvIdbGet()) || {};
+        // per invoice keep the newest copy (device storage wins a tie); anything attached during start-up is kept too
+        const merged = Object.assign({}, stored);
+        [legacy, custodyInvoicesMap].forEach(src => Object.keys(src).forEach(k => { const a = merged[k], b = src[k]; if (b && (!a || (Number(b._v) || 0) > (Number(a._v) || 0))) merged[k] = b; }));
+        custodyInvoicesMap = merged;
+        await cgInvIdbPut(custodyInvoicesMap);
+        // verified in IndexedDB → the big localStorage copy can go (it was the main risk of "storage full")
+        const check = await cgInvIdbGet();
+        if (check && Object.keys(check).length >= Object.keys(legacy).length) localStorage.removeItem('buffet_v9_custody_invoices');
+        cgInvReady = true;
+    } catch (e) {
+        console.warn('Invoice storage (IndexedDB) not available, staying on localStorage:', e);
+        cgInvReady = false;
+    }
+    cgInvSnapshot = Object.assign({}, custodyInvoicesMap);
+    if (typeof renderCustodyView === 'function' && document.getElementById('pane-custody')) { try { renderCustodyView(); } catch (e) {} }
+    cgInvSchedulePush(1500);
+}
+
+// Called from persistState(): save on the device and note what changed for the cloud
+function cgInvoicesOnPersist() {
+    if (!cgInvSnapshot) cgInvSnapshot = Object.assign({}, custodyInvoicesMap); // called before this part of the script loaded
+    const meta = cgInvMeta();
+    let changed = false;
+    Object.keys(custodyInvoicesMap).forEach(k => {
+        const e = custodyInvoicesMap[k];
+        if (!e) return;
+        if (cgInvSnapshot[k] !== e) { // a new or replaced invoice on this device
+            if (!e._fromCloud) { e._v = Date.now(); delete meta.tombs[k]; delete meta.tooBig[k]; }
+            delete e._fromCloud;
+            changed = true;
+        }
+    });
+    Object.keys(cgInvSnapshot).forEach(k => {
+        if (!custodyInvoicesMap[k]) { meta.tombs[k] = Date.now(); delete meta.synced[k]; changed = true; } // deleted here
+    });
+    cgInvSnapshot = Object.assign({}, custodyInvoicesMap);
+    if (changed) cgInvSaveMeta(meta);
+    if (cgInvReady) cgInvIdbPut(custodyInvoicesMap).catch(err => console.warn('Invoice save failed:', err));
+    else { try { localStorage.setItem('buffet_v9_custody_invoices', JSON.stringify(custodyInvoicesMap)); } catch (e) { console.warn('Invoice save failed (storage full?):', e); } }
+    if (changed) cgInvSchedulePush(1200);
+}
+
+// Smaller copy for the cloud: images to ≤1600px JPEG; other files (PDF) as they are if they fit
+function cgInvShrink(entry) {
+    return new Promise(resolve => {
+        const url = String(entry.dataUrl || '');
+        const isImg = /^data:image\//.test(url);
+        if (!isImg) return resolve(url.length <= CG_INV_MAX_CHARS ? { dataUrl: url, mimeType: entry.mimeType } : null);
+        if (url.length <= 400000) return resolve({ dataUrl: url, mimeType: entry.mimeType });
+        const img = new Image();
+        img.onload = () => {
+            const tries = [[1600, 0.75], [1400, 0.68], [1200, 0.6], [1000, 0.55]];
+            for (const [max, q] of tries) {
+                const s = Math.min(1, max / Math.max(img.width, img.height));
+                const c = document.createElement('canvas');
+                c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+                const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+                const out = c.toDataURL('image/jpeg', q);
+                if (out.length <= CG_INV_MAX_CHARS) return resolve({ dataUrl: out, mimeType: 'image/jpeg' });
+            }
+            resolve(null);
+        };
+        img.onerror = () => resolve(url.length <= CG_INV_MAX_CHARS ? { dataUrl: url, mimeType: entry.mimeType } : null);
+        img.src = url;
+    });
+}
+
+function cgInvRef() { return cloudDb && cloudWorkspaceId ? cloudDb.collection('buffet_workspaces').doc(cloudWorkspaceId).collection('invoices') : null; }
+function cgInvSchedulePush(ms) { clearTimeout(cgInvPushTimer); cgInvPushTimer = setTimeout(cgInvoicesPush, ms || 1000); }
+
+// Send this device's new/changed/deleted invoices to the cloud
+async function cgInvoicesPush() {
+    const ref = cgInvRef();
+    if (!ref || cgInvPushing || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
+    cgInvPushing = true;
+    let failed = false, skipped = 0;
+    try {
+        const meta = cgInvMeta();
+        for (const k of Object.keys(custodyInvoicesMap)) {
+            const e = custodyInvoicesMap[k];
+            if (!e || !e.dataUrl) continue;
+            if (!e._v) e._v = 1; // invoices from before sharing: oldest version, so any newer copy wins
+            if (meta.synced[k] === e._v || meta.tooBig[k] === e._v) continue;
+            const small = await cgInvShrink(e);
+            if (!small) { meta.tooBig[k] = e._v; skipped++; cgInvSaveMeta(meta); continue; }
+            try {
+                await ref.doc(String(k)).set({ name: e.name || '', originalName: e.originalName || '', mimeType: small.mimeType || 'image/jpeg', dataUrl: small.dataUrl, savedAt: e.savedAt || '', v: e._v, deleted: false });
+                meta.synced[k] = e._v; cgInvSaveMeta(meta);
+            } catch (err) { failed = true; console.warn('Invoice upload failed:', k, err); break; }
+        }
+        if (!failed) for (const k of Object.keys(meta.tombs)) {
+            if (custodyInvoicesMap[k]) { delete meta.tombs[k]; continue; }
+            try { await ref.doc(String(k)).set({ deleted: true, v: meta.tombs[k], dataUrl: '' }); delete meta.tombs[k]; cgInvSaveMeta(meta); }
+            catch (err) { failed = true; console.warn('Invoice delete sync failed:', k, err); break; }
+        }
+        if (cgInvReady) cgInvIdbPut(custodyInvoicesMap).catch(() => {});
+    } finally { cgInvPushing = false; }
+    if (skipped) showToast(currentLang === 'ar' ? `فيه ${skipped} فاتورة حجمها كبير جداً، فضلت على الجهاز ده بس` : `${skipped} invoice file(s) too large to share; kept on this device only`, 'warning');
+    if (failed) { showToast(currentLang === 'ar' ? 'تعذّر رفع صورة فاتورة دلوقتي، هتترفع لوحدها لما النت يرجع' : 'Could not upload an invoice now; it will retry automatically', 'warning'); cgInvSchedulePush(120000); }
+}
+
+// Listen for invoices added/changed/deleted on other devices (only newer than what this device has seen)
+function cgInvoicesStartCloud() {
+    const ref = cgInvRef();
+    if (!ref) return;
+    if (cgInvUnsub) cgInvUnsub();
+    const since = Math.max(0, cgInvMeta().seen - 86400000); // a day of margin for devices whose clock is a little off
+    cgInvUnsub = ref.where('v', '>', since).onSnapshot(snap => {
+        const meta = cgInvMeta();
+        let changed = false;
+        snap.docChanges().forEach(ch => {
+            if (ch.type === 'removed') return;
+            const d = ch.doc.data() || {}, k = ch.doc.id, v = Number(d.v) || 0;
+            if (v > meta.seen) meta.seen = v;
+            const local = custodyInvoicesMap[k];
+            if (d.deleted) {
+                if (local && (Number(local._v) || 0) <= v) { delete custodyInvoicesMap[k]; changed = true; }
+                delete meta.synced[k];
+                return;
+            }
+            if (!local || (Number(local._v) || 0) < v) {
+                custodyInvoicesMap[k] = { name: d.name || '', originalName: d.originalName || '', mimeType: d.mimeType || 'image/jpeg', dataUrl: d.dataUrl || '', savedAt: d.savedAt || '', _v: v };
+                meta.synced[k] = v;
+                changed = true;
+            } else if ((Number(local._v) || 0) === v) meta.synced[k] = v;
+        });
+        cgInvSaveMeta(meta);
+        if (changed) {
+            cgInvSnapshot = Object.assign({}, custodyInvoicesMap); // came from the cloud: not a local change
+            if (cgInvReady) cgInvIdbPut(custodyInvoicesMap).catch(() => {});
+            else { try { localStorage.setItem('buffet_v9_custody_invoices', JSON.stringify(custodyInvoicesMap)); } catch (e) {} }
+            if (typeof renderAllWhenNotTyping === 'function') renderAllWhenNotTyping();
+        }
+    }, err => console.warn('Invoice listener error:', err));
+    cgInvSchedulePush(2000);
+}
+window.addEventListener('online', () => cgInvSchedulePush(1500));
+
 function renderAllWhenNotTyping() {
     const el = document.activeElement;
     const typing = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
