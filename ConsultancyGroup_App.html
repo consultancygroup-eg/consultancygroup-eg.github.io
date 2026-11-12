@@ -7370,10 +7370,11 @@ function initApp() {
         window.lucide.createIcons();
     }
 
-    // Set today's date in forms
-    const today = new Date().toISOString().split('T')[0];
-    const dateInput = document.getElementById('issue-date');
-    if (dateInput) dateInput.value = today;
+    // Set today's date in forms (and keep it on today when the program stays open past midnight)
+    refreshIssueDateToToday(true);
+    setInterval(() => refreshIssueDateToToday(false), 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshIssueDateToToday(false); });
+    window.addEventListener('focus', () => refreshIssueDateToToday(false));
 
     // Attach search and hotkeys
     setupHotkeys();
@@ -7929,7 +7930,26 @@ function calculateTerminalSummary() {
     if (piecesCountEl) piecesCountEl.textContent = totalPieces;
 }
 
+// Today's date on this computer's clock (toISOString() is UTC: between 00:00 and 02:00 Cairo it gave yesterday)
+function localTodayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+// The issue date is filled with today when the program opens. If the program was left open overnight it
+// kept yesterday's date, so the next morning's issues were saved on the previous day (10 → 11 Nov 2026).
+// Now it moves to the new day by itself, unless the user picked a different date on purpose.
+function refreshIssueDateToToday(force) {
+    const el = document.getElementById('issue-date');
+    if (!el) return;
+    const today = localTodayStr();
+    if (force || !el.value || el.value === el.dataset.autoDate) {
+        if (el.value !== today) el.value = today;
+        el.dataset.autoDate = today;
+    }
+}
+
 function submitSmartIssue(andPrint = false) {
+    refreshIssueDateToToday(false);
     const dateInput = document.getElementById('issue-date');
     const recipientInput = document.getElementById('issue-recipient');
     const notesInput = document.getElementById('issue-notes');
