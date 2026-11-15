@@ -2971,7 +2971,7 @@ tr.elec-active td { background: var(--primary-light) !important; }
 .preq-print { font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif; color: #55524b; }
 .preq-print .en { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: plaintext; }
 .preq-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 10px; border-bottom: 1px solid #d9aa28; }
-.preq-head img { height: 58px; width: auto; object-fit: contain; display: block; }
+.preq-head img { width: 62mm; height: 14.5mm; display: block; } /* brand logo size: 6.2 × 1.45 cm */
 .preq-head-text { text-align: end; }
 .preq-title { text-align: center; font-weight: 700; color: #3d3a34; margin-top: 10px; }
 .preq-print .preq-title { font-weight: 700 !important; }

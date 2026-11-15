@@ -3492,12 +3492,15 @@ function getPrintLogoSrc() {
     return 'assets/logo_light.png';
 }
 
+// Brand logo size on paper: 6.2 cm wide × 1.45 cm high, in every PDF and Excel file
+// (Excel sizes pictures in screen pixels at 96 per inch: 6.2 cm = 234 px, 1.45 cm = 55 px)
+const CG_LOGO_XL_W = 234, CG_LOGO_XL_H = 55;
 function buildCenteredPrintHeader(reportTitle, itemOrSubDef = '') {
     const isAr = currentLang === 'ar';
     const logoSrc = getPrintLogoSrc();
     return `
         <div class="voucher-header" style="border:none; margin:0; padding:6px 0 0.45rem 0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-            <img src="${logoSrc}" alt="المجموعة الإستشارية | Consultancy Group" style="height:58px; width:auto; object-fit:contain; display:block; margin:4px auto 0.25rem auto;">
+            <img src="${logoSrc}" alt="المجموعة الإستشارية | Consultancy Group" style="width:62mm; height:14.5mm; display:block; margin:4px auto 0.25rem auto;">
             <p style="margin:0 0 0.25rem 0; font-size:0.86rem; font-weight:800; color:#2a2722; text-align:center;">${isAr ? 'إدارة المرافق - مدير المرافق' : 'Facilities Management - Facility Manager'}</p>
             <h3 style="margin:0; font-size:1.12rem; font-weight:900; color:#1f1d19; text-align:center;">${reportTitle}</h3>
             ${itemOrSubDef ? `<p style="margin:0.18rem 0 0 0; font-size:0.82rem; font-weight:700; color:#55524b; text-align:center;">${itemOrSubDef}</p>` : ''}
@@ -10750,7 +10753,7 @@ function exportPurchaseReqExcel(id) {
     sh.rows = []; sh.merges = []; sh.heights = {}; sh.freezeRow = 0; sh.printTitles = 0; sh.ltr = !isAr;
     // header as on the brand letterhead: the logo at the start side (left in English, right in Arabic),
     // the department and position stacked at the other side above the gold line, the title centred under the line
-    sh.image = { col: 0, row: 0, w: 225, h: 54, offX: 4, offY: 8 };
+    sh.image = { col: 0, row: 0, w: CG_LOGO_XL_W, h: CG_LOGO_XL_H, offX: 4, offY: 8 };
     const blank = k => Array(6).fill({ v: '', s: k || 'default' });
     sh.add([...blank().slice(0, 3), { v: isAr ? 'إدارة المرافق' : 'Facilities Management', s: 'docDept' + E }, { v: '', s: 'docDept' + E }, { v: '', s: 'docDept' + E }], 36); sh.merge('D1:F1');
     sh.add([...blank().slice(0, 3), { v: isAr ? 'مدير المرافق' : 'Facility Manager', s: 'docPos' + E }, { v: '', s: 'docPos' + E }, { v: '', s: 'docPos' + E }], 30); sh.merge('D2:F2');
@@ -11081,7 +11084,7 @@ const CGX = (() => {
             freezeRow: HEAD_ROW,
             printTitles: HEAD_ROW,
             landscape: !!landscape,
-            image: { col: 0, row: 0, w: 225, h: 54, offX: 8, offY: 12 }
+            image: { col: 0, row: 0, w: CG_LOGO_XL_W, h: CG_LOGO_XL_H, offX: 8, offY: 12 }
         };
         sh.add = (cells, height) => { sh.rows.push(cells); if (height) sh.heights[sh.rows.length] = height; return sh.rows.length; };
         sh.row = () => sh.rows.length + 1; // the row number the next add() will use
