@@ -2240,7 +2240,8 @@ function handleCycleChange(val) {
 }
 
 // --- RENDERING PIPELINE ---
-function renderAll() {
+function renderAll() { withDeptCalcMemo(renderAllNow); }
+function renderAllNow() {
     updateCycleDropdown();
     renderKPIs();
     renderCharts();
@@ -6078,7 +6079,7 @@ function renderTab(tabId) {
     const fn = TAB_RENDERERS[tabId];
     if (!fn) { renderAll(); return; }
     updateCycleDropdown();
-    fn();
+    withDeptCalcMemo(fn);
     renderAlertCenter();
     const pane = document.getElementById(`pane-${tabId}`);
     if (window.lucide) window.lucide.createIcons(pane ? { root: pane } : undefined);
@@ -6440,10 +6441,14 @@ function connectToFirebase(config, wsId) {
         // Real-time listener on the workspace document
         if (cloudUnsubscribe) cloudUnsubscribe();
 
-        cloudUnsubscribe = cloudDb.collection('buffet_workspaces').doc(wsId).onSnapshot((doc) => {
+        cgOnCloudSnapshot = (doc) => {
             // Skip the echo of our own unsaved local edits: re-rendering here rebuilt the tables while the
             // user was typing and dropped the focus after the first digit (e.g. typing "13" left only "1").
             if (doc.exists && doc.metadata && doc.metadata.hasPendingWrites) return;
+            // While this device is still sending a change, a copy from the cloud is older than what is on screen:
+            // applying it put back e.g. the old department order after a quick second ▲ press (so ▲ needed 3 presses).
+            // It is read again once the sending is done.
+            if (doc.exists && (cgSyncRunning || cgSyncAgain)) { cgSnapshotSkipped = true; return; }
             if (doc.exists) {
                 const cloudData = doc.data();
 
@@ -6527,7 +6532,8 @@ function connectToFirebase(config, wsId) {
                 // If doc doesn't exist yet, seed it with current local data
                 syncToCloud(true);
             }
-        }, (error) => {
+        };
+        cloudUnsubscribe = cloudDb.collection('buffet_workspaces').doc(wsId).onSnapshot(cgOnCloudSnapshot, (error) => {
             console.error('Firestore listener error:', error);
             updateCloudStatusBadge('offline', 'Offline');
         });
@@ -6838,6 +6844,7 @@ function cgMergeFromCloud(cloudData) {
 }
 
 let cgSyncRunning = false, cgSyncAgain = false;
+let cgOnCloudSnapshot = null, cgSnapshotSkipped = false;
 function syncToCloud(isInitial = false) {
     if (isSyncingFromCloud) return; // Ignore updates triggered by inbound cloud sync
     cgCollectLocalDeletions();
@@ -6905,6 +6912,11 @@ function syncToCloud(isInitial = false) {
     }).then(() => {
         cgSyncRunning = false;
         if (cgSyncAgain) { cgSyncAgain = false; syncToCloud(); }
+        else if (cgSnapshotSkipped && cgOnCloudSnapshot) {
+            // a cloud copy was set aside while sending: read the newest one now (it may hold another device's change)
+            cgSnapshotSkipped = false;
+            ref.get().then(d => cgOnCloudSnapshot(d)).catch(() => {});
+        }
     });
 }
 // Send anything saved while offline as soon as the connection is back
@@ -9596,7 +9608,22 @@ const ASSET_ALIASES = {
     'ترابيزة اجتماعات': ['ترابيزة اجتماعات كبيرة', 'ترابيزة اجتماعات صغيرة'],
     'ثلاجة': ['ثلاجة بوفيه'], 'كاتل': ['غلاية مياه (كاتل)'], 'غلاية مياه': ['غلاية مياه (كاتل)'], 'شاشة عرض حائط': ['شاشة عرض']
 };
+// While one screen is being drawn the same lookups repeat thousands of times; this memo (on only during a draw) keeps them fast
+let deptCalcMemo = null;
+function withDeptCalcMemo(fn) {
+    if (deptCalcMemo) return fn();
+    deptCalcMemo = { items: new Map(), pools: new Map() };
+    try { return fn(); } finally { deptCalcMemo = null; }
+}
 function assetItemsFor(name) {
+    if (deptCalcMemo) {
+        let r = deptCalcMemo.items.get(name);
+        if (!r) { r = assetItemsForRaw(name); deptCalcMemo.items.set(name, r); }
+        return r;
+    }
+    return assetItemsForRaw(name);
+}
+function assetItemsForRaw(name) {
     const inv = (typeof furnitureInventory !== 'undefined' && Array.isArray(furnitureInventory)) ? furnitureInventory : [];
     const exact = inv.filter(f => f.name === name);
     if (exact.length) return exact;
@@ -9630,23 +9657,57 @@ function deptExplicitHave(x, it) {
     return assetAllocFor(it.name, x.id);
 }
 function assetKey(name) { return assetItemsFor(name).map(f => f.id != null ? f.id : f.name).sort().join('|'); }
+// Desks are one group (staff + manager desks), and so are office chairs (staff + manager chairs):
+// a manager office may list its desk as "مكتب" while the inventory has it under "مكتب مدير".
+// The floor comparison and the automatic count both use these groups, so the two always agree.
+const DEPT_FAM_ASSETS = { desk: ['مكتب', 'مكتب مدير'], chair: ['كرسي', 'كرسي مدير'] };
+function deptCmpFamily(n) {
+    n = String(n || '').trim();
+    return /^مكتب(\s|$)/.test(n) ? 'desk' : (/^كرسي(\s|$)/.test(n) && !/ضيوف|انتظار|بوفيه/.test(n) ? 'chair' : null);
+}
+// Which pool of the asset inventory a department item reads from
+function deptPoolKey(name) { const fam = deptCmpFamily(name); return fam ? 'fam:' + fam : 'a:' + assetKey(name); }
+// Asset items behind a pool on a floor (a group = its basic names + every name of that group typed on the floor)
+function deptPoolAssets(name, floor) {
+    const fam = deptCmpFamily(name);
+    if (!fam) return assetItemsFor(name);
+    const names = new Set(DEPT_FAM_ASSETS[fam]);
+    deptLayout.forEach(x => { if (x.floor === floor) (x.items || []).forEach(y => { if (y.name && deptCmpFamily(y.name) === fam) names.add(y.name); }); });
+    const m = new Map();
+    names.forEach(n => assetItemsFor(n).forEach(f => m.set(f.id != null ? f.id : f.name, f)));
+    return [...m.values()];
+}
+// One pool on one floor: inventory total, what is typed/allocated, and who holds the rest
+function deptPoolInfo(name, floor) {
+    const key = deptPoolKey(name);
+    const mk = floor + '\u0000' + key;
+    if (deptCalcMemo && deptCalcMemo.pools.has(mk)) return deptCalcMemo.pools.get(mk);
+    const assets = deptPoolAssets(name, floor);
+    let info = null;
+    if (assets.length) {
+        const total = assets.reduce((s, f) => s + (Number((f.floors || {})[floor]) || 0), 0);
+        let taken = 0, holder = null;
+        deptLayout.forEach(x => {
+            if (x.floor !== floor) return;
+            (x.items || []).forEach(y => {
+                if (!y.name || deptPoolKey(y.name) !== key) return;
+                const e = deptExplicitHave(x, y);
+                if (e !== null) taken += e; else if (!holder) holder = y;
+            });
+        });
+        info = { total, taken, holder };
+    }
+    if (deptCalcMemo) deptCalcMemo.pools.set(mk, info);
+    return info;
+}
 function deptItemHaveInfo(d, it) {
     if (!isUncounted(it.have)) return { have: Number(it.have) || 0, src: 'manual' };
     const al = assetAllocFor(it.name, d.id);
     if (al !== null) return { have: al, src: 'alloc' };
-    const a = assetFloorCount(it.name, d.floor);
-    if (a === null) return null;
-    const key = assetKey(it.name);
-    // every (department, item) on this floor that reads the same asset item
-    const pairs = [];
-    deptLayout.filter(x => x.floor === d.floor).forEach(x => (x.items || []).forEach(y => { if (y.name && assetKey(y.name) === key) pairs.push({ x, y }); }));
-    let taken = 0;
-    const open = [];
-    pairs.forEach(p => { const e = deptExplicitHave(p.x, p.y); if (e !== null) taken += e; else open.push(p); });
-    if (!open.length) return null;
-    // the holder of the remainder: the first department on the floor (order set with the ▲▼ arrows)
-    const holder = open[0];
-    if (holder.x === d && (holder.y === it || holder.y.name === it.name)) return { have: Math.max(0, a - taken), src: 'asset' };
+    const p = deptPoolInfo(it.name, d.floor);
+    if (!p) return null;
+    // the holder of the remainder: the first place on the floor with that item (order set with the ▲▼ arrows)
+    if (p.holder === it) return { have: Math.max(0, p.total - p.taken), src: 'asset' };
     return null; // the rest wait for the user to move their count
 }
 function deptItemShort(dept, it) {
@@ -9817,9 +9878,9 @@ function deptListTotals(list) {
 function deptAssetCompareHtml(depts, fl) {
     // Desks are compared as one group (staff + manager desks), and so are office chairs (staff + manager chairs):
     // a manager office may list its desk as "مكتب" while the inventory has it under "مكتب مدير".
-    const familyOf = n => /^مكتب(\s|$)/.test(n) ? 'desk' : (/^كرسي(\s|$)/.test(n) && !/ضيوف|انتظار|بوفيه/.test(n) ? 'chair' : null);
+    const familyOf = deptCmpFamily;
     const FAM_LABEL = { desk: 'المكاتب (موظفين + مديرين)', chair: 'الكراسي (موظفين + مديرين)' };
-    const FAM_ASSETS = { desk: ['مكتب', 'مكتب مدير'], chair: ['كرسي', 'كرسي مدير'] };
+    const FAM_ASSETS = DEPT_FAM_ASSETS;
     const groups = [];
     deptItemColumns(depts).forEach(name => {
         const fam = familyOf(name);
@@ -9830,7 +9891,7 @@ function deptAssetCompareHtml(depts, fl) {
     });
     const chips = groups.map(g => {
         const assets = new Map();
-        [...g.names, ...(g.fam ? FAM_ASSETS[g.fam] : [])].forEach(n => assetItemsFor(n).forEach(f => assets.set(f.id != null ? f.id : f.name, f)));
+        (g.fam ? deptPoolAssets(g.names[0], fl) : g.names.flatMap(n => assetItemsFor(n))).forEach(f => assets.set(f.id != null ? f.id : f.name, f));
         if (!assets.size) return '';
         const a = [...assets.values()].reduce((s, f) => s + (Number((f.floors || {})[fl]) || 0), 0);
         let have = 0; depts.forEach(d => g.names.forEach(n => { const c = deptItemCellData(d, n); if (c) have += c.have; }));
@@ -10125,7 +10186,10 @@ function moveDept(id, dir) {
     if (!target) return;
     const a = sameFloor[pos].i, b = target.i;
     [deptLayout[a], deptLayout[b]] = [deptLayout[b], deptLayout[a]];
-    persistState();
+    // Only the departments changed: save that one list and redraw the open section (not the whole program)
+    localStorage.setItem('buffet_v9_depts', JSON.stringify(deptLayout));
+    renderTab(activeTab);
+    syncToCloud();
 }
 
 // ======================================================================
@@ -11440,7 +11504,8 @@ function exportFloorsCompareToCSV() {
 }
 
 // Floors by department: needed = offices × per office, missing = MAX(0, needed − counted), free offices = offices − staff
-function exportDeptsToCSV(only) {
+function exportDeptsToCSV(only) { return withDeptCalcMemo(() => exportDeptsToCSVNow(only)); }
+function exportDeptsToCSVNow(only) {
     const F = CGX.FIRST;
     const sh = CGX.report({
         name: 'الأقسام', title: 'تحليل الطوابق بالأقسام',
@@ -11525,7 +11590,8 @@ function exportHqToCSV() {
 
 // Departments PDF: all floors, one floor ({ floor }) or one department ({ deptId })
 // Columns: department · total offices (agreed) · each office item (current, of required, missing) · what to buy
-function printDeptsReport(opts) {
+function printDeptsReport(opts) { return withDeptCalcMemo(() => printDeptsReportNow(opts)); }
+function printDeptsReportNow(opts) {
     opts = opts || {};
     const isAr = currentLang === 'ar';
     let list = deptLayout;
