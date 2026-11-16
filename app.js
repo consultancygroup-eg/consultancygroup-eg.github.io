@@ -6486,12 +6486,8 @@ function connectToFirebase(config, wsId) {
                 if (cloudData.poPricingMap && typeof cloudData.poPricingMap === 'object') {
                     poPricingMap = cloudData.poPricingMap;
                 }
-                if (cloudData.supplierPOs && Array.isArray(cloudData.supplierPOs)) {
-                    supplierPOs = cloudData.supplierPOs;
-                }
-                if (cloudData.monthlyCoreExpenses && Array.isArray(cloudData.monthlyCoreExpenses)) {
-                    monthlyCoreExpenses = cloudData.monthlyCoreExpenses;
-                }
+                supplierPOs = syncMerged.supplierPOs;
+                monthlyCoreExpenses = syncMerged.monthlyCoreExpenses;
                 if (cloudData.deptLayout && Array.isArray(cloudData.deptLayout)) {
                     deptLayout = cloudData.deptLayout;
                 }
@@ -6758,8 +6754,13 @@ function renderAllWhenNotTyping() {
 // Now both directions MERGE by entry id. A deletion is remembered by id (tombstone), so a deleted entry
 // does not come back, and an edited entry keeps the newest version (updatedAt/savedAt).
 // ---------------------------------------------------------------------------------------------
-const CG_SYNC_LISTS = ['transactions', 'custodyTransactions'];
-function cgListGet(k) { return k === 'transactions' ? transactions : custodyTransactions; }
+// supplierPOs + monthlyCoreExpenses joined on 16 Nov: they were replaced whole by every cloud copy, so an added row,
+// a deletion or an edit (e.g. the supplier name) could flip back to the old copy a moment after saving.
+const CG_SYNC_LISTS = ['transactions', 'custodyTransactions', 'supplierPOs', 'monthlyCoreExpenses'];
+const CG_SYNC_LATE_LISTS = new Set(['supplierPOs', 'monthlyCoreExpenses']);
+function cgListGet(k) { return k === 'transactions' ? transactions : k === 'custodyTransactions' ? custodyTransactions : k === 'supplierPOs' ? supplierPOs : monthlyCoreExpenses; }
+// A device that never synced these lists by id yet takes the cloud copy as it is (an old copy must not bring back deleted rows)
+function cgLateListNew(k) { return CG_SYNC_LATE_LISTS.has(k) && !(cgKnownIds && Array.isArray(cgKnownIds[k])); }
 function cgLoadJson(key, fallback) { try { const v = JSON.parse(localStorage.getItem(key)); return v && typeof v === 'object' ? v : fallback; } catch (e) { return fallback; } }
 // ids deleted anywhere: { transactions: [...], custodyTransactions: [...] }
 let cgTombs = cgLoadJson('buffet_v9_sync_tombs', { transactions: [], custodyTransactions: [] });
@@ -6836,6 +6837,7 @@ function cgMergeFromCloud(cloudData) {
         const cloudList = Array.isArray(cloudData[k]) ? cloudData[k] : null;
         const local = cgListGet(k) || [];
         if (!cloudList) { res[k] = local; if (local.length) res.needsPush = true; return; }
+        if (cgLateListNew(k)) { res[k] = cloudList; return; }
         const merged = cgMergeLists(cloudList, local, cgTombs[k], false);
         if (!cgSameIds(merged, cloudList)) res.needsPush = true;
         res[k] = merged;
@@ -6871,7 +6873,12 @@ function syncToCloud(isInitial = false) {
         });
         mergedLists = { deletedIds: tombs };
         CG_SYNC_LISTS.forEach(k => {
-            mergedLists[k] = cgMergeLists(cgListGet(k) || [], Array.isArray(cloud[k]) ? cloud[k] : [], tombs[k], false);
+            let local = cgListGet(k) || [];
+            if (cgLateListNew(k) && Array.isArray(cloud[k])) {
+                const cloudIds = new Set(cloud[k].map(x => cgIdKey(x && x.id)));
+                local = local.filter(x => cloudIds.has(cgIdKey(x && x.id)));
+            }
+            mergedLists[k] = cgMergeLists(local, Array.isArray(cloud[k]) ? cloud[k] : [], tombs[k], false);
         });
         const payload = {
             authKey: EXPECTED_PASSWORD_HASH,
@@ -6885,8 +6892,8 @@ function syncToCloud(isInitial = false) {
             custodyTransactions: mergedLists.custodyTransactions,
             deletedIds: tombs,
             poPricingMap,
-            supplierPOs,
-            monthlyCoreExpenses,
+            supplierPOs: mergedLists.supplierPOs,
+            monthlyCoreExpenses: mergedLists.monthlyCoreExpenses,
             deptLayout,
             elecData,
             purchaseReqs,
@@ -6896,14 +6903,20 @@ function syncToCloud(isInitial = false) {
         tx.set(ref, payload, { merge: true });
     })).then(() => {
         // entries another device added meanwhile are now here too
-        const gotNew = CG_SYNC_LISTS.some(k => !cgSameIds(mergedLists[k], cgListGet(k)));
+        const gotNew = CG_SYNC_LISTS.some(k => CG_SYNC_LATE_LISTS.has(k)
+            ? JSON.stringify(mergedLists[k]) !== JSON.stringify(cgListGet(k))
+            : !cgSameIds(mergedLists[k], cgListGet(k)));
         transactions = mergedLists.transactions;
         custodyTransactions = mergedLists.custodyTransactions;
+        supplierPOs = mergedLists.supplierPOs;
+        monthlyCoreExpenses = mergedLists.monthlyCoreExpenses;
         cgTombs = mergedLists.deletedIds;
         cgRememberSyncedIds();
         try {
             localStorage.setItem('buffet_v9_trans', JSON.stringify(transactions));
             localStorage.setItem('buffet_v9_custody', JSON.stringify(custodyTransactions));
+            localStorage.setItem('buffet_v9_supplier_pos', JSON.stringify(supplierPOs));
+            localStorage.setItem('buffet_v9_monthly_core', JSON.stringify(monthlyCoreExpenses));
         } catch (e) {}
         cgSetDirty(false);
         updateCloudStatusBadge('online', 'Online');
@@ -9349,7 +9362,7 @@ function saveSupplierPOItem() {
         Object.assign(existing, { date, item, supplier, qty, unitPrice, total, scheme, paid, remaining, notes, updatedAt });
         target = existing;
     } else {
-        const nextId = supplierPOs.length > 0 ? Math.max(...supplierPOs.map(p => p.id)) + 1 : 501;
+        const nextId = Math.max(Date.now(), ...supplierPOs.map(p => Number(p.id) + 1 || 0));
         target = { id: nextId, date, item, supplier, qty, unitPrice, total, scheme, paid, remaining, notes, updatedAt };
         supplierPOs.push(target);
     }
@@ -9518,13 +9531,15 @@ function updateMonthlyCoreField(id, field, val) {
     const item = monthlyCoreExpenses.find(e => e.id === id);
     if (!item) return;
     item[field] = field === 'amount' ? (Number(val) || 0) : String(val || '').trim();
+    item.updatedAt = new Date().toISOString();
     persistState();
 }
 
 function addMonthlyCoreExpenseRow() {
     if (currentUserRole === 'viewer') return;
-    const nextId = monthlyCoreExpenses.length > 0 ? Math.max(...monthlyCoreExpenses.map(e => e.id)) + 1 : 601;
-    monthlyCoreExpenses.push({ id: nextId, title: 'بند مصروفات شهرية جديد', amount: 0, notes: 'ثابت شهرياً' });
+    // time-based id: two devices adding a row at once must not get the same id (they would merge into one row)
+    const nextId = Math.max(Date.now(), ...monthlyCoreExpenses.map(e => Number(e.id) + 1 || 0));
+    monthlyCoreExpenses.push({ id: nextId, title: 'بند مصروفات شهرية جديد', amount: 0, notes: 'ثابت شهرياً', updatedAt: new Date().toISOString() });
     persistState();
 }
 
@@ -9541,22 +9556,33 @@ function printMonthlyCoreExpenses() {
     let rowsHtml = '';
     let total = 0;
 
+    // fixed column widths: the item name wraps inside its own column (it used to run over into the amount column),
+    // the amount column is just wide enough for the number, and the notes get the room
+    const mcW = { n: '6%', item: '42%', amt: '17%', notes: '35%' };
+    const mcBase = 'white-space: normal !important; word-break: break-word; overflow-wrap: anywhere; max-width: none !important; min-width: 0 !important; vertical-align: middle !important;';
+    const mcC = {
+        n: `width: ${mcW.n} !important; text-align: center !important; ${mcBase}`,
+        item: `width: ${mcW.item} !important; text-align: start !important; font-size: 0.86rem !important; line-height: 1.35 !important; ${mcBase}`,
+        amt: `width: ${mcW.amt} !important; text-align: center !important; font-weight: 700 !important; white-space: nowrap !important; vertical-align: middle !important;`,
+        notes: `width: ${mcW.notes} !important; text-align: start !important; font-size: 0.82rem !important; line-height: 1.4 !important; ${mcBase}`
+    };
     monthlyCoreExpenses.forEach((e, idx) => {
         const amt = Number(e.amount) || 0;
         total += amt;
         rowsHtml += `
             <tr>
-                <td style="text-align: center !important;">${idx + 1}</td>
-                <td class="print-item-name"><strong>${trText(e.title)}</strong></td>
-                <td style="text-align: center !important; font-weight: 900;">${amt.toLocaleString()} ج.م</td>
-                <td class="print-notes-col">${e.notes || '—'}</td>
+                <td style="${mcC.n}">${idx + 1}</td>
+                <td style="${mcC.item}"><strong>${escHtml(trText(e.title))}</strong></td>
+                <td style="${mcC.amt}">${amt.toLocaleString()} ج.م</td>
+                <td style="${mcC.notes}">${escHtml(e.notes || '—')}</td>
             </tr>
         `;
     });
 
     printArea.innerHTML = `
         <div class="voucher-print-container" dir="${isAr ? 'rtl' : 'ltr'}">
-            <table class="print-table">
+            <table class="print-table" style="table-layout: fixed !important;">
+                <colgroup><col style="width:${mcW.n}"><col style="width:${mcW.item}"><col style="width:${mcW.amt}"><col style="width:${mcW.notes}"></colgroup>
                 <thead>
                     <tr>
                         <th colspan="4" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
@@ -9567,17 +9593,17 @@ function printMonthlyCoreExpenses() {
                         </th>
                     </tr>
                     <tr>
-                        <th>م</th>
-                        <th class="print-item-name">البند / البيان الشهري</th>
-                        <th style="text-align: center !important;">القيمة الشهرية التقديرية</th>
-                        <th class="print-notes-col">ملاحظات</th>
+                        <th style="${mcC.n}">م</th>
+                        <th style="${mcC.item}">البند / البيان الشهري</th>
+                        <th style="${mcC.amt.replace('white-space: nowrap !important;', mcBase)}">القيمة الشهرية</th>
+                        <th style="${mcC.notes}">ملاحظات</th>
                     </tr>
                 </thead>
                 <tbody>${rowsHtml}</tbody>
                 <tfoot>
                     <tr>
-                        <th colspan="2">الإجمالي الشهري</th>
-                        <th style="text-align: center !important; font-weight: 900;">${total.toLocaleString()} ج.م</th>
+                        <th colspan="2" style="text-align: start !important;">الإجمالي الشهري</th>
+                        <th style="${mcC.amt}">${total.toLocaleString()} ج.م</th>
                         <th></th>
                     </tr>
                 </tfoot>
