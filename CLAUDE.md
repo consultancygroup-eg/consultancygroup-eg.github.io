@@ -2,6 +2,9 @@
 
 The user is the facilities manager, not a developer. Reply in Egyptian Arabic, in plain language.
 
+## ⏸ Pending (check first)
+`PENDING_PROJECT_STATUS.md`: the «حركة المستخلصات» feature for the project status program (`consultancygroup-sa`) is on hold. At the start of a session, ask the facilities manager for the accountant's answers to the 3 questions there before anything else.
+
 ## What it is
 A single-page app with no build tooling: `index.html` + `style.css` + `app.js` (about 7.5k lines, Arabic/English).
 Data lives in browser `localStorage` (`buffet_v9_*` keys). After login it also syncs to Firebase Firestore (`initCloudSync` / `syncToCloud` in app.js).
