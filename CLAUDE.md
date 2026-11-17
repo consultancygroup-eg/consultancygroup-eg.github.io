@@ -3,7 +3,7 @@
 The user is the facilities manager, not a developer. Reply in Egyptian Arabic, in plain language.
 
 ## Project status program (`consultancygroup-sa`)
-«حركة المستخلصات» shipped on 17 Nov 2026. Notes and open items are in `PENDING_PROJECT_STATUS.md`.
+Full handover (latest status, how things are stored, how to test safely): `PROJECT_STATUS_HANDOVER.md`. Read it before working on this program.
 - **Where files go:** anything for the project status program is saved in the facilities manager's `C:\Users\adm.001\General` folder. That includes the desktop copy, exports and backups. When sending them a file, tell them to save it there.
 - **The desktop copy** («نسخة سطح المكتب») is `index.html` from `consultancygroup-sa` with `const ADMIN = true;`.
   - It lives in the General folder, and it does **not** update by itself.
