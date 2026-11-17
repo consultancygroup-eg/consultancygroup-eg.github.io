@@ -16,6 +16,8 @@ Shipped to `consultancygroup-eg/consultancygroup-sa` `main` (commit 3c484dc). Li
 - External projects are docs with `stage:'external'`, so they never appear in the 3 project lists. Backup and restore include them automatically.
 
 ## Open
-- The Rajhi Mosque history (64 invoices) has not been entered yet. It is in the mockup artifact https://claude.ai/artifact/8jsaLcEZrAkc1ysRdEjtpU. Ask the facilities manager before writing it to the real Firestore.
+- Done 17 Nov, with the facilities manager's approval: the 64 Rajhi Mosque invoices are written to the real Firestore (doc `cgsa_projects/c2`, row ids x001–x064).
+  - Dates are exactly as in the Excel and as confirmed.
+  - The project now reads invoiced 7,045,605.60 and collected 5,855,464.35. Before, it was 7,045,605 / 5,855,464.
 - Entering all 64 Rajhi invoices gives invoiced 7,045,605.60 and collected 5,855,464.35. Both are the same as the program's current figures, so entering them doesn't change the totals (tested on a fake copy).
 - The contract value is read from the project itself (Rajhi = 6,974,000). The 3,792,000 in the mockup was wrong.
