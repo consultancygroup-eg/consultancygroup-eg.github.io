@@ -2,6 +2,32 @@
 <html lang="ar" dir="rtl" class="theme-gold">
 <head>
     <meta charset="UTF-8">
+    <script>
+    // Desktop copy (opened from the computer as a file, e.g. by BuffetManager): run the newest version from the
+    // live site, so opening the icon or refreshing always shows the latest changes. The data stays on this
+    // computer as before (same file address). No internet: the copy saved on the computer opens (?local=1).
+    (function () {
+        if (location.protocol !== 'file:' || window.__cgLive || /[?&]local=1/.test(location.search)) return;
+        window.__cgLive = true;
+        var here = location.href.split('#')[0].split('?')[0];
+        document.write('<div style="font-family:Tahoma,Arial,sans-serif;text-align:center;margin-top:35vh;color:#94700f;font-size:18px;">جاري فتح آخر نسخة من البرنامج…</div><plaintext style="display:none">');
+        var done = false;
+        function useLocal() { if (done) return; done = true; location.replace(here + '?local=1'); }
+        var ctl = window.AbortController ? new AbortController() : null;
+        setTimeout(function () { if (!done && ctl) ctl.abort(); useLocal(); }, 8000);
+        fetch('https://consultancygroup-eg.github.io/ConsultancyGroup_Web.html?t=' + Date.now(), { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+            .then(function (html) {
+                if (done) return;
+                if (html.indexOf('initApp') < 0) return useLocal();
+                done = true;
+                document.open();
+                document.write(html);
+                document.close();
+            })
+            .catch(useLocal);
+    })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المجموعة الاستشارية - إدارة المرافق | Consultancy Group</title>
     <meta name="apple-mobile-web-app-title" content="المجموعة الاستشارية">
