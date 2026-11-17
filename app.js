@@ -1285,6 +1285,17 @@ const EN_EXACT_MAP = {
     'تاريخ وصول التوريد:': 'Supply Arrival Date:',
     'الرصيد الحالي': 'Current Stock',
     'الكمية الموردة': 'Supplied Qty',
+    'المتعاقد عليه': 'Contracted',
+    'المتاح الآن': 'Available now',
+    'مرحّل من اللي قبلها': 'Carried from previous',
+    'توريد الدورة': 'Cycle supply',
+    'بدأت بـ': 'Started with',
+    'انتهت بـ': 'Ended with',
+    'حركة المخزن في الدورة': 'Stock in cycle',
+    'املأ الكميات المتعاقد عليها': 'Fill contracted quantities',
+    'الرصيد المتعاقد عليه': 'Contracted Qty',
+    'الرصيد المتعاقد عليه (ثابت)': 'Contracted quantity (fixed)',
+    'الرصيد الابتدائي لدورة': 'Opening balance of cycle',
     'تأكيد وإضافة للمخزن': 'Confirm & Add to Stock',
     'تعديل يوم بداية الدورة الشهرية': 'Edit Monthly Cycle Start Day',
     'حدد اليوم المعتاد في الشهر الذي تبدأ منه الدورة (مثال: يوم 19 يعني أن الدورة تبدأ من 19 الشهر وتنتهي يوم 18 من الشهر التالي):': 'Specify the day of the month when the cycle begins (e.g., Day 19 means the cycle runs from the 19th to the 18th of next month):',
@@ -2037,6 +2048,7 @@ const I18N = {
         thItemName: 'اسم الصنف',
         thCategory: 'الفئة',
         thUnit: 'الوحدة',
+        thContract: 'الرصيد المتعاقد عليه',
         thInitial: 'الرصيد الابتدائي',
         thIssued: 'المنصرف بالدورة',
         thRemaining: 'الرصيد المتاح',
@@ -2096,6 +2108,7 @@ const I18N = {
         thItemName: 'Item Name',
         thCategory: 'Category',
         thUnit: 'Unit',
+        thContract: 'Contracted Qty',
         thInitial: 'Initial Stock',
         thIssued: 'Cycle Issued',
         thRemaining: 'Available Stock',
@@ -2199,6 +2212,114 @@ function getCycleTransactions() {
     return transactions.filter(t => getCycleKeyForDate(t.date) === activeCycleKey);
 }
 
+// --- STOCK PER CYCLE (17 Nov 2026) ---
+// Each monthly cycle is separate: opening = carried over (what was left at the end of the previous cycle)
+// + what was supplied in this cycle; issued counts this cycle only; available = opening − issued.
+// Only the leftover moves to the next cycle. Supplies are kept per item (item.supplies: [{id, qty, date}]).
+// item.total = the carried-over balance of the item's first cycle (item.stockSince, 'YYYY-MM' = month the cycle starts;
+// items from before this change start in the Oct/Nov 2026 cycle, whose opening already holds the earlier supplies).
+// A manual opening for a later cycle: item.openings['YYYY-MM'] = carried-over part (replaces the automatic carry).
+const STOCK_BASE_MONTH = '2026-10';
+function cycleIdxOfMonth(ym) { const [y, m] = String(ym || '').split('-').map(Number); return (y && m) ? y * 12 + (m - 1) : NaN; }
+function cycleIdxOfKey(key) { return cycleIdxOfMonth(String(key || '').split(' / ')[0]); }
+function cycleIdxOfDate(d) { return d ? cycleIdxOfKey(getCycleKeyForDate(d)) : NaN; }
+function cycleMonthOfIdx(idx) { return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, '0')}`; }
+function cycleKeyOfIdx(idx) { return getCycleKeyForDate(`${cycleMonthOfIdx(idx)}-${String(Math.min(cycleStartDay + 1, 28)).padStart(2, '0')}`); }
+function stockActiveIdx() {
+    const key = (activeCycleKey && activeCycleKey !== 'ALL' && activeCycleKey !== 'CURRENT') ? activeCycleKey : getCycleKeyForDate(localTodayStr());
+    return cycleIdxOfKey(key);
+}
+function stockBaseIdx(item) { const b = cycleIdxOfMonth(item.stockSince || STOCK_BASE_MONTH); return isNaN(b) ? cycleIdxOfMonth(STOCK_BASE_MONTH) : b; }
+// itemId -> { carry, supplied, opening, issued, available } for a cycle key (default: the cycle on screen)
+function getStockBalances(key) {
+    key = key || activeCycleKey;
+    const all = key === 'ALL';
+    const k = all ? NaN : (key === 'CURRENT' ? cycleIdxOfKey(getCycleKeyForDate(localTodayStr())) : cycleIdxOfKey(key));
+    const issuedBy = new Map(); // cycleIdx -> Map(itemId -> qty)
+    const allIssued = new Map();
+    transactions.forEach(t => {
+        const q = Number(t.qty) || 0;
+        allIssued.set(t.itemId, (allIssued.get(t.itemId) || 0) + q);
+        const i = cycleIdxOfDate(t.date);
+        if (isNaN(i)) return;
+        if (!issuedBy.has(i)) issuedBy.set(i, new Map());
+        const m = issuedBy.get(i);
+        m.set(t.itemId, (m.get(t.itemId) || 0) + q);
+    });
+    const iss = (i, id) => (issuedBy.get(i) && issuedBy.get(i).get(id)) || 0;
+    const out = new Map();
+    inventory.forEach(item => {
+        const base = stockBaseIdx(item);
+        const sup = new Map();
+        let supAll = 0;
+        (item.supplies || []).forEach(s => {
+            const q = Number(s.qty) || 0;
+            supAll += q;
+            const i = cycleIdxOfDate(s.date);
+            if (!isNaN(i)) sup.set(i, (sup.get(i) || 0) + q);
+        });
+        const baseCarry = Math.max(0, Number(item.total) || 0);
+        if (all) {
+            const opening = baseCarry + supAll, issued = allIssued.get(item.id) || 0;
+            out.set(item.id, { carry: baseCarry, supplied: supAll, opening, issued, available: opening - issued });
+            return;
+        }
+        if (isNaN(k) || k < base) {
+            // a cycle from before this item's first cycle: the old way (one opening for everything)
+            const issued = isNaN(k) ? 0 : iss(k, item.id), supplied = sup.get(k) || 0, opening = baseCarry + supplied;
+            out.set(item.id, { carry: baseCarry, supplied, opening, issued, available: opening - issued });
+            return;
+        }
+        const manual = item.openings || {};
+        let carry = baseCarry, row = null;
+        for (let i = base; i <= k; i++) {
+            if (i > base) {
+                const mk = cycleMonthOfIdx(i);
+                carry = manual[mk] !== undefined ? Math.max(0, Number(manual[mk]) || 0) : Math.max(0, row.available);
+            }
+            const supplied = sup.get(i) || 0, issued = iss(i, item.id), opening = carry + supplied;
+            row = { carry, supplied, opening, issued, available: opening - issued };
+        }
+        out.set(item.id, row);
+    });
+    return out;
+}
+// The fixed contracted quantity (e.g. 1200): shown beside the opening; items from before this change start with their old opening
+function itemContractQty(item) { return item.contractQty !== undefined ? (Number(item.contractQty) || 0) : (Number(item.total) || 0); }
+const STOCK_ZERO = { carry: 0, supplied: 0, opening: 0, issued: 0, available: 0 };
+function stockOf(map, item) { return (map && map.get(item.id)) || STOCK_ZERO; }
+// "مرحّل 120 + توريد 1200" under the opening, when the opening is made of both
+function stockOpeningNote(b) {
+    if (!b || !b.supplied) return '';
+    const isAr = currentLang === 'ar';
+    return `<div style="font-size:0.72rem;font-weight:600;color:var(--text-muted);white-space:nowrap;">${isAr ? 'مرحّل' : 'Carried'} ${b.carry} + ${isAr ? 'توريد' : 'Supplied'} ${b.supplied}</div>`;
+}
+// The supplier order of each cycle is separate: quantity and notes are kept per cycle.
+// The Oct/Nov 2026 cycle keeps what was typed before this change (entry.qty / entry.notes).
+function poCycleMonth() { return cycleMonthOfIdx(stockActiveIdx()); }
+function poEntryQty(entry, issued) {
+    const mk = poCycleMonth();
+    if (entry && entry.qtyByCycle && entry.qtyByCycle[mk] !== undefined) return Number(entry.qtyByCycle[mk]) || 0;
+    if (entry && entry.qty !== undefined && mk === STOCK_BASE_MONTH) return Number(entry.qty) || 0;
+    return issued;
+}
+function poEntryHasQty(entry) {
+    const mk = poCycleMonth();
+    return !!entry && ((entry.qtyByCycle && entry.qtyByCycle[mk] !== undefined) || (entry.qty !== undefined && mk === STOCK_BASE_MONTH));
+}
+function poEntryNotes(entry) {
+    const mk = poCycleMonth();
+    if (entry && entry.notesByCycle && entry.notesByCycle[mk] !== undefined) return entry.notesByCycle[mk];
+    if (entry && mk === STOCK_BASE_MONTH) return entry.notes || '';
+    return '';
+}
+function poEntryPrice(itemId) {
+    const key = cycleKeyOfIdx(stockActiveIdx());
+    const e = poPricingMap[itemId] || {};
+    if (e.prices && e.prices[key] !== undefined) return Number(e.prices[key]) || 0;
+    return Number(e.unitPrice) || 0;
+}
+
 function updateCycleDropdown() {
     const cycleSelect = document.getElementById('cycle-dropdown');
     if (!cycleSelect) return;
@@ -2210,6 +2331,7 @@ function updateCycleDropdown() {
     transactions.forEach(t => {
         if (t.date) keys.add(getCycleKeyForDate(t.date));
     });
+    inventory.forEach(it => (it.supplies || []).forEach(sp => { if (sp.date) keys.add(getCycleKeyForDate(sp.date)); }));
 
     const sortedKeys = Array.from(keys).sort().reverse();
 
@@ -2219,7 +2341,9 @@ function updateCycleDropdown() {
         opt.value = k;
         opt.textContent = k === currentCycle 
             ? `${currentLang === 'ar' ? 'الدورة الحالية النشطة' : 'Active Current Cycle'} (${k})`
-            : `${currentLang === 'ar' ? 'دورة سابقة' : 'Past Cycle'} (${k})`;
+            : k > currentCycle
+                ? `${currentLang === 'ar' ? 'الدورة الجاية' : 'Next Cycle'} (${k})`
+                : `${currentLang === 'ar' ? 'دورة سابقة' : 'Past Cycle'} (${k})`;
         cycleSelect.appendChild(opt);
     });
 
@@ -2232,8 +2356,48 @@ function updateCycleDropdown() {
     if (labelBadge) labelBadge.textContent = activeCycleKey;
     const sidebarCycle = document.getElementById('sidebar-cycle-val');
     if (sidebarCycle) sidebarCycle.textContent = activeCycleKey;
+    renderCycleStockSummary(activeCycleKey === currentCycle);
 }
 
+// Under the cycle picker: what the chosen cycle started with, what was issued, and what it ended with
+function renderCycleStockSummary(isCurrent) {
+    const box = document.getElementById('cycle-stock-summary');
+    if (!box) return;
+    if (activeCycleKey === 'ALL' || !inventory.length) { box.innerHTML = ''; return; }
+    const isAr = currentLang === 'ar';
+    const map = getStockBalances();
+    const t = { carry: 0, supplied: 0, opening: 0, issued: 0, available: 0 };
+    inventory.forEach(item => { const b = stockOf(map, item); Object.keys(t).forEach(k => { t[k] += b[k]; }); });
+    const n = v => Number(v).toLocaleString('en-US');
+    const future = activeCycleKey > getCycleKeyForDate(localTodayStr());
+    const endLabel = isCurrent || future ? (isAr ? 'المتاح دلوقتي' : 'Available now') : (isAr ? 'انتهت بـ' : 'Ended with');
+    box.innerHTML = `
+        <span style="font-weight:700;color:var(--text-muted);">${isAr ? 'إجمالي كميات كل الأصناف في الدورة دي:' : 'All items in this cycle:'}</span>
+        <span class="css-chip css-start">${isAr ? 'بدأت بـ' : 'Started with'} <b>${n(t.opening)}</b></span>
+        <span class="css-chip">${isAr ? 'مرحّل' : 'Carried'} <b>${n(t.carry)}</b> + ${isAr ? 'توريد' : 'Supplied'} <b>${n(t.supplied)}</b></span>
+        <span class="css-chip">${isAr ? 'المنصرف' : 'Issued'} <b>${n(t.issued)}</b></span>
+        <span class="css-chip css-start">${endLabel} <b>${n(t.available)}</b></span>
+        <button type="button" onclick="openCycleStockDetails()" class="btn btn-secondary btn-sm">${isAr ? 'تفاصيل كل صنف' : 'Per item'}</button>`;
+}
+function openCycleStockDetails() {
+    const tbody = document.getElementById('cycle-stock-tbody');
+    if (!tbody) return;
+    const isAr = currentLang === 'ar';
+    const map = getStockBalances();
+    const isCurrent = activeCycleKey === getCycleKeyForDate(localTodayStr()) || activeCycleKey > getCycleKeyForDate(localTodayStr());
+    const title = document.getElementById('cycle-stock-title');
+    if (title) title.textContent = `${isAr ? 'حركة المخزن في دورة' : 'Stock in cycle'} ${cycleShortLabel(activeCycleKey)} (${activeCycleKey})`;
+    const endTh = document.getElementById('cycle-stock-end-th');
+    if (endTh) endTh.textContent = isCurrent ? (isAr ? 'المتاح دلوقتي' : 'Available now') : (isAr ? 'انتهت بـ' : 'Ended with');
+    tbody.innerHTML = inventory.map(item => {
+        const b = stockOf(map, item);
+        return `<tr><td style="font-weight:700;">${trText(item.name)}</td><td style="text-align:center;color:var(--text-muted);">${trText(item.unit)}</td>
+            <td style="text-align:center;color:var(--text-muted);">${itemContractQty(item)}</td><td style="text-align:center;">${b.carry}</td><td style="text-align:center;">${b.supplied}</td>
+            <td style="text-align:center;font-weight:800;">${b.opening}</td><td style="text-align:center;font-weight:800;color:var(--warning);">${b.issued}</td>
+            <td style="text-align:center;font-weight:800;color:${b.available <= item.minLimit ? 'var(--danger)' : 'var(--success)'};">${b.available}</td></tr>`;
+    }).join('');
+    openModal('modal-cycle-stock');
+}
 function handleCycleChange(val) {
     activeCycleKey = val;
     renderAll();
@@ -2278,9 +2442,11 @@ function renderKPIs() {
     let totalIssued = 0;
     let shortageCount = 0;
 
+    const stockMap = getStockBalances();
     inventory.forEach(item => {
-        const itemIssued = currentCycleTrans.filter(t => t.itemId === item.id).reduce((sum, t) => sum + Number(t.qty), 0);
-        const rem = item.total - itemIssued;
+        const sb = stockOf(stockMap, item);
+        const itemIssued = sb.issued;
+        const rem = sb.available;
 
         totalStock += rem;
         totalIssued += itemIssued;
@@ -2440,9 +2606,11 @@ function renderDashboardTable() {
     tbody.innerHTML = '';
     const t = I18N[currentLang];
 
+    const stockMap = getStockBalances();
     items.forEach((item, idx) => {
-        const issued = currentCycleTrans.filter(tr => tr.itemId === item.id).reduce((s, tr) => s + Number(tr.qty), 0);
-        const remaining = item.total - issued;
+        const sb = stockOf(stockMap, item);
+        const issued = sb.issued;
+        const remaining = sb.available;
 
         let statusBadge = `<span class="badge badge-success"><i data-lucide="check-circle-2" style="width:12px;height:12px;"></i> ${t.statusAvailable}</span>`;
         if (remaining <= 0) {
@@ -2458,7 +2626,8 @@ function renderDashboardTable() {
             </td>
             <td><span class="badge badge-secondary">${trText(item.cat)}</span></td>
             <td style="text-align: center; color: var(--text-muted);">${trText(item.unit)}</td>
-            <td style="text-align: center; font-weight: 700;">${item.total}</td>
+            <td style="text-align: center; color: var(--text-muted); font-weight: 700;">${itemContractQty(item)}</td>
+            <td style="text-align: center; font-weight: 700;">${sb.opening}${stockOpeningNote(sb)}</td>
             <td style="text-align: center; font-weight: 800; color: var(--warning);">${issued}</td>
             <td style="text-align: center; font-weight: 800; color: ${remaining <= item.minLimit ? 'var(--danger)' : 'var(--success)'};">${remaining}</td>
             <td style="text-align: center;">${statusBadge}</td>
@@ -2488,9 +2657,11 @@ function renderInventoryTable() {
 
     tbody.innerHTML = '';
 
+    const stockMap = getStockBalances();
     items.forEach((item, idx) => {
-        const issued = currentCycleTrans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
-        const remaining = item.total - issued;
+        const sb = stockOf(stockMap, item);
+        const issued = sb.issued;
+        const remaining = sb.available;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -2498,7 +2669,8 @@ function renderInventoryTable() {
             <td style="font-weight: 700;">${trText(item.name)}</td>
             <td><span class="badge badge-secondary">${trText(item.cat)}</span></td>
             <td style="text-align: center; color: var(--text-muted);">${trText(item.unit)}</td>
-            <td style="text-align: center; font-weight: 800;">${item.total}</td>
+            <td style="text-align: center; color: var(--text-muted); font-weight: 700;">${itemContractQty(item)}</td>
+            <td style="text-align: center; font-weight: 800;">${sb.opening}${stockOpeningNote(sb)}</td>
             <td style="text-align: center; font-weight: 800; color: var(--warning);">${issued}</td>
             <td style="text-align: center; font-weight: 800; color: ${remaining <= item.minLimit ? 'var(--danger)' : 'var(--success)'};">${remaining}</td>
             <td style="text-align: center;">${item.minLimit}</td>
@@ -2520,7 +2692,11 @@ function openEditItemModal(id) {
     document.getElementById('ei-name').value = item.name;
     document.getElementById('ei-cat').value = item.cat;
     document.getElementById('ei-unit').value = item.unit;
-    document.getElementById('ei-total').value = item.total;
+    const sb = stockOf(getStockBalances(activeCycleKey === 'ALL' ? 'CURRENT' : activeCycleKey), item);
+    document.getElementById('ei-total').value = sb.opening;
+    document.getElementById('ei-contract').value = itemContractQty(item);
+    const eiCycle = document.getElementById('ei-cycle-label');
+    if (eiCycle) eiCycle.textContent = cycleShortLabel(cycleKeyOfIdx(stockActiveIdx()));
     document.getElementById('ei-min').value = item.minLimit;
     openModal('modal-edit-item');
 }
@@ -2537,7 +2713,16 @@ function saveEditItem() {
     item.name = name;
     item.cat = document.getElementById('ei-cat').value;
     item.unit = unit;
-    item.total = Math.max(0, Number(document.getElementById('ei-total').value) || 0);
+    // the opening of the cycle on screen: the supplied part stays, the carried-over part is set to match
+    const newOpening = Math.max(0, Number(document.getElementById('ei-total').value) || 0);
+    const k = stockActiveIdx();
+    const sb = stockOf(getStockBalances(activeCycleKey === 'ALL' ? 'CURRENT' : activeCycleKey), item);
+    if (newOpening !== sb.opening) {
+        const carry = Math.max(0, newOpening - sb.supplied);
+        if (k <= stockBaseIdx(item)) item.total = carry;
+        else { item.openings = item.openings || {}; item.openings[cycleMonthOfIdx(k)] = carry; }
+    }
+    item.contractQty = Math.max(0, Number(document.getElementById('ei-contract').value) || 0);
     item.minLimit = Math.max(0, Number(document.getElementById('ei-min').value) || 0);
     item.updatedAt = new Date().toISOString();
     persistState();
@@ -2548,13 +2733,15 @@ function printInventoryReport() {
     const isAr = currentLang === 'ar';
     const trans = getCycleTransactions();
     let body = '';
+    const stockMap = getStockBalances();
     inventory.forEach((item, idx) => {
-        const issued = trans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
-        const remaining = item.total - issued;
-        body += `<tr><td style="text-align:center;">${idx + 1}</td><td class="print-item-name" style="text-align:right !important;">${trText(item.name)}</td><td>${trText(item.cat)}</td><td style="text-align:center;">${trText(item.unit)}</td><td style="text-align:center;">${item.total}</td><td style="text-align:center;">${issued}</td><td style="text-align:center;">${remaining}</td><td style="text-align:center;">${item.minLimit}</td></tr>`;
+        const sb = stockOf(stockMap, item);
+        const issued = sb.issued;
+        const remaining = sb.available;
+        body += `<tr><td style="text-align:center;">${idx + 1}</td><td class="print-item-name" style="text-align:right !important;">${trText(item.name)}</td><td>${trText(item.cat)}</td><td style="text-align:center;">${trText(item.unit)}</td><td style="text-align:center;">${itemContractQty(item)}</td><td style="text-align:center;">${sb.opening}</td><td style="text-align:center;">${issued}</td><td style="text-align:center;">${remaining}</td><td style="text-align:center;">${item.minLimit}</td></tr>`;
     });
-    const head = `<tr><th style="text-align:center;">#</th><th>${isAr ? 'اسم الصنف' : 'Item'}</th><th>${isAr ? 'الفئة' : 'Category'}</th><th style="text-align:center;">${isAr ? 'الوحدة' : 'Unit'}</th><th style="text-align:center;">${isAr ? 'إجمالي الوارد' : 'Total in'}</th><th style="text-align:center;">${isAr ? 'المنصرف' : 'Issued'}</th><th style="text-align:center;">${isAr ? 'الرصيد' : 'Balance'}</th><th style="text-align:center;">${isAr ? 'حد الطلب' : 'Min'}</th></tr>`;
-    printCgTable(isAr ? 'كشف المخزن الرئيسي والأرصدة' : 'Main Store Balances', `${isAr ? 'الدورة:' : 'Cycle:'} ${activeCycleKey} | ${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`, 8, head, body, '');
+    const head = `<tr><th style="text-align:center;">#</th><th>${isAr ? 'اسم الصنف' : 'Item'}</th><th>${isAr ? 'الفئة' : 'Category'}</th><th style="text-align:center;">${isAr ? 'الوحدة' : 'Unit'}</th><th style="text-align:center;">${isAr ? 'المتعاقد عليه' : 'Contracted'}</th><th style="text-align:center;">${isAr ? 'الرصيد الابتدائي' : 'Opening'}</th><th style="text-align:center;">${isAr ? 'المنصرف' : 'Issued'}</th><th style="text-align:center;">${isAr ? 'الرصيد' : 'Balance'}</th><th style="text-align:center;">${isAr ? 'حد الطلب' : 'Min'}</th></tr>`;
+    printCgTable(isAr ? 'كشف المخزن الرئيسي والأرصدة' : 'Main Store Balances', `${isAr ? 'الدورة:' : 'Cycle:'} ${activeCycleKey} | ${isAr ? 'تاريخ التقرير:' : 'Date:'} ${getFormattedTodayDate(isAr)}`, 9, head, body, '');
 }
 
 function updateItemField(id, field, value) {
@@ -2606,9 +2793,9 @@ function renderSmartTerminal() {
 
     tbody.innerHTML = '';
 
+    const stockMap = getStockBalances();
     items.forEach((item, idx) => {
-        const issued = currentCycleTrans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
-        const available = item.total - issued;
+        const available = stockOf(stockMap, item).available;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -3299,13 +3486,15 @@ function renderPurchaseOrder() {
     tbody.innerHTML = '';
     let grandTotalOrderCost = 0;
 
+    const stockMap = getStockBalances();
     inventory.forEach((item, idx) => {
-        const issued = currentCycleTrans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
-        const remaining = item.total - issued;
+        const sb = stockOf(stockMap, item);
+        const issued = sb.issued;
+        const remaining = sb.available;
         const savedPo = poPricingMap[item.id] || {};
-        const qtyToOrder = savedPo.qty !== undefined ? Number(savedPo.qty) : issued;
-        const unitPrice = Number(savedPo.unitPrice) || 0;
-        const itemNotes = savedPo.notes || '';
+        const qtyToOrder = poEntryQty(savedPo, issued);
+        const unitPrice = poEntryPrice(item.id);
+        const itemNotes = poEntryNotes(savedPo);
         const lineTotal = +(qtyToOrder * unitPrice).toFixed(2);
         grandTotalOrderCost += lineTotal;
 
@@ -3350,7 +3539,12 @@ function renderPurchaseOrder() {
 function updatePoPricingField(itemId, field, val) {
     if (!poPricingMap[itemId]) poPricingMap[itemId] = {};
     if (field === 'notes') {
-        poPricingMap[itemId].notes = String(val || '').trim();
+        if (!poPricingMap[itemId].notesByCycle) poPricingMap[itemId].notesByCycle = {};
+        poPricingMap[itemId].notesByCycle[poCycleMonth()] = String(val || '').trim();
+    } else if (field === 'qty') {
+        // each cycle has its own order quantity
+        if (!poPricingMap[itemId].qtyByCycle) poPricingMap[itemId].qtyByCycle = {};
+        poPricingMap[itemId].qtyByCycle[poCycleMonth()] = Math.max(0, Number(val) || 0);
     } else {
         poPricingMap[itemId][field] = Math.max(0, Number(val) || 0);
         // Keep each month's purchase price so months can be compared later
@@ -3365,11 +3559,12 @@ function updatePoPricingField(itemId, field, val) {
     // Live recalculate row and grand total without losing focus
     const currentCycleTrans = getCycleTransactions();
     let grandTotal = 0;
+    const stockMap = getStockBalances();
     inventory.forEach(item => {
-        const issued = currentCycleTrans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
+        const issued = stockOf(stockMap, item).issued;
         const entry = poPricingMap[item.id] || {};
-        const q = entry.qty !== undefined ? Number(entry.qty) : issued;
-        const p = Number(entry.unitPrice) || 0;
+        const q = poEntryQty(entry, issued);
+        const p = poEntryPrice(item.id);
         const tot = +(q * p).toFixed(2);
         grandTotal += tot;
         if (item.id === itemId) {
@@ -3603,9 +3798,9 @@ function printPurchaseOrder() {
         const item = inventory.find(i => i.id === itemId);
         if (qty > 0 && item) {
             const entry = poPricingMap[itemId] || {};
-            const unitPrice = Number(entry.unitPrice) || 0;
+            const unitPrice = poEntryPrice(itemId);
             const total = +(qty * unitPrice).toFixed(2);
-            const notes = entry.notes || '';
+            const notes = poEntryNotes(entry);
             grandTotalCost += total;
             orderItems.push({ name: trText(item.name), unit: trText(item.unit), qty, unitPrice, total, notes });
         }
@@ -3687,17 +3882,18 @@ function sharePurchaseOrderWhatsApp() {
     ];
     let grandTotal = 0;
     let idx = 0;
+    const stockMap = getStockBalances();
     inventory.forEach(item => {
-        const issued = currentCycleTrans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
+        const issued = stockOf(stockMap, item).issued;
         const entry = poPricingMap[item.id] || {};
-        const qty = entry.qty !== undefined ? Number(entry.qty) : issued;
+        const qty = poEntryQty(entry, issued);
         if (qty > 0) {
             idx++;
-            const price = Number(entry.unitPrice) || 0;
+            const price = poEntryPrice(item.id);
             const tot = +(qty * price).toFixed(2);
             grandTotal += tot;
             const priceStr = price > 0 ? ` × ${price} ج = *${tot.toLocaleString()} ج.م*` : '';
-            const noteStr = entry.notes ? ` (${entry.notes})` : '';
+            const noteStr = poEntryNotes(entry) ? ` (${poEntryNotes(entry)})` : '';
             lines.push(`${idx}. *${item.name}* — الكمية: ${qty} ${item.unit}${priceStr}${noteStr}`);
         }
     });
@@ -3713,15 +3909,17 @@ function exportPurchaseOrderToCSVLegacy() {
     let csvContent = '\uFEFF';
     csvContent += 'م,اسم الصنف,الوحدة,الرصيد الحالي,المنصرف,الكمية المطلوبة,سعر الوحدة,الإجمالي,ملاحظات\n';
     let grandTotal = 0;
+    const stockMap = getStockBalances();
     inventory.forEach((item, idx) => {
-        const issued = currentCycleTrans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
-        const rem = item.total - issued;
+        const sb = stockOf(stockMap, item);
+        const issued = sb.issued;
+        const rem = sb.available;
         const entry = poPricingMap[item.id] || {};
-        const qty = entry.qty !== undefined ? Number(entry.qty) : issued;
-        const price = Number(entry.unitPrice) || 0;
+        const qty = poEntryQty(entry, issued);
+        const price = poEntryPrice(item.id);
         const tot = +(qty * price).toFixed(2);
         grandTotal += tot;
-        csvContent += `"${idx + 1}","${item.name}","${item.unit}","${rem}","${issued}","${qty}","${price}","${tot}","${entry.notes || ''}"\n`;
+        csvContent += `"${idx + 1}","${item.name}","${item.unit}","${rem}","${issued}","${qty}","${price}","${tot}","${poEntryNotes(entry)}"\n`;
     });
     csvContent += `"","الإجمالي العام","","","","","","${grandTotal}",""\n`;
     downloadCSV(csvContent, `أمر_شراء_المورد_${localTodayStr()}.csv`);
@@ -5582,35 +5780,56 @@ function openSupplyModal() {
     const currentCycleTrans = getCycleTransactions();
     tbody.innerHTML = '';
 
+    const stockMap = getStockBalances('CURRENT');
     inventory.forEach(item => {
-        const issued = currentCycleTrans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
-        const rem = item.total - issued;
+        const rem = stockOf(stockMap, item).available;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${trText(item.name)}</strong></td>
+            <td style="text-align: center; color: var(--text-muted);">${itemContractQty(item)}</td>
             <td style="text-align: center; color: var(--text-muted);">${rem}</td>
             <td style="text-align: center;">
-                <input type="number" min="0" placeholder="0" class="table-input supply-qty-field" data-item-id="${item.id}" style="width: 100px; text-align: center; font-weight: 800; color: var(--success);">
+                <input type="number" min="0" placeholder="0" class="table-input supply-qty-field" data-item-id="${item.id}" data-contract="${itemContractQty(item)}" style="width: 100px; text-align: center; font-weight: 800; color: var(--success);">
             </td>
         `;
         tbody.appendChild(tr);
     });
 
+    updateSupplyCycleNote();
     openModal('modal-supply');
+}
+// Which cycle the supply counts in (by its arrival date)
+function updateSupplyCycleNote() {
+    const el = document.getElementById('supply-cycle-note');
+    const d = (document.getElementById('supply-date') || {}).value || localTodayStr();
+    if (!el) return;
+    const key = getCycleKeyForDate(d);
+    el.textContent = currentLang === 'ar'
+        ? `التوريد ده هيتحسب في دورة: ${cycleShortLabel(key)} (${key}). المتبقي من الدورة اللي قبلها بيترحّل لوحده.`
+        : `This supply counts in the cycle: ${key}. What was left from the cycle before is carried over automatically.`;
+}
+// Fill every item with its contracted quantity
+function fillSupplyWithContract() {
+    document.querySelectorAll('.supply-qty-field').forEach(inp => { const c = Number(inp.dataset.contract) || 0; if (c > 0) inp.value = c; });
 }
 
 function submitStockSupply() {
     const inputs = document.querySelectorAll('.supply-qty-field');
     let addedCount = 0;
 
-    inputs.forEach(inp => {
+    const date = (document.getElementById('supply-date') || {}).value || localTodayStr();
+    const stamp = Date.now();
+    inputs.forEach((inp, n) => {
         const qty = Number(inp.value) || 0;
         const itemId = Number(inp.dataset.itemId);
         if (qty > 0) {
             const item = inventory.find(i => i.id === itemId);
             if (item) {
-                item.total += qty;
+                // kept as a supply of the cycle it arrived in (no longer added to one running total)
+                item.supplies = item.supplies || [];
+                item.supplies.push({ id: stamp + n, qty, date });
+                item.updatedAt = new Date().toISOString();
                 addedCount++;
             }
         }
@@ -5656,8 +5875,10 @@ function saveNewItem() {
         cat,
         unit,
         total,
+        contractQty: total,
         minLimit,
-        date: today
+        date: today,
+        stockSince: cycleMonthOfIdx(cycleIdxOfDate(today))
     });
 
     persistState();
@@ -5691,9 +5912,11 @@ function renderAlertCenter() {
     const currentCycleTrans = getCycleTransactions();
     const shortageItems = [];
 
+    const stockMap = getStockBalances();
     inventory.forEach(item => {
-        const issued = currentCycleTrans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
-        const rem = item.total - issued;
+        const sb = stockOf(stockMap, item);
+        const issued = sb.issued;
+        const rem = sb.available;
         if (rem <= item.minLimit) {
             shortageItems.push({ ...item, remaining: rem, issued });
         }
@@ -5753,12 +5976,14 @@ function exportInventoryToCSVLegacy() {
     let csvContent = '\uFEFF'; // Arabic UTF-8 BOM
     csvContent += 'رقم,اسم الصنف,الفئة,الوحدة,الرصيد الابتدائي,المنصرف خلال الدورة,الرصيد المتبقي,الحد الأدنى,الحالة\n';
 
+    const stockMap = getStockBalances();
     inventory.forEach((item, idx) => {
-        const issued = currentCycleTrans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
-        const rem = item.total - issued;
+        const sb = stockOf(stockMap, item);
+        const issued = sb.issued;
+        const rem = sb.available;
         let status = rem <= 0 ? 'نفذ بالكامل' : (rem <= item.minLimit ? 'قارب على النفاذ' : 'متوفر');
 
-        csvContent += `"${idx + 1}","${item.name}","${item.cat}","${item.unit}","${item.total}","${issued}","${rem}","${item.minLimit}","${status}"\n`;
+        csvContent += `"${idx + 1}","${item.name}","${item.cat}","${item.unit}","${sb.opening}","${issued}","${rem}","${item.minLimit}","${status}"\n`;
     });
 
     downloadCSV(csvContent, `تقرير_مخزن_البوفيه_${localTodayStr()}.csv`);
@@ -11241,15 +11466,17 @@ function exportInventoryToCSV(only) {
     const sh = CGX.report({
         name: 'المخزن الرئيسي', title: 'كشف المخزن الرئيسي والأرصدة',
         subtitle: `الدورة: ${activeCycleKey}   |   تاريخ التقرير: ${cgxToday()}`,
-        columns: [{ h: 'م', w: 6 }, { h: 'اسم الصنف', w: 26 }, { h: 'الفئة', w: 18 }, { h: 'الوحدة', w: 10 }, { h: 'إجمالي الوارد', w: 14 }, { h: 'المنصرف خلال الدورة', w: 16 }, { h: 'الرصيد المتبقي', w: 15 }, { h: 'حد الطلب', w: 11 }, { h: 'الحالة', w: 16 }]
+        columns: [{ h: 'م', w: 6 }, { h: 'اسم الصنف', w: 26 }, { h: 'الفئة', w: 18 }, { h: 'الوحدة', w: 10 }, { h: 'الرصيد الابتدائي', w: 14 }, { h: 'المنصرف خلال الدورة', w: 16 }, { h: 'الرصيد المتبقي', w: 15 }, { h: 'حد الطلب', w: 11 }, { h: 'الحالة', w: 16 }]
     });
+    const stockMap = getStockBalances();
     inventory.forEach((item, i) => {
         const r = F + i;
-        const issued = trans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
-        const rem = item.total - issued;
+        const sb = stockOf(stockMap, item);
+        const issued = sb.issued;
+        const rem = sb.available;
         sh.add([
             { v: i + 1, s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.cat), s: 'text' }, { v: trText(item.unit), s: 'center' },
-            { v: Number(item.total) || 0, s: 'inputInt' }, only ? { f: `'استهلاك الأدوار'!J${r}`, v: issued, s: 'int' } : { v: issued, s: 'int' },
+            { v: sb.opening, s: 'inputInt' }, only ? { f: `'استهلاك الأدوار'!J${r}`, v: issued, s: 'int' } : { v: issued, s: 'int' },
             { f: `E${r}-F${r}`, v: rem, s: 'totInt' }, { v: Number(item.minLimit) || 0, s: 'inputInt' },
             { f: `IF(G${r}<=0,"نفذ بالكامل",IF(G${r}<=H${r},"قارب على النفاذ","متوفر"))`, v: rem <= 0 ? 'نفذ بالكامل' : (rem <= item.minLimit ? 'قارب على النفاذ' : 'متوفر'), s: 'center' }
         ]);
@@ -11311,13 +11538,15 @@ function exportPurchaseOrderToCSV(only) {
         subtitle: `الدورة: ${activeCycleKey}   |   تاريخ التقرير: ${cgxToday()}`,
         columns: [{ h: 'م', w: 6 }, { h: 'اسم الصنف', w: 24 }, { h: 'الوحدة', w: 10 }, { h: 'الرصيد الحالي', w: 13 }, { h: 'المنصرف', w: 11 }, { h: 'الكمية المطلوبة', w: 15 }, { h: 'سعر الوحدة', w: 13 }, { h: 'الإجمالي', w: 15 }, { h: 'ملاحظات', w: 22 }]
     });
+    const stockMap = getStockBalances();
     inventory.forEach((item, i) => {
         const r = F + i;
-        const issued = trans.filter(t => t.itemId === item.id).reduce((s, t) => s + Number(t.qty), 0);
+        const sb = stockOf(stockMap, item);
+        const issued = sb.issued;
         const e = poPricingMap[item.id] || {};
-        const qty = e.qty !== undefined ? Number(e.qty) : issued;
-        const price = Number(e.unitPrice) || 0;
-        sh.add([{ v: i + 1, s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.unit), s: 'center' }, only ? { f: `'المخزن الرئيسي'!G${r}`, v: item.total - issued, s: 'int' } : { v: item.total - issued, s: 'int' }, only ? { f: `'استهلاك الأدوار'!J${r}`, v: issued, s: 'int' } : { v: issued, s: 'int' }, (only && e.qty === undefined) ? { f: `E${r}`, v: qty, s: 'inputInt' } : { v: qty, s: 'inputInt' }, { v: price, s: 'input' }, { f: `F${r}*G${r}`, v: +(qty * price).toFixed(2), s: 'gold' }, { v: e.notes || '', s: 'text' }]);
+        const qty = poEntryQty(e, issued);
+        const price = poEntryPrice(item.id);
+        sh.add([{ v: i + 1, s: 'center' }, { v: trText(item.name), s: 'textBold' }, { v: trText(item.unit), s: 'center' }, only ? { f: `'المخزن الرئيسي'!G${r}`, v: sb.available, s: 'int' } : { v: sb.available, s: 'int' }, only ? { f: `'استهلاك الأدوار'!J${r}`, v: issued, s: 'int' } : { v: issued, s: 'int' }, (only && !poEntryHasQty(e)) ? { f: `E${r}`, v: qty, s: 'inputInt' } : { v: qty, s: 'inputInt' }, { v: price, s: 'input' }, { f: `F${r}*G${r}`, v: +(qty * price).toFixed(2), s: 'gold' }, { v: poEntryNotes(e), s: 'text' }]);
     });
     const L = F + inventory.length - 1;
     cgxTotalRow(sh, 7, [{ f: `SUM(H${F}:H${L})`, s: 'finMoney' }, { v: '', s: 'finLabel' }], true);

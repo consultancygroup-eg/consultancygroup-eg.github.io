@@ -671,6 +671,28 @@ header.app-header {
     box-shadow: var(--shadow-sm);
 }
 
+.cycle-stock-summary {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 0.75rem;
+    font-size: 0.85rem;
+}
+.cycle-stock-summary:empty { display: none; }
+.cycle-stock-summary .css-chip {
+    background: var(--bg-subtle);
+    border-radius: var(--radius-full);
+    padding: 0.3rem 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+.cycle-stock-summary .css-chip b { color: var(--text-primary); font-weight: 800; }
+.cycle-stock-summary .css-chip.css-start { background: var(--primary-light); }
+.cycle-stock-summary .css-chip.css-start b { color: var(--primary); }
+
 .cycle-banner-info {
     display: flex;
     align-items: center;

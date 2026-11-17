@@ -485,6 +485,7 @@
                             <span>تعديل يوم الدورة</span>
                         </button>
                     </div>
+                    <div id="cycle-stock-summary" class="cycle-stock-summary"></div>
                 </div>
 
                 <!-- ==================== 1. DASHBOARD VIEW ==================== -->
@@ -595,6 +596,7 @@
                                         <th data-i18n="thItemName">اسم الصنف</th>
                                         <th data-i18n="thCategory">الفئة</th>
                                         <th style="text-align: center;" data-i18n="thUnit">الوحدة</th>
+                                        <th style="text-align: center;" data-i18n="thContract">الرصيد المتعاقد عليه</th>
                                         <th style="text-align: center;" data-i18n="thInitial">الرصيد الابتدائي</th>
                                         <th style="text-align: center;" data-i18n="thIssued">المنصرف بالدورة</th>
                                         <th style="text-align: center;" data-i18n="thRemaining">الرصيد المتاح</th>
@@ -643,6 +645,7 @@
                                         <th data-i18n="thItemName">اسم الصنف</th>
                                         <th data-i18n="thCategory">الفئة</th>
                                         <th style="text-align: center;" data-i18n="thUnit">الوحدة</th>
+                                        <th style="text-align: center;" data-i18n="thContract">الرصيد المتعاقد عليه</th>
                                         <th style="text-align: center;" data-i18n="thInitial">الرصيد الابتدائي</th>
                                         <th style="text-align: center;" data-i18n="thIssued">المنصرف</th>
                                         <th style="text-align: center;" data-i18n="thRemaining">المتبقي</th>
@@ -1835,6 +1838,38 @@
         </div>
     </div>
 
+    <!-- Modal: one cycle's stock per item (started with / issued / ended with) -->
+    <div id="modal-cycle-stock" class="modal-overlay">
+        <div class="modal-box" style="max-width: 860px;">
+            <div class="modal-header">
+                <h3 id="cycle-stock-title">حركة المخزن في الدورة</h3>
+                <button class="modal-close-btn" onclick="closeModal('modal-cycle-stock')">✖</button>
+            </div>
+            <div class="modal-content-area">
+                <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>اسم الصنف</th>
+                                <th style="text-align: center;">الوحدة</th>
+                                <th style="text-align: center;">المتعاقد عليه</th>
+                                <th style="text-align: center;">مرحّل من اللي قبلها</th>
+                                <th style="text-align: center;">توريد الدورة</th>
+                                <th style="text-align: center;">بدأت بـ</th>
+                                <th style="text-align: center;">المنصرف</th>
+                                <th style="text-align: center;" id="cycle-stock-end-th">انتهت بـ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cycle-stock-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('modal-cycle-stock')" class="btn btn-secondary">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Stock Supply (توريد بضاعة) -->
     <div id="modal-supply" class="modal-overlay">
         <div class="modal-box" style="max-width: 620px;">
@@ -1845,14 +1880,19 @@
             <div class="modal-content-area">
                 <div class="form-group">
                     <label class="form-label">تاريخ وصول التوريد:</label>
-                    <input type="date" id="supply-date" class="form-control">
+                    <input type="date" id="supply-date" class="form-control" onchange="updateSupplyCycleNote()">
+                    <div id="supply-cycle-note" style="margin-top: 6px; font-size: 0.82rem; color: var(--text-muted);"></div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <button type="button" onclick="fillSupplyWithContract()" class="btn btn-secondary btn-sm">املأ الكميات المتعاقد عليها</button>
                 </div>
                 <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
                     <table class="data-table">
                         <thead>
                             <tr>
                                 <th>اسم الصنف</th>
-                                <th style="text-align: center;">الرصيد الحالي</th>
+                                <th style="text-align: center;">المتعاقد عليه</th>
+                                <th style="text-align: center;">المتاح الآن</th>
                                 <th style="text-align: center; width: 130px;">الكمية الموردة</th>
                             </tr>
                         </thead>
@@ -2504,7 +2544,10 @@
                     <label>الوحدة
                         <input type="text" id="ei-unit" class="form-control">
                     </label>
-                    <label>إجمالي الوارد (الكمية)
+                    <label>الرصيد المتعاقد عليه (ثابت)
+                        <input type="number" id="ei-contract" class="form-control" min="0">
+                    </label>
+                    <label>الرصيد الابتدائي لدورة <span id="ei-cycle-label"></span>
                         <input type="number" id="ei-total" class="form-control" min="0">
                     </label>
                     <label>حد الطلب
