@@ -3099,6 +3099,11 @@ body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170,
     <!-- Local Offline Chart.js & Lucide Icons -->
     <script src="assets/chart.js"></script>
     <script src="assets/lucide.js"></script>
+    <!-- If this file was saved without its "assets" folder next to it, load the same files from the live site -->
+    <script>
+        if (!window.Chart) document.write('<script src="https://consultancygroup-eg.github.io/assets/chart.js"><\/script>');
+        if (!window.lucide) document.write('<script src="https://consultancygroup-eg.github.io/assets/lucide.js"><\/script>');
+    </script>
 
     <!-- Optional Cloud Synchronization (Firebase Realtime / Firestore) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
