@@ -691,6 +691,16 @@ header.app-header {
     box-shadow: var(--shadow-sm);
 }
 
+.cycle-edit-section {
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-color);
+}
+.cycle-edit-section h4 {
+    margin: 0 0 0.4rem;
+    font-size: 0.95rem;
+    color: var(--primary);
+}
 .cycle-stock-summary {
     width: 100%;
     display: flex;
@@ -4966,6 +4976,23 @@ body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170,
                         <tbody id="supply-modal-tbody"></tbody>
                     </table>
                 </div>
+                <div class="cycle-edit-section">
+                    <h4>التوريدات المسجلة (ممكن تلغي أي توريد)</h4>
+                    <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: center;">التاريخ</th>
+                                    <th>اسم الصنف</th>
+                                    <th style="text-align: center;">الكمية</th>
+                                    <th style="text-align: center;">الدورة</th>
+                                    <th style="text-align: center;">إلغاء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="supply-log-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button onclick="closeModal('modal-supply')" class="btn btn-secondary">إلغاء</button>
@@ -4978,7 +5005,7 @@ body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170,
     <div id="modal-cycle" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-header">
-                <h3>تعديل يوم بداية الدورة الشهرية</h3>
+                <h3>ضبط الدورة (البداية والنهاية)</h3>
                 <button class="modal-close-btn" onclick="closeModal('modal-cycle')">✖</button>
             </div>
             <div class="modal-content-area">
@@ -4989,10 +5016,39 @@ body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170,
                     <label class="form-label">يوم بداية الدورة (1 - 28):</label>
                     <input type="number" id="cycle-start-day-input" min="1" max="28" value="19" class="form-control" style="font-size: 1.1rem; font-weight: 800; text-align: center;">
                 </div>
+                <div style="text-align: end;">
+                    <button onclick="saveCycleStartDay()" class="btn btn-primary btn-sm">حفظ يوم البداية</button>
+                </div>
+
+                <div class="cycle-edit-section">
+                    <h4>قفل الدورة وبدء دورة جديدة</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0 0 0.5rem;">الدورة الشغالة بتتقفل اليوم اللي قبله، والمتبقي بس هو اللي بيترحّل للدورة الجديدة.</p>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <label class="form-label" style="margin: 0;">الدورة الجديدة تبدأ من يوم:</label>
+                        <input type="date" id="cycle-new-start" class="form-control" style="max-width: 180px;">
+                        <button onclick="startNewCycleFrom()" class="btn btn-primary btn-sm">اقفل وابدأ دورة جديدة</button>
+                    </div>
+                </div>
+
+                <div class="cycle-edit-section">
+                    <h4>بداية ونهاية الدورة المعروضة</h4>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;" id="cycle-edit-label"></div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <label class="form-label" style="margin: 0;">من يوم</label>
+                        <input type="date" id="cycle-edit-from" class="form-control" style="max-width: 170px;">
+                        <label class="form-label" style="margin: 0;">لحد يوم</label>
+                        <input type="date" id="cycle-edit-to" class="form-control" style="max-width: 170px;">
+                        <button onclick="saveCycleRange()" class="btn btn-primary btn-sm">حفظ بداية ونهاية الدورة</button>
+                    </div>
+                </div>
+
+                <div class="cycle-edit-section">
+                    <h4>دورات متعدلة بإيد</h4>
+                    <div id="cycle-ranges-list"></div>
+                </div>
             </div>
             <div class="modal-footer">
-                <button onclick="closeModal('modal-cycle')" class="btn btn-secondary">إلغاء</button>
-                <button onclick="saveCycleStartDay()" class="btn btn-primary">حفظ وتطبيق</button>
+                <button onclick="closeModal('modal-cycle')" class="btn btn-secondary">إغلاق</button>
             </div>
         </div>
     </div>
@@ -6693,6 +6749,8 @@ let activeCustodySubtab = 'ledger';
 let custodyCameraStream = null;
 
 let cycleStartDay = Number(localStorage.getItem('buffet_v9_cycle_day')) || 19;
+// cycles whose start and end were set by hand: [{from: 'YYYY-MM-DD', to: 'YYYY-MM-DD'}]
+let cycleRanges = (() => { try { const v = JSON.parse(localStorage.getItem('buffet_v9_cycle_ranges')); return Array.isArray(v) ? v : []; } catch (e) { return []; } })();
 let activeCycleKey = 'CURRENT';
 let historyDateFrom = '';
 let historyDateTo = '';
@@ -7034,6 +7092,18 @@ const EN_EXACT_MAP = {
     'الكمية الموردة': 'Supplied Qty',
     'المتعاقد عليه': 'Contracted',
     'المتاح الآن': 'Available now',
+    'حفظ يوم البداية': 'Save start day',
+    'ضبط الدورة (البداية والنهاية)': 'Cycle settings (start and end)',
+    'قفل الدورة وبدء دورة جديدة': 'Close the cycle and start a new one',
+    'الدورة الشغالة بتتقفل اليوم اللي قبله، والمتبقي بس هو اللي بيترحّل للدورة الجديدة.': 'The running cycle closes the day before; only what is left carries over.',
+    'الدورة الجديدة تبدأ من يوم:': 'New cycle starts on:',
+    'اقفل وابدأ دورة جديدة': 'Close & start new cycle',
+    'بداية ونهاية الدورة المعروضة': 'Start and end of the cycle on screen',
+    'من يوم': 'From',
+    'لحد يوم': 'To',
+    'حفظ بداية ونهاية الدورة': 'Save cycle dates',
+    'دورات متعدلة بإيد': 'Hand-set cycles',
+    'التوريدات المسجلة (ممكن تلغي أي توريد)': 'Registered supplies (any can be cancelled)',
     'مرحّل من اللي قبلها': 'Carried from previous',
     'توريد الدورة': 'Cycle supply',
     'بدأت بـ': 'Started with',
@@ -7924,6 +7994,7 @@ function persistState() {
     localStorage.setItem('buffet_v9_elec', JSON.stringify(elecData));
     localStorage.setItem('buffet_v9_preq', JSON.stringify(purchaseReqs));
     localStorage.setItem('buffet_v9_cycle_day', cycleStartDay);
+    localStorage.setItem('buffet_v9_cycle_ranges', JSON.stringify(cycleRanges));
     renderAll();
 
     // Push changes to cloud if connected
@@ -7931,27 +8002,52 @@ function persistState() {
 }
 
 // --- CYCLE LOGIC ---
+// Cycles normally run from day N of a month to day N−1 of the next (cycleStartDay).
+// The facilities manager can also set a cycle's start and end by hand (cycleRanges: [{from, to}]), e.g. to close
+// a cycle early and start a new one. Automatic cycles next to a hand-set one are cut so cycles never overlap.
+const pad2 = n => String(n).padStart(2, '0');
+function ymdParse(s) {
+    const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(s || ''));
+    if (m) return [+m[1], +m[2], +m[3]];
+    const d = new Date(s);
+    return isNaN(d) ? null : [d.getFullYear(), d.getMonth() + 1, d.getDate()];
+}
+function ymdStr(y, m, d) { const t = new Date(Date.UTC(y, m - 1, d)); return `${t.getUTCFullYear()}-${pad2(t.getUTCMonth() + 1)}-${pad2(t.getUTCDate())}`; }
+function ymdNorm(s) { const p = ymdParse(s); return p ? ymdStr(p[0], p[1], p[2]) : ''; }
+function ymdAddDays(s, n) { const p = ymdParse(s); return p ? ymdStr(p[0], p[1], p[2] + n) : ''; }
+function cycleFromOfKey(key) { return String(key || '').split(' / ')[0]; }
+function cycleToOfKey(key) { return String(key || '').split(' / ')[1] || ''; }
+function autoCycleRange(ds) {
+    const [y, m, d] = ymdParse(ds);
+    const sm = d < cycleStartDay ? m - 1 : m;
+    return [ymdStr(y, sm, cycleStartDay), ymdStr(y, sm + 1, cycleStartDay - 1)];
+}
+function cycleRangesSorted() {
+    return (Array.isArray(cycleRanges) ? cycleRanges : []).filter(r => r && r.from && r.to && r.from <= r.to).slice().sort((a, b) => a.from.localeCompare(b.from));
+}
 function getCycleKeyForDate(dateStr) {
     if (!dateStr) return '';
-    const d = new Date(dateStr);
-    let year = d.getFullYear();
-    let month = d.getMonth() + 1;
-    const day = d.getDate();
-
-    if (day < cycleStartDay) {
-        month -= 1;
-        if (month === 0) {
-            month = 12;
-            year -= 1;
-        }
+    const ds = ymdNorm(dateStr);
+    if (!ds) return '';
+    const R = cycleRangesSorted();
+    for (const r of R) if (r.from <= ds && ds <= r.to) return `${r.from} / ${r.to}`;
+    let [from, to] = autoCycleRange(ds);
+    for (const r of R) {
+        if (r.to < ds && r.to >= from) from = ymdAddDays(r.to, 1);
+        if (r.from > ds && r.from <= to) to = ymdAddDays(r.from, -1);
     }
-
-    const nextMonth = month === 12 ? 1 : month + 1;
-    const nextYear = month === 12 ? year + 1 : year;
-
-    const from = `${year}-${String(month).padStart(2, '0')}-${String(cycleStartDay).padStart(2, '0')}`;
-    const to = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(cycleStartDay - 1).padStart(2, '0')}`;
     return `${from} / ${to}`;
+}
+// Hand-set cycle: other hand-set cycles that overlap it are cut back (or removed)
+function setCycleRange(from, to) {
+    const out = [];
+    cycleRangesSorted().forEach(r => {
+        if (r.to < from || r.from > to) { out.push(r); return; }
+        if (r.from < from) out.push({ from: r.from, to: ymdAddDays(from, -1) });
+        if (r.to > to) out.push({ from: ymdAddDays(to, 1), to: r.to });
+    });
+    out.push({ from, to });
+    cycleRanges = out.sort((a, b) => a.from.localeCompare(b.from));
 }
 
 function getCycleTransactions() {
@@ -7960,50 +8056,56 @@ function getCycleTransactions() {
 }
 
 // --- STOCK PER CYCLE (17 Nov 2026) ---
-// Each monthly cycle is separate: opening = carried over (what was left at the end of the previous cycle)
+// Each cycle is separate: opening = carried over (what was left at the end of the previous cycle)
 // + what was supplied in this cycle; issued counts this cycle only; available = opening − issued.
 // Only the leftover moves to the next cycle. Supplies are kept per item (item.supplies: [{id, qty, date}]).
-// item.total = the carried-over balance of the item's first cycle (item.stockSince, 'YYYY-MM' = month the cycle starts;
-// items from before this change start in the Oct/Nov 2026 cycle, whose opening already holds the earlier supplies).
-// A manual opening for a later cycle: item.openings['YYYY-MM'] = carried-over part (replaces the automatic carry).
-const STOCK_BASE_MONTH = '2026-10';
-function cycleIdxOfMonth(ym) { const [y, m] = String(ym || '').split('-').map(Number); return (y && m) ? y * 12 + (m - 1) : NaN; }
-function cycleIdxOfKey(key) { return cycleIdxOfMonth(String(key || '').split(' / ')[0]); }
-function cycleIdxOfDate(d) { return d ? cycleIdxOfKey(getCycleKeyForDate(d)) : NaN; }
-function cycleMonthOfIdx(idx) { return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, '0')}`; }
-function cycleKeyOfIdx(idx) { return getCycleKeyForDate(`${cycleMonthOfIdx(idx)}-${String(Math.min(cycleStartDay + 1, 28)).padStart(2, '0')}`); }
-function stockActiveIdx() {
-    const key = (activeCycleKey && activeCycleKey !== 'ALL' && activeCycleKey !== 'CURRENT') ? activeCycleKey : getCycleKeyForDate(localTodayStr());
-    return cycleIdxOfKey(key);
+// item.total = the carried-over balance of the item's first cycle (the cycle holding item.stockSince; items from before
+// this change start in the cycle holding 19 Oct 2026, whose opening already holds the earlier supplies).
+// A manual opening for a later cycle: item.openings[<a date in that cycle>] = carried-over part (replaces the automatic carry).
+const STOCK_BASE_DATE = '2026-10-19';
+// keys saved on 17 Nov as 'YYYY-MM' (month the cycle starts) are read as that month's start day
+function cycleKeyDate(k) { return /^\d{4}-\d{2}$/.test(k) ? `${k}-${pad2(cycleStartDay)}` : k; }
+function valueForCycle(map, key) {
+    if (!map) return undefined;
+    const f = cycleFromOfKey(key), t = cycleToOfKey(key);
+    let v;
+    Object.keys(map).sort((a, b) => cycleKeyDate(a).localeCompare(cycleKeyDate(b))).forEach(k => { const d = cycleKeyDate(k); if (d >= f && d <= t) v = map[k]; });
+    return v;
 }
-function stockBaseIdx(item) { const b = cycleIdxOfMonth(item.stockSince || STOCK_BASE_MONTH); return isNaN(b) ? cycleIdxOfMonth(STOCK_BASE_MONTH) : b; }
+function stockBaseDate(item) { const s = item && item.stockSince; return s ? cycleKeyDate(s) : STOCK_BASE_DATE; }
+function stockActiveKey() {
+    return (activeCycleKey && activeCycleKey !== 'ALL' && activeCycleKey !== 'CURRENT') ? activeCycleKey : getCycleKeyForDate(localTodayStr());
+}
 // itemId -> { carry, supplied, opening, issued, available } for a cycle key (default: the cycle on screen)
 function getStockBalances(key) {
     key = key || activeCycleKey;
     const all = key === 'ALL';
-    const k = all ? NaN : (key === 'CURRENT' ? cycleIdxOfKey(getCycleKeyForDate(localTodayStr())) : cycleIdxOfKey(key));
-    const issuedBy = new Map(); // cycleIdx -> Map(itemId -> qty)
+    if (key === 'CURRENT') key = getCycleKeyForDate(localTodayStr());
+    const keyMemo = new Map();
+    const cycleOf = d => { if (!keyMemo.has(d)) keyMemo.set(d, getCycleKeyForDate(d)); return keyMemo.get(d); };
+    const issuedBy = new Map(); // cycleKey -> Map(itemId -> qty)
     const allIssued = new Map();
     transactions.forEach(t => {
         const q = Number(t.qty) || 0;
         allIssued.set(t.itemId, (allIssued.get(t.itemId) || 0) + q);
-        const i = cycleIdxOfDate(t.date);
-        if (isNaN(i)) return;
-        if (!issuedBy.has(i)) issuedBy.set(i, new Map());
-        const m = issuedBy.get(i);
+        if (!t.date) return;
+        const c = cycleOf(t.date);
+        if (!issuedBy.has(c)) issuedBy.set(c, new Map());
+        const m = issuedBy.get(c);
         m.set(t.itemId, (m.get(t.itemId) || 0) + q);
     });
-    const iss = (i, id) => (issuedBy.get(i) && issuedBy.get(i).get(id)) || 0;
+    const iss = (c, id) => (issuedBy.get(c) && issuedBy.get(c).get(id)) || 0;
+    const kFrom = cycleFromOfKey(key);
     const out = new Map();
     inventory.forEach(item => {
-        const base = stockBaseIdx(item);
         const sup = new Map();
         let supAll = 0;
         (item.supplies || []).forEach(s => {
             const q = Number(s.qty) || 0;
             supAll += q;
-            const i = cycleIdxOfDate(s.date);
-            if (!isNaN(i)) sup.set(i, (sup.get(i) || 0) + q);
+            if (!s.date) return;
+            const c = cycleOf(s.date);
+            sup.set(c, (sup.get(c) || 0) + q);
         });
         const baseCarry = Math.max(0, Number(item.total) || 0);
         if (all) {
@@ -8011,21 +8113,23 @@ function getStockBalances(key) {
             out.set(item.id, { carry: baseCarry, supplied: supAll, opening, issued, available: opening - issued });
             return;
         }
-        if (isNaN(k) || k < base) {
+        let ck = cycleOf(stockBaseDate(item));
+        if (!kFrom || kFrom < cycleFromOfKey(ck)) {
             // a cycle from before this item's first cycle: the old way (one opening for everything)
-            const issued = isNaN(k) ? 0 : iss(k, item.id), supplied = sup.get(k) || 0, opening = baseCarry + supplied;
+            const issued = iss(key, item.id), supplied = sup.get(key) || 0, opening = baseCarry + supplied;
             out.set(item.id, { carry: baseCarry, supplied, opening, issued, available: opening - issued });
             return;
         }
-        const manual = item.openings || {};
         let carry = baseCarry, row = null;
-        for (let i = base; i <= k; i++) {
-            if (i > base) {
-                const mk = cycleMonthOfIdx(i);
-                carry = manual[mk] !== undefined ? Math.max(0, Number(manual[mk]) || 0) : Math.max(0, row.available);
+        for (let guard = 0; guard < 600; guard++) {
+            if (row) {
+                const manual = valueForCycle(item.openings, ck);
+                carry = manual !== undefined ? Math.max(0, Number(manual) || 0) : Math.max(0, row.available);
             }
-            const supplied = sup.get(i) || 0, issued = iss(i, item.id), opening = carry + supplied;
+            const supplied = sup.get(ck) || 0, issued = iss(ck, item.id), opening = carry + supplied;
             row = { carry, supplied, opening, issued, available: opening - issued };
+            if (cycleFromOfKey(ck) >= kFrom) break;
+            ck = cycleOf(ymdAddDays(cycleToOfKey(ck), 1));
         }
         out.set(item.id, row);
     });
@@ -8043,25 +8147,31 @@ function stockOpeningNote(b) {
 }
 // The supplier order of each cycle is separate: quantity and notes are kept per cycle.
 // The Oct/Nov 2026 cycle keeps what was typed before this change (entry.qty / entry.notes).
-function poCycleMonth() { return cycleMonthOfIdx(stockActiveIdx()); }
+// one value per cycle, saved under the cycle's start date
+function cycleMapSet(map, key, val) {
+    const f = cycleFromOfKey(key), t = cycleToOfKey(key);
+    Object.keys(map).forEach(k => { const d = cycleKeyDate(k); if (d >= f && d <= t) delete map[k]; });
+    map[f] = val;
+}
+function poCycleKey() { return stockActiveKey(); }
+function poIsBaseCycle() { return getCycleKeyForDate(STOCK_BASE_DATE) === poCycleKey(); }
 function poEntryQty(entry, issued) {
-    const mk = poCycleMonth();
-    if (entry && entry.qtyByCycle && entry.qtyByCycle[mk] !== undefined) return Number(entry.qtyByCycle[mk]) || 0;
-    if (entry && entry.qty !== undefined && mk === STOCK_BASE_MONTH) return Number(entry.qty) || 0;
+    const v = valueForCycle(entry && entry.qtyByCycle, poCycleKey());
+    if (v !== undefined) return Number(v) || 0;
+    if (entry && entry.qty !== undefined && poIsBaseCycle()) return Number(entry.qty) || 0;
     return issued;
 }
 function poEntryHasQty(entry) {
-    const mk = poCycleMonth();
-    return !!entry && ((entry.qtyByCycle && entry.qtyByCycle[mk] !== undefined) || (entry.qty !== undefined && mk === STOCK_BASE_MONTH));
+    return !!entry && (valueForCycle(entry.qtyByCycle, poCycleKey()) !== undefined || (entry.qty !== undefined && poIsBaseCycle()));
 }
 function poEntryNotes(entry) {
-    const mk = poCycleMonth();
-    if (entry && entry.notesByCycle && entry.notesByCycle[mk] !== undefined) return entry.notesByCycle[mk];
-    if (entry && mk === STOCK_BASE_MONTH) return entry.notes || '';
+    const v = valueForCycle(entry && entry.notesByCycle, poCycleKey());
+    if (v !== undefined) return v;
+    if (entry && poIsBaseCycle()) return entry.notes || '';
     return '';
 }
 function poEntryPrice(itemId) {
-    const key = cycleKeyOfIdx(stockActiveIdx());
+    const key = stockActiveKey();
     const e = poPricingMap[itemId] || {};
     if (e.prices && e.prices[key] !== undefined) return Number(e.prices[key]) || 0;
     return Number(e.unitPrice) || 0;
@@ -8079,6 +8189,7 @@ function updateCycleDropdown() {
         if (t.date) keys.add(getCycleKeyForDate(t.date));
     });
     inventory.forEach(it => (it.supplies || []).forEach(sp => { if (sp.date) keys.add(getCycleKeyForDate(sp.date)); }));
+    cycleRangesSorted().forEach(r => keys.add(`${r.from} / ${r.to}`));
 
     const sortedKeys = Array.from(keys).sort().reverse();
 
@@ -8439,11 +8550,11 @@ function openEditItemModal(id) {
     document.getElementById('ei-name').value = item.name;
     document.getElementById('ei-cat').value = item.cat;
     document.getElementById('ei-unit').value = item.unit;
-    const sb = stockOf(getStockBalances(activeCycleKey === 'ALL' ? 'CURRENT' : activeCycleKey), item);
+    const sb = stockOf(getStockBalances(stockActiveKey()), item);
     document.getElementById('ei-total').value = sb.opening;
     document.getElementById('ei-contract').value = itemContractQty(item);
     const eiCycle = document.getElementById('ei-cycle-label');
-    if (eiCycle) eiCycle.textContent = cycleShortLabel(cycleKeyOfIdx(stockActiveIdx()));
+    if (eiCycle) eiCycle.textContent = cycleShortLabel(stockActiveKey());
     document.getElementById('ei-min').value = item.minLimit;
     openModal('modal-edit-item');
 }
@@ -8462,12 +8573,12 @@ function saveEditItem() {
     item.unit = unit;
     // the opening of the cycle on screen: the supplied part stays, the carried-over part is set to match
     const newOpening = Math.max(0, Number(document.getElementById('ei-total').value) || 0);
-    const k = stockActiveIdx();
-    const sb = stockOf(getStockBalances(activeCycleKey === 'ALL' ? 'CURRENT' : activeCycleKey), item);
+    const k = stockActiveKey();
+    const sb = stockOf(getStockBalances(k), item);
     if (newOpening !== sb.opening) {
         const carry = Math.max(0, newOpening - sb.supplied);
-        if (k <= stockBaseIdx(item)) item.total = carry;
-        else { item.openings = item.openings || {}; item.openings[cycleMonthOfIdx(k)] = carry; }
+        if (cycleFromOfKey(k) <= cycleFromOfKey(getCycleKeyForDate(stockBaseDate(item)))) item.total = carry;
+        else { item.openings = item.openings || {}; cycleMapSet(item.openings, k, carry); }
     }
     item.contractQty = Math.max(0, Number(document.getElementById('ei-contract').value) || 0);
     item.minLimit = Math.max(0, Number(document.getElementById('ei-min').value) || 0);
@@ -8761,6 +8872,15 @@ function cycleShortLabel(key) {
     const ar = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     const en = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     if (!y || !m) return key;
+    // a cycle with a hand-set start or end: "15 نوفمبر – 18 ديسمبر 2026"
+    const [af, at] = autoCycleRange(from);
+    const to = cycleToOfKey(key);
+    if (af !== from || at !== to) {
+        const p2 = ymdParse(to);
+        if (!p2) return key;
+        const d1 = from.split('-').map(Number)[2];
+        return currentLang === 'ar' ? `${d1} ${ar[m - 1]} – ${p2[2]} ${ar[p2[1] - 1]} ${p2[0]}` : `${d1} ${en[m - 1]} – ${p2[2]} ${en[p2[1] - 1]} ${p2[0]}`;
+    }
     const n = m % 12; // index of the next month
     const y2 = m === 12 ? y + 1 : y;
     if (cycleStartDay <= 1) return currentLang === 'ar' ? `${ar[m - 1]} ${y}` : `${en[m - 1]} ${y}`;
@@ -9287,11 +9407,11 @@ function updatePoPricingField(itemId, field, val) {
     if (!poPricingMap[itemId]) poPricingMap[itemId] = {};
     if (field === 'notes') {
         if (!poPricingMap[itemId].notesByCycle) poPricingMap[itemId].notesByCycle = {};
-        poPricingMap[itemId].notesByCycle[poCycleMonth()] = String(val || '').trim();
+        cycleMapSet(poPricingMap[itemId].notesByCycle, poCycleKey(), String(val || '').trim());
     } else if (field === 'qty') {
         // each cycle has its own order quantity
         if (!poPricingMap[itemId].qtyByCycle) poPricingMap[itemId].qtyByCycle = {};
-        poPricingMap[itemId].qtyByCycle[poCycleMonth()] = Math.max(0, Number(val) || 0);
+        cycleMapSet(poPricingMap[itemId].qtyByCycle, poCycleKey(), Math.max(0, Number(val) || 0));
     } else {
         poPricingMap[itemId][field] = Math.max(0, Number(val) || 0);
         // Keep each month's purchase price so months can be compared later
@@ -11544,6 +11664,7 @@ function openSupplyModal() {
     });
 
     updateSupplyCycleNote();
+    renderSupplyLog();
     openModal('modal-supply');
 }
 // Which cycle the supply counts in (by its arrival date)
@@ -11555,6 +11676,33 @@ function updateSupplyCycleNote() {
     el.textContent = currentLang === 'ar'
         ? `التوريد ده هيتحسب في دورة: ${cycleShortLabel(key)} (${key}). المتبقي من الدورة اللي قبلها بيترحّل لوحده.`
         : `This supply counts in the cycle: ${key}. What was left from the cycle before is carried over automatically.`;
+}
+// Supplies already registered (newest first), each can be cancelled
+function renderSupplyLog() {
+    const box = document.getElementById('supply-log-body');
+    if (!box) return;
+    const isAr = currentLang === 'ar';
+    const rows = [];
+    inventory.forEach(item => (item.supplies || []).forEach(sp => rows.push({ item, sp })));
+    rows.sort((a, b) => String(b.sp.date || '').localeCompare(String(a.sp.date || '')) || (b.sp.id || 0) - (a.sp.id || 0));
+    box.innerHTML = rows.length ? rows.map(({ item, sp }) => `<tr>
+            <td style="text-align:center;">${sp.date || ''}</td><td style="font-weight:700;">${trText(item.name)}</td>
+            <td style="text-align:center;font-weight:800;">${sp.qty}</td><td style="text-align:center;color:var(--text-muted);font-size:0.8rem;">${cycleShortLabel(getCycleKeyForDate(sp.date))}</td>
+            <td style="text-align:center;">${currentUserRole === 'viewer' ? '' : `<button type="button" onclick="cancelSupply(${item.id}, ${sp.id})" class="btn btn-sm btn-danger">${isAr ? 'إلغاء' : 'Cancel'}</button>`}</td></tr>`).join('')
+        : `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">${isAr ? 'مفيش توريدات مسجلة لسه' : 'No supplies yet'}</td></tr>`;
+}
+function cancelSupply(itemId, supplyId) {
+    if (currentUserRole === 'viewer') return;
+    const isAr = currentLang === 'ar';
+    const item = inventory.find(i => i.id === itemId);
+    const sp = item && (item.supplies || []).find(x => x.id === supplyId);
+    if (!sp) return;
+    if (!confirm(isAr ? `إلغاء توريد ${sp.qty} ${trText(item.unit)} ${trText(item.name)} بتاريخ ${sp.date}؟` : `Cancel this supply (${sp.qty})?`)) return;
+    item.supplies = item.supplies.filter(x => x.id !== supplyId);
+    item.updatedAt = new Date().toISOString();
+    persistState();
+    renderSupplyLog();
+    showToast(isAr ? 'تم إلغاء التوريد' : 'Supply cancelled', 'success');
 }
 // Fill every item with its contracted quantity
 function fillSupplyWithContract() {
@@ -11625,7 +11773,7 @@ function saveNewItem() {
         contractQty: total,
         minLimit,
         date: today,
-        stockSince: cycleMonthOfIdx(cycleIdxOfDate(today))
+        stockSince: today
     });
 
     persistState();
@@ -11635,8 +11783,64 @@ function saveNewItem() {
 
 // --- CYCLE SETTINGS MODAL ---
 function openCycleModal() {
-    document.getElementById('cycle-start-day-input').value = cycleStartDay;
+    fillCycleModal();
     openModal('modal-cycle');
+}
+function fillCycleModal() {
+    document.getElementById('cycle-start-day-input').value = cycleStartDay;
+    const key = stockActiveKey();
+    const f = document.getElementById('cycle-edit-from'), t = document.getElementById('cycle-edit-to');
+    if (f) f.value = cycleFromOfKey(key);
+    if (t) t.value = cycleToOfKey(key);
+    const lbl = document.getElementById('cycle-edit-label');
+    if (lbl) lbl.textContent = `${cycleShortLabel(key)} (${key})`;
+    const ns = document.getElementById('cycle-new-start');
+    if (ns) ns.value = localTodayStr();
+    renderCycleRangesList();
+}
+function renderCycleRangesList() {
+    const box = document.getElementById('cycle-ranges-list');
+    if (!box) return;
+    const R = cycleRangesSorted();
+    const isAr = currentLang === 'ar';
+    box.innerHTML = R.length ? R.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;padding:0.35rem 0;border-bottom:1px solid var(--border-subtle);">
+            <span style="font-weight:700;">${r.from} → ${r.to}</span>
+            <button type="button" onclick="removeCycleRange('${r.from}')" class="btn btn-sm btn-secondary">${isAr ? 'رجّعها تلقائي' : 'Back to automatic'}</button></div>`).join('')
+        : `<div style="color:var(--text-muted);font-size:0.85rem;">${isAr ? 'مفيش دورات متعدلة بإيد. كل الدورات ماشية بيوم البداية اللي فوق.' : 'No hand-set cycles.'}</div>`;
+}
+function cycleRangeChanged(msg) {
+    persistState();
+    fillCycleModal();
+    showToast(msg, 'success');
+}
+// Save the start and end of the cycle on screen
+function saveCycleRange() {
+    const isAr = currentLang === 'ar';
+    const from = ymdNorm(document.getElementById('cycle-edit-from').value), to = ymdNorm(document.getElementById('cycle-edit-to').value);
+    if (!from || !to || from > to) { showToast(isAr ? 'تاريخ البداية لازم يكون قبل تاريخ النهاية' : 'Start must be before end', 'warning'); return; }
+    setCycleRange(from, to);
+    activeCycleKey = `${from} / ${to}`;
+    cycleRangeChanged(isAr ? `الدورة بقت من ${from} لـ ${to}` : 'Cycle dates saved');
+}
+// Close the running cycle the day before `start` and begin a new cycle on `start`
+function startNewCycleFrom() {
+    const isAr = currentLang === 'ar';
+    const start = ymdNorm(document.getElementById('cycle-new-start').value);
+    if (!start) { showToast(isAr ? 'اختار تاريخ بداية الدورة الجديدة' : 'Pick the start date', 'warning'); return; }
+    const prev = getCycleKeyForDate(ymdAddDays(start, -1));
+    const prevFrom = cycleFromOfKey(prev);
+    // the new cycle ends where the automatic cycles line up again (at least two weeks long); it can be edited after
+    const end = autoCycleRange(ymdAddDays(start, 14))[1];
+    if (!confirm(isAr ? `هتتقفل الدورة اللي بدأت ${prevFrom} يوم ${ymdAddDays(start, -1)}، وتبدأ دورة جديدة من ${start} لـ ${end}. المتبقي بس هو اللي هيترحّل. موافق؟` : `Close the cycle on ${ymdAddDays(start, -1)} and start a new one on ${start}?`)) return;
+    if (prevFrom < start) setCycleRange(prevFrom, ymdAddDays(start, -1));
+    setCycleRange(start, end);
+    activeCycleKey = `${start} / ${end}`;
+    cycleRangeChanged(isAr ? `بدأت دورة جديدة من ${start}` : 'New cycle started');
+}
+function removeCycleRange(from) {
+    cycleRanges = cycleRangesSorted().filter(r => r.from !== from);
+    activeCycleKey = 'CURRENT';
+    cycleRangeChanged(currentLang === 'ar' ? 'الدورة رجعت تلقائي' : 'Back to automatic');
 }
 
 function saveCycleStartDay() {
@@ -11798,6 +12002,7 @@ function exportDataBackup() {
         elecData,
         purchaseReqs,
         cycleStartDay,
+        cycleRanges,
         exportDate: new Date().toISOString()
     };
 
@@ -11831,6 +12036,7 @@ function importDataBackup(e) {
                 if (data.elecData) elecData = data.elecData;
                 if (data.purchaseReqs) purchaseReqs = data.purchaseReqs;
                 if (data.cycleStartDay) cycleStartDay = data.cycleStartDay;
+                if (Array.isArray(data.cycleRanges)) cycleRanges = data.cycleRanges;
 
                 persistState();
                 showToast(currentLang === 'ar' ? 'تمت استعادة كافة البيانات بنجاح!' : 'Data restored successfully!', 'success');
@@ -11860,6 +12066,7 @@ function resetAllData() {
         monthlyCoreExpenses = JSON.parse(JSON.stringify(SEED_MONTHLY_CORE_EXPENSES));
         poPricingMap = {};
         cycleStartDay = 19;
+        cycleRanges = [];
         persistState();
         showToast(currentLang === 'ar' ? 'تمت إعادة ضبط النظام للبيانات الافتراضية' : 'System reset to defaults', 'info');
     }
@@ -12472,6 +12679,7 @@ function connectToFirebase(config, wsId) {
                 if (cloudData.cycleStartDay) {
                     cycleStartDay = Number(cloudData.cycleStartDay);
                 }
+                if (Array.isArray(cloudData.cycleRanges)) cycleRanges = cloudData.cycleRanges;
 
                 // Cache in local storage
                 localStorage.setItem('buffet_v9_inv', JSON.stringify(inventory));
@@ -12487,6 +12695,7 @@ function connectToFirebase(config, wsId) {
                 localStorage.setItem('buffet_v9_elec', JSON.stringify(elecData));
                 localStorage.setItem('buffet_v9_preq', JSON.stringify(purchaseReqs));
                 localStorage.setItem('buffet_v9_cycle_day', cycleStartDay);
+                localStorage.setItem('buffet_v9_cycle_ranges', JSON.stringify(cycleRanges));
 
                 renderAllWhenNotTyping();
                 isSyncingFromCloud = false;
@@ -12870,6 +13079,7 @@ function syncToCloud(isInitial = false) {
             elecData,
             purchaseReqs,
             cycleStartDay,
+            cycleRanges,
             lastUpdated: new Date().toISOString()
         };
         tx.set(ref, payload, { merge: true });

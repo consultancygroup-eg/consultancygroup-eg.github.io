@@ -671,6 +671,16 @@ header.app-header {
     box-shadow: var(--shadow-sm);
 }
 
+.cycle-edit-section {
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-color);
+}
+.cycle-edit-section h4 {
+    margin: 0 0 0.4rem;
+    font-size: 0.95rem;
+    color: var(--primary);
+}
 .cycle-stock-summary {
     width: 100%;
     display: flex;

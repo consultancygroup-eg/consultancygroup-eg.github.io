@@ -1899,6 +1899,23 @@
                         <tbody id="supply-modal-tbody"></tbody>
                     </table>
                 </div>
+                <div class="cycle-edit-section">
+                    <h4>التوريدات المسجلة (ممكن تلغي أي توريد)</h4>
+                    <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: center;">التاريخ</th>
+                                    <th>اسم الصنف</th>
+                                    <th style="text-align: center;">الكمية</th>
+                                    <th style="text-align: center;">الدورة</th>
+                                    <th style="text-align: center;">إلغاء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="supply-log-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button onclick="closeModal('modal-supply')" class="btn btn-secondary">إلغاء</button>
@@ -1911,7 +1928,7 @@
     <div id="modal-cycle" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-header">
-                <h3>تعديل يوم بداية الدورة الشهرية</h3>
+                <h3>ضبط الدورة (البداية والنهاية)</h3>
                 <button class="modal-close-btn" onclick="closeModal('modal-cycle')">✖</button>
             </div>
             <div class="modal-content-area">
@@ -1922,10 +1939,39 @@
                     <label class="form-label">يوم بداية الدورة (1 - 28):</label>
                     <input type="number" id="cycle-start-day-input" min="1" max="28" value="19" class="form-control" style="font-size: 1.1rem; font-weight: 800; text-align: center;">
                 </div>
+                <div style="text-align: end;">
+                    <button onclick="saveCycleStartDay()" class="btn btn-primary btn-sm">حفظ يوم البداية</button>
+                </div>
+
+                <div class="cycle-edit-section">
+                    <h4>قفل الدورة وبدء دورة جديدة</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0 0 0.5rem;">الدورة الشغالة بتتقفل اليوم اللي قبله، والمتبقي بس هو اللي بيترحّل للدورة الجديدة.</p>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <label class="form-label" style="margin: 0;">الدورة الجديدة تبدأ من يوم:</label>
+                        <input type="date" id="cycle-new-start" class="form-control" style="max-width: 180px;">
+                        <button onclick="startNewCycleFrom()" class="btn btn-primary btn-sm">اقفل وابدأ دورة جديدة</button>
+                    </div>
+                </div>
+
+                <div class="cycle-edit-section">
+                    <h4>بداية ونهاية الدورة المعروضة</h4>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;" id="cycle-edit-label"></div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <label class="form-label" style="margin: 0;">من يوم</label>
+                        <input type="date" id="cycle-edit-from" class="form-control" style="max-width: 170px;">
+                        <label class="form-label" style="margin: 0;">لحد يوم</label>
+                        <input type="date" id="cycle-edit-to" class="form-control" style="max-width: 170px;">
+                        <button onclick="saveCycleRange()" class="btn btn-primary btn-sm">حفظ بداية ونهاية الدورة</button>
+                    </div>
+                </div>
+
+                <div class="cycle-edit-section">
+                    <h4>دورات متعدلة بإيد</h4>
+                    <div id="cycle-ranges-list"></div>
+                </div>
             </div>
             <div class="modal-footer">
-                <button onclick="closeModal('modal-cycle')" class="btn btn-secondary">إلغاء</button>
-                <button onclick="saveCycleStartDay()" class="btn btn-primary">حفظ وتطبيق</button>
+                <button onclick="closeModal('modal-cycle')" class="btn btn-secondary">إغلاق</button>
             </div>
         </div>
     </div>
