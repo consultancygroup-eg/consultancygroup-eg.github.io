@@ -3385,7 +3385,7 @@ body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170,
 
                 <button onclick="switchTab('preq')" id="nav-btn-preq" class="sidebar-nav-item nav-group-custody" style="display: none;">
                     <i data-lucide="file-text"></i>
-                    <span id="nav-preq-label">أمر شراء</span>
+                    <span id="nav-preq-label">طلب شراء</span>
                 </button>
 
                 <!-- Collapsible Transfer Audit & Reminders in Right Sidebar under Custody -->
@@ -12226,8 +12226,8 @@ function getTabTitles() {
             sub: isAr ? 'إدارة المرافق | حساب شحن عدادات الكهرباء للأدوار كل 15 يوم والمديونيات' : 'Facilities Management | Floor meter top-ups every 15 days and arrears'
         },
         preq: {
-            title: isAr ? 'أمر شراء' : 'Purchase Order',
-            sub: isAr ? 'إدارة المرافق | أمر شراء بنموذج الشركة، يطبع عربي أو إنجليزي حسب لغة البرنامج' : 'Facilities Management | Company purchase order form, printed in the program language'
+            title: isAr ? 'طلب شراء' : 'Purchase Order',
+            sub: isAr ? 'إدارة المرافق | طلب شراء بنموذج الشركة، يطبع عربي أو إنجليزي حسب لغة البرنامج' : 'Facilities Management | Company purchase order form, printed in the program language'
         },
         hq: {
             title: isAr ? 'جرد وتجهيزات مقر الإدارة العليا' : 'Executive Management HQ Inventory',
@@ -16778,17 +16778,17 @@ function printElecCharge(historyId) {
 // ======================================================================
 const PREQ_T = {
     ar: {
-        nav: 'أمر شراء', title: 'أمر شراء', doc: 'أمر شراء',
+        nav: 'طلب شراء', title: 'طلب شراء', doc: 'طلب شراء',
         hint: 'اكتب البيانات والأصناف، والإجمالي بيتحسب لوحده. الـ PDF بيطلع بنفس لغة البرنامج.',
-        save: 'حفظ أمر الشراء', saveEdit: 'حفظ التعديل', newOrder: 'أمر شراء جديد',
+        save: 'حفظ طلب الشراء', saveEdit: 'حفظ التعديل', newOrder: 'طلب شراء جديد',
         from: 'من', employee: 'الاسم', position: 'الوظيفة', reqFrom: 'إلى', place: 'مكان الشراء',
-        orderNo: 'رقم الأمر', orderBox: 'بيانات الأمر', delivery: 'التسليم', date: 'التاريخ',
+        orderNo: 'رقم الطلب', orderBox: 'بيانات الطلب', delivery: 'التسليم', date: 'التاريخ',
         item: 'م', qty: 'الكمية المطلوبة', desc: 'الوصف', reason: 'السبب', price: 'سعر الوحدة', total: 'الإجمالي',
         addItem: '+ صنف', grand: 'الإجمالي', cur: 'ج.م',
         director: 'المدير الإقليمي', approver: 'المعتمد', signature: 'التوقيع', sigsBox: 'مسميات التوقيعات (تقدر تغيّرها)', sig1: 'التوقيع الأول', sig2: 'التوقيع التاني',
-        history: 'أوامر الشراء السابقة', items: 'الأصناف', del: 'حذف',
-        none: 'مفيش أوامر شراء محفوظة لسه', saved: 'تم حفظ أمر الشراء', delAsk: n => `حذف أمر الشراء رقم ${n}؟`,
-        empty: 'اكتب صنف واحد على الأقل', reasonDefault: 'احتياج عمل', editing: n => `بتعدّل أمر الشراء رقم ${n}`,
+        history: 'طلبات الشراء السابقة', items: 'الأصناف', del: 'حذف',
+        none: 'مفيش طلبات شراء محفوظة لسه', saved: 'تم حفظ طلب الشراء', delAsk: n => `حذف طلب الشراء رقم ${n}؟`,
+        empty: 'اكتب صنف واحد على الأقل', reasonDefault: 'احتياج عمل', editing: n => `بتعدّل طلب الشراء رقم ${n}`,
         dept: 'إدارة المرافق'
     },
     en: {
@@ -17042,7 +17042,7 @@ function exportPurchaseReqExcel(id) {
         const r = sh.add([{ v: l, s: 'sigLbl' + S }, { v: a || '', s: 'sigVal' + S }, { v: '', s: 'sigVal' + S }, { v: l, s: 'sigLbl' + S }, { v: b || '', s: 'sigVal' + S }, { v: '', s: 'sigVal' + S }], 30);
         sh.merge(`B${r}:C${r}`); sh.merge(`E${r}:F${r}`);
     });
-    CGX.download(sh, `${isAr ? 'أمر_شراء' : 'Purchase_Order'}_${o.no || ''}_${o.date || cgxToday()}`);
+    CGX.download(sh, `${isAr ? 'طلب_شراء' : 'Purchase_Order'}_${o.no || ''}_${o.date || cgxToday()}`);
 }
 // English purchase order: names and titles in English (the job title is the singular "Facility Manager" everywhere)
 function preqEnglishOf(s) {
@@ -17654,9 +17654,9 @@ function cgxPurchaseReqSheet() {
     const F = CGX.FIRST;
     const list = (purchaseReqs.history || []).length ? purchaseReqs.history : [preqDraft()];
     const sh = CGX.report({
-        name: 'أوامر الشراء', title: 'أوامر الشراء',
+        name: 'طلبات الشراء', title: 'طلبات الشراء',
         subtitle: `تاريخ التقرير: ${cgxToday()}`,
-        columns: [{ h: 'رقم الأمر', w: 10 }, { h: 'التاريخ', w: 12 }, { h: 'من', w: 18 }, { h: 'إلى', w: 18 }, { h: 'مكان الشراء', w: 18 }, { h: 'الوصف', w: 26 }, { h: 'السبب', w: 22 }, { h: 'الكمية', w: 9 }, { h: 'سعر الوحدة', w: 13 }, { h: 'الإجمالي', w: 15 }],
+        columns: [{ h: 'رقم الطلب', w: 10 }, { h: 'التاريخ', w: 12 }, { h: 'من', w: 18 }, { h: 'إلى', w: 18 }, { h: 'مكان الشراء', w: 18 }, { h: 'الوصف', w: 26 }, { h: 'السبب', w: 22 }, { h: 'الكمية', w: 9 }, { h: 'سعر الوحدة', w: 13 }, { h: 'الإجمالي', w: 15 }],
         landscape: true
     });
     let n = 0;
