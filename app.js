@@ -11245,8 +11245,8 @@ function printPurchaseReq(id) {
                 <td class="pc en">${elecMoney(it.qty)}</td>
                 <td>${escHtml(it.desc)}</td>
                 <td>${escHtml(String(it.reason || '').trim() || t.reasonDefault)}</td>
-                <td class="pc en">${it.price === '' || it.price == null ? '' : `${elecMoney2(it.price)} ${t.cur}`}</td>
-                <td class="pc en strong">${preqLineTotal(it) ? `${elecMoney2(preqLineTotal(it))} ${t.cur}` : ''}</td>
+                <td class="pc en">${it.price === '' || it.price == null ? '' : `${elecMoney2(it.price)}`}</td>
+                <td class="pc en strong">${preqLineTotal(it) ? `${elecMoney2(preqLineTotal(it))}` : ''}</td>
             </tr>` : `<tr class="blank"><td class="pc">&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>`;
     }
     // Under each title: the name (filled in when the title is the To or From position, otherwise a line to write on), then the signature
@@ -11282,15 +11282,15 @@ function printPurchaseReq(id) {
             </div>
             <table class="preq-print-table">
                 <thead><tr>
-                    <th class="pc" style="width:6%;">${t.item}</th>
-                    <th class="pc" style="width:10%;">${t.qty}</th>
-                    <th style="width:24%;">${t.desc}</th>
-                    <th style="width:26%;">${t.reason}</th>
-                    <th class="pc" style="width:16%; white-space:nowrap;">${t.price}</th>
-                    <th class="pc" style="width:18%;">${t.total}</th>
+                    <th class="pc" style="width:5%; white-space:nowrap;">${t.item}</th>
+                    <th class="pc" style="width:11%;">${t.qty}</th>
+                    <th style="width:38%; white-space:nowrap;">${t.desc}</th>
+                    <th style="width:20%; white-space:nowrap;">${t.reason}</th>
+                    <th class="pc" style="width:13%; white-space:nowrap;">${t.price}</th>
+                    <th class="pc" style="width:13%; white-space:nowrap;">${t.total}</th>
                 </tr></thead>
                 <tbody>${rows}</tbody>
-                <tfoot><tr class="final"><td colspan="5">${t.grand}</td><td class="pc en">${elecMoney2(preqGrand({ items }))} ${t.cur}</td></tr></tfoot>
+                <tfoot><tr class="final"><td colspan="5">${t.grand}</td><td class="pc en">${elecMoney2(preqGrand({ items }))}</td></tr></tfoot>
             </table>
             <div class="preq-sigs">${sigBox(escHtml(String(o.sig1 || "").trim()) || t.director)}${sigBox(escHtml(String(o.sig2 || "").trim()) || t.approver)}</div>
         </div>`;
