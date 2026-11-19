@@ -3078,10 +3078,14 @@ tr.elec-active td { background: var(--primary-light) !important; }
 .preq-sig-line b { flex: 1; font-weight: 700; color: #3d3a34; padding-bottom: 2px; }
 /* Purchase order PDF: one font size (12pt) everywhere; only bold or regular differ (user request 2026-11-12) */
 #official-print-viewport .preq-print, #official-print-viewport .preq-print * { font-size: 12pt !important; line-height: 1.45; }
-.preq-print .preq-doc, .preq-print .preq-party-title, .preq-print .preq-party b, .preq-print .preq-meta b,
+.preq-print .preq-doc, .preq-print .preq-party-title, .preq-print .preq-party b,
 .preq-print .preq-print-table th, .preq-print .preq-print-table td.strong, .preq-print .preq-print-table tr.final td, .preq-print .preq-sig-title { font-weight: 700 !important; }
 .preq-print .preq-dept, .preq-print .preq-party span, .preq-print .preq-meta span, .preq-print .preq-print-table td, .preq-print .preq-sig-line { font-weight: 400; }
 .preq-print .preq-doc { letter-spacing: 0; }
+/* Order details strip: values in regular weight (long shop names looked heavy); the place of purchase gets double width so it stays on one line */
+.preq-print .preq-meta b { font-weight: 400 !important; }
+.preq-print .preq-meta .preq-meta-wide { flex: 2; }
+.preq-print .preq-meta div { display: flex; flex-direction: column; justify-content: center; }
 /* Full-module Excel button: alone at the bottom of the menu, above the cycle box */
 .sidebar-full-xlsx { width: 100%; justify-content: center; margin-bottom: 0.55rem; }
 /* Dark mode: the gold sheet header was overridden by the dark table header, leaving dark text on dark (hard to read) */
@@ -17111,7 +17115,7 @@ function printPurchaseReq(id) {
             <div class="elec-meta preq-meta">
                 <div><span>${t.orderNo}</span><b class="en">${escHtml(o.no)}</b></div>
                 <div><span>${t.delivery}</span><b>${escHtml(o.delivery) || '—'}</b></div>
-                <div><span>${t.place}</span><b>${escHtml(o.place) || '—'}</b></div>
+                <div class="preq-meta-wide"><span>${t.place}</span><b>${escHtml(o.place) || '—'}</b></div>
                 <div><span>${t.date}</span><b class="en">${escHtml(o.date)}</b></div>
             </div>
             <table class="preq-print-table">

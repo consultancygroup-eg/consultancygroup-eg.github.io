@@ -11277,7 +11277,7 @@ function printPurchaseReq(id) {
             <div class="elec-meta preq-meta">
                 <div><span>${t.orderNo}</span><b class="en">${escHtml(o.no)}</b></div>
                 <div><span>${t.delivery}</span><b>${escHtml(o.delivery) || '—'}</b></div>
-                <div><span>${t.place}</span><b>${escHtml(o.place) || '—'}</b></div>
+                <div class="preq-meta-wide"><span>${t.place}</span><b>${escHtml(o.place) || '—'}</b></div>
                 <div><span>${t.date}</span><b class="en">${escHtml(o.date)}</b></div>
             </div>
             <table class="preq-print-table">
