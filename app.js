@@ -975,15 +975,15 @@ const EN_EXACT_MAP = {
     // Lock Screen, Portal & Branding
     'المجموعة الإستشارية': 'Consultancy Group',
     'المجموعة الإستشارية | Consultancy Group': 'Consultancy Group',
-    'إدارة المرافق - مدير المرافق': 'Facilities Management - Facility Manager',
+    'إدارة المرافق': 'Facilities Management',
     'منظومة إدارة المرافق والأصول — منطقة محمية 🔒': 'Facilities & Asset Management System — Protected Area 🔒',
     'نظام إدارة البوفيه والنظافة — منطقة محمية 🔒': 'Facilities Management System — Protected Area 🔒',
     'أدخل كلمة المرور للفتح...': 'Enter password to unlock...',
     '❌ كلمة المرور غير صحيحة، حاول مرة أخرى': '❌ Incorrect password, please try again',
     'فتح النظام والمزامنة': 'Unlock & Sync System',
     'محمي بتشفير SHA-256 ومزامنة Google Firebase': 'Protected by SHA-256 Encryption & Google Firebase Sync',
-    'المجموعة الإستشارية | البوفيه والنظافة': 'Facilities Management - Facility Manager',
-    'Consultancy Group - إدارة البوفيه والنظافة': 'Facilities Management - Facility Manager',
+    'المجموعة الإستشارية | البوفيه والنظافة': 'Facilities Management',
+    'Consultancy Group - إدارة البوفيه والنظافة': 'Facilities Management',
     'اختر القسم المراد إدارته أو استعراض تقاريره الآن:': 'Select the department or inventory module to manage:',
     'مصروفات البوفيه': 'Buffet Expenses',
     'إدارة المخزن الرئيسي والأرصدة، تسجيل صرف الطوابق (4 إلى 9)، سجل الحركات، تحليل الطوابق، وأمر شراء للمورد.': 'Manage main warehouse stock, floor dispensing (Floors 4-9), transaction audit logs, floor analysis, and supplier purchase orders.',
@@ -2016,8 +2016,8 @@ function cgEnsureLangObserver() {
 const I18N = {
     ar: {
         appTitle: 'Consultancy Group',
-        appSubtitle: 'Consultancy Group - إدارة المرافق - مدير المرافق',
-        desktopStatus: 'إدارة المرافق - مدير المرافق',
+        appSubtitle: 'Consultancy Group - إدارة المرافق',
+        desktopStatus: 'إدارة المرافق',
         
         // Navigation
         navDashboard: 'لوحة التحكم والتحليلات',
@@ -2076,8 +2076,8 @@ const I18N = {
     },
     en: {
         appTitle: 'Consultancy Group',
-        appSubtitle: 'Consultancy Group - Facilities Management - Facility Manager',
-        desktopStatus: 'Facilities Management - Facility Manager',
+        appSubtitle: 'Consultancy Group - Facilities Management',
+        desktopStatus: 'Facilities Management',
 
         // Navigation
         navDashboard: 'Analytics Dashboard',
@@ -3755,14 +3755,19 @@ function getPrintLogoSrc() {
 // (Excel sizes pictures in screen pixels at 96 per inch: 6.2 cm = 234 px, 1.45 cm = 55 px)
 const CG_LOGO_XL_W = 234, CG_LOGO_XL_H = 55;
 function buildCenteredPrintHeader(reportTitle, itemOrSubDef = '') {
+    // Letterhead like the purchase order: logo at the reading-start side, opposite it the department with the document title under it, then the gold line
     const isAr = currentLang === 'ar';
     const logoSrc = getPrintLogoSrc();
     return `
-        <div class="voucher-header" style="border:none; margin:0; padding:6px 0 0.45rem 0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-            <img src="${logoSrc}" alt="المجموعة الإستشارية | Consultancy Group" style="width:62mm; height:14.5mm; display:block; margin:4px auto 0.25rem auto;">
-            <p style="margin:0 0 0.25rem 0; font-size:0.86rem; font-weight:800; color:#2a2722; text-align:center;">${isAr ? 'إدارة المرافق - مدير المرافق' : 'Facilities Management - Facility Manager'}</p>
-            <h3 style="margin:0; font-size:1.12rem; font-weight:900; color:#1f1d19; text-align:center;">${reportTitle}</h3>
-            ${itemOrSubDef ? `<p style="margin:0.18rem 0 0 0; font-size:0.82rem; font-weight:700; color:#55524b; text-align:center;">${itemOrSubDef}</p>` : ''}
+        <div class="voucher-header" style="border:none; margin:0; padding:6px 0 0.45rem 0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding-bottom:8px; border-bottom:1px solid #d9aa28;">
+                <img src="${logoSrc}" alt="المجموعة الإستشارية | Consultancy Group" style="width:62mm; height:14.5mm; display:block; margin:0;">
+                <div style="text-align:end;">
+                    <div style="font-size:1.05rem; font-weight:800; color:#2a2722;">${isAr ? 'إدارة المرافق' : 'Facilities Management'}</div>
+                    <div style="margin-top:2px; font-size:0.95rem; font-weight:700; color:#55524b;">${reportTitle}</div>
+                </div>
+            </div>
+            ${itemOrSubDef ? `<p style="margin:0.35rem 0 0 0; font-size:0.82rem; font-weight:700; color:#55524b; text-align:center;">${itemOrSubDef}</p>` : ''}
         </div>
     `;
 }
@@ -3939,7 +3944,7 @@ function sharePurchaseOrderWhatsApp() {
     const currentCycleTrans = getCycleTransactions();
     const lines = [
         '*المجموعة الإستشارية | Consultancy Group*',
-        '*إدارة المرافق - مدير المرافق*',
+        '*إدارة المرافق*',
         `*أمر شراء وعرض أسعار البوفيه والمنظفات*`,
         `التاريخ: ${getFormattedTodayDate(true)}`,
         '--------------------------------'
@@ -5409,7 +5414,7 @@ function printFurnitureMatrixReport() {
 
 function shareFloorsAnalysisWhatsApp() {
     const floors = ['الدور الرابع', 'الدور الخامس', 'الدور السادس', 'الدور السابع', 'الدور الثامن', 'الدور التاسع'];
-    let lines = ['*المجموعة الإستشارية | Consultancy Group*', '*إدارة المرافق - مدير المرافق*', `*تقرير تحليل جرد الطوابق (الأدوار 4 إلى 9) — للإدارة العليا*`, `التاريخ: ${getFormattedTodayDate(true)}`, '--------------------------------'];
+    let lines = ['*المجموعة الإستشارية | Consultancy Group*', '*إدارة المرافق*', `*تقرير تحليل جرد الطوابق (الأدوار 4 إلى 9) — للإدارة العليا*`, `التاريخ: ${getFormattedTodayDate(true)}`, '--------------------------------'];
 
     let grandTotal = 0;
     furnitureInventory.forEach(item => {
@@ -6348,55 +6353,55 @@ function getTabTitles() {
     return {
         dash: {
             title: I18N[currentLang].navDashboard,
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | نظرة شمولية على مؤشرات الأداء والأرصدة' : 'Facilities Management - Facility Manager | Comprehensive KPIs & Stock'
+            sub: isAr ? 'إدارة المرافق | نظرة شمولية على مؤشرات الأداء والأرصدة' : 'Facilities Management | Comprehensive KPIs & Stock'
         },
         inventory: {
             title: I18N[currentLang].navInventory,
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | إدارة وتعديل الأصناف والأرصدة الافتتاحية' : 'Facilities Management - Facility Manager | Manage Items & Balances'
+            sub: isAr ? 'إدارة المرافق | إدارة وتعديل الأصناف والأرصدة الافتتاحية' : 'Facilities Management | Manage Items & Balances'
         },
         terminal: {
             title: I18N[currentLang].navTerminal,
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | محطة الصرف السريع والمباشر للطوابق' : 'Facilities Management - Facility Manager | Floor Dispensing Terminal'
+            sub: isAr ? 'إدارة المرافق | محطة الصرف السريع والمباشر للطوابق' : 'Facilities Management | Floor Dispensing Terminal'
         },
         floors: {
             title: I18N[currentLang].navFloors,
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | مصفوفة مقارنة الاستهلاك للأدوار 4 إلى 9' : 'Facilities Management - Facility Manager | Floors Consumption Matrix (4-9)'
+            sub: isAr ? 'إدارة المرافق | مصفوفة مقارنة الاستهلاك للأدوار 4 إلى 9' : 'Facilities Management | Floors Consumption Matrix (4-9)'
         },
         history: {
             title: I18N[currentLang].navHistory,
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | سجل تدقيق حركات الصرف وطباعة السندات' : 'Facilities Management - Facility Manager | Issue Audit Log & Vouchers'
+            sub: isAr ? 'إدارة المرافق | سجل تدقيق حركات الصرف وطباعة السندات' : 'Facilities Management | Issue Audit Log & Vouchers'
         },
         po: {
             title: I18N[currentLang].navPO,
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | أمر شراء للمورد بناءً على الاستهلاك' : 'Facilities Management - Facility Manager | Supplier Purchase Order'
+            sub: isAr ? 'إدارة المرافق | أمر شراء للمورد بناءً على الاستهلاك' : 'Facilities Management | Supplier Purchase Order'
         },
         furniture: {
             title: isAr ? 'جرد أصول الشركة (الأدوار 4 - 9)' : 'Company Assets Inventory (Floors 4 - 9)',
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | تسجيل ومراجعة الأعداد المتواجدة بالفعل في كل طابق' : 'Facilities Management - Facility Manager | Actual Furniture Counts per Floor'
+            sub: isAr ? 'إدارة المرافق | تسجيل ومراجعة الأعداد المتواجدة بالفعل في كل طابق' : 'Facilities Management | Actual Furniture Counts per Floor'
         },
         'furniture-matrix': {
             title: isAr ? 'تحليل الطوابق الشامل للأثاث (4 - 9)' : 'Comprehensive Furniture Floors Analysis (4 - 9)',
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | بيان تحليلي مقارن جاهز للعرض والإرسال للإدارة العليا' : 'Facilities Management - Facility Manager | Executive Floors Comparison Report'
+            sub: isAr ? 'إدارة المرافق | بيان تحليلي مقارن جاهز للعرض والإرسال للإدارة العليا' : 'Facilities Management | Executive Floors Comparison Report'
         },
         'furniture-depts': {
             title: isAr ? 'تحليل الطوابق بالأقسام' : 'Floors by Department',
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | الأقسام في كل دور، عدد المكاتب ومحتوياتها، والمطلوب شراؤه' : 'Facilities Management | Departments per floor, offices, contents and what to buy'
+            sub: isAr ? 'إدارة المرافق | الأقسام في كل دور، عدد المكاتب ومحتوياتها، والمطلوب شراؤه' : 'Facilities Management | Departments per floor, offices, contents and what to buy'
         },
         elec: {
             title: isAr ? 'شحن الكهرباء' : 'Electricity Top-up',
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | حساب شحن عدادات الكهرباء للأدوار كل 15 يوم والمديونيات' : 'Facilities Management | Floor meter top-ups every 15 days and arrears'
+            sub: isAr ? 'إدارة المرافق | حساب شحن عدادات الكهرباء للأدوار كل 15 يوم والمديونيات' : 'Facilities Management | Floor meter top-ups every 15 days and arrears'
         },
         preq: {
             title: isAr ? 'أمر شراء' : 'Purchase Order',
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | أمر شراء بنموذج الشركة، يطبع عربي أو إنجليزي حسب لغة البرنامج' : 'Facilities Management | Company purchase order form, printed in the program language'
+            sub: isAr ? 'إدارة المرافق | أمر شراء بنموذج الشركة، يطبع عربي أو إنجليزي حسب لغة البرنامج' : 'Facilities Management | Company purchase order form, printed in the program language'
         },
         hq: {
             title: isAr ? 'جرد وتجهيزات مقر الإدارة العليا' : 'Executive Management HQ Inventory',
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | بيان الأعداد الفعلية والحالة الفنية لتجهيزات مقر الإدارة العليا' : 'Facilities Management - Facility Manager | Executive HQ Assets & Appliances'
+            sub: isAr ? 'إدارة المرافق | بيان الأعداد الفعلية والحالة الفنية لتجهيزات مقر الإدارة العليا' : 'Facilities Management | Executive HQ Assets & Appliances'
         },
         custody: {
             title: isAr ? 'العهدة والفواتير وتحويلات الموردين' : 'Company Custody, Invoices & Supplier Transfers',
-            sub: isAr ? 'إدارة المرافق - مدير المرافق | ترحيل تراكمي للعهدة، تنبيه بنود الحوالات، إرفاق الفواتير بالسكانر، والدفعات المباشرة' : 'Facilities Management - Facility Manager | Custody Ledger, Transfer Variance Alerts, Scanner & Direct Supplier Payments'
+            sub: isAr ? 'إدارة المرافق | ترحيل تراكمي للعهدة، تنبيه بنود الحوالات، إرفاق الفواتير بالسكانر، والدفعات المباشرة' : 'Facilities Management | Custody Ledger, Transfer Variance Alerts, Scanner & Direct Supplier Payments'
         }
     };
 }
@@ -7394,7 +7399,7 @@ function openShareModal() {
 function shareViaWhatsApp() {
     const input = document.getElementById('share-link-input');
     const url = input ? input.value : getShareableUrl();
-    const text = `المجموعة الإستشارية | Consultancy Group\nإدارة المرافق - مدير المرافق\nرابط المتابعة والمزامنة اللحظية:\n${url}`;
+    const text = `المجموعة الإستشارية | Consultancy Group\nإدارة المرافق\nرابط المتابعة والمزامنة اللحظية:\n${url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }
 
@@ -7403,7 +7408,7 @@ function shareViaNative() {
     const url = input ? input.value : getShareableUrl();
     if (navigator.share) {
         navigator.share({
-            title: 'Consultancy Group - إدارة المرافق - مدير المرافق',
+            title: 'Consultancy Group - إدارة المرافق',
             text: 'رابط متابعة ومزامنة إدارة المرافق لحظة بلحظة:',
             url: url
         }).catch(() => {});
@@ -7587,7 +7592,7 @@ function downloadStandaloneDesktopPackage() {
         'echo     start "" "%APP_DIR%\\index.html" >> "%LAUNCHER%"',
         'echo ) >> "%LAUNCHER%"',
         '',
-        'powershell -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $desktop = [Environment]::GetFolderPath(\'Desktop\'); $s = $ws.CreateShortcut(\\\"$desktop\\Consultancy Group - إدارة المرافق.lnk\\\"); $s.TargetPath = \\\"$env:USERPROFILE\\ConsultancyGroup_DesktopApp\\Start_ConsultancyGroup.bat\\\"; $s.WorkingDirectory = \\\"$env:USERPROFILE\\ConsultancyGroup_DesktopApp\\\"; $s.WindowStyle = 7; $s.Description = \'Consultancy Group - إدارة المرافق - مدير المرافق\'; $s.Save()"',
+        'powershell -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $desktop = [Environment]::GetFolderPath(\'Desktop\'); $s = $ws.CreateShortcut(\\\"$desktop\\Consultancy Group - إدارة المرافق.lnk\\\"); $s.TargetPath = \\\"$env:USERPROFILE\\ConsultancyGroup_DesktopApp\\Start_ConsultancyGroup.bat\\\"; $s.WorkingDirectory = \\\"$env:USERPROFILE\\ConsultancyGroup_DesktopApp\\\"; $s.WindowStyle = 7; $s.Description = \'Consultancy Group - إدارة المرافق\'; $s.Save()"',
         '',
         'call "%LAUNCHER%"',
         'exit /b'
@@ -8680,7 +8685,7 @@ function shareSingleCustodyRowByIdEmail(rowId) {
     const subject = `المجموعة الإستشارية | فاتورة وحركة عهدة رقم #${row.serialNum} - ${row.desc}`;
     const bodyLines = [
         'المجموعة الإستشارية | Consultancy Group',
-        'إدارة المرافق - مدير المرافق',
+        'إدارة المرافق',
         '----------------------------------------',
         `رقم التسلسل بالعهدة: #${row.serialNum}`,
         `اسم ملف الفاتورة: فاتورة_عهدة_رقم_${row.serialNum}`,
@@ -9147,7 +9152,7 @@ function shareCustodyWhatsAppSummary() {
 
     const lines = [
         '*المجموعة الإستشارية | Consultancy Group*',
-        '*إدارة المرافق - مدير المرافق*',
+        '*إدارة المرافق*',
         `*جرد العهدة من تاريخ ${firstDate} إلى تاريخ ${lastDate}*${rawSearch ? ` (بحث: ${rawSearch})` : ''}`,
         '--------------------------------',
         `• *إجمالي الوارد:* ${totalIn.toLocaleString()} ج.م`,
@@ -10561,7 +10566,7 @@ function printDeptsReportLegacy() {
 
 // Detailed department breakdown for the regional manager (floor analysis stays for senior management / accounts)
 function shareDeptsWhatsApp() {
-    const lines = ['*المجموعة الإستشارية | Consultancy Group*', '*إدارة المرافق - مدير المرافق*', '*تحليل الطوابق بالأقسام — التفاصيل*', `التاريخ: ${getFormattedTodayDate(true)}`, '--------------------------------'];
+    const lines = ['*المجموعة الإستشارية | Consultancy Group*', '*إدارة المرافق*', '*تحليل الطوابق بالأقسام — التفاصيل*', `التاريخ: ${getFormattedTodayDate(true)}`, '--------------------------------'];
     DEPT_FLOORS.forEach(fl => {
         const depts = deptLayout.filter(d => d.floor === fl);
         if (!depts.length) return;
@@ -11161,9 +11166,9 @@ function exportPurchaseReqExcel(id) {
     sh.image = { col: 0, row: 0, w: CG_LOGO_XL_W, h: CG_LOGO_XL_H, offX: 4, offY: 8 };
     const blank = k => Array(6).fill({ v: '', s: k || 'default' });
     sh.add([...blank().slice(0, 3), { v: isAr ? 'إدارة المرافق' : 'Facilities Management', s: 'docDept' + E }, { v: '', s: 'docDept' + E }, { v: '', s: 'docDept' + E }], 36); sh.merge('D1:F1');
-    sh.add([...blank().slice(0, 3), { v: isAr ? 'مدير المرافق' : 'Facility Manager', s: 'docPos' + E }, { v: '', s: 'docPos' + E }, { v: '', s: 'docPos' + E }], 30); sh.merge('D2:F2');
+    sh.add([...blank().slice(0, 3), { v: t.title, s: 'docPos' + E }, { v: '', s: 'docPos' + E }, { v: '', s: 'docPos' + E }], 30); sh.merge('D2:F2');
     sh.add(blank('rule'), 6);
-    sh.add([{ v: t.title, s: 'docTitleC' }, ...blank('docTitleC').slice(1)], 30); sh.merge('A4:F4');
+    sh.add(blank(), 4);
     sh.add([], 10);
     // From / To
     const r5 = sh.add([{ v: t.from, s: 'partyHead' + S }, { v: '', s: 'partyHead' + S }, { v: '', s: 'partyHead' + S }, { v: t.reqFrom, s: 'partyHead' + S }, { v: '', s: 'partyHead' + S }, { v: '', s: 'partyHead' + S }], 22);
@@ -11262,10 +11267,9 @@ function printPurchaseReq(id) {
                 <img src="${getPrintLogoSrc()}" alt="المجموعة الإستشارية | Consultancy Group">
                 <div class="preq-head-text">
                     <div class="preq-doc">${isAr ? 'إدارة المرافق' : 'Facilities Management'}</div>
-                    <div class="preq-dept">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
+                    <div class="preq-dept">${t.title}</div>
                 </div>
             </div>
-            <div class="preq-title">${t.title}</div>
             <div class="preq-parties">
                 ${party(t.from, t.employee, isAr ? preqArabicOf(o.fromName) : preqEnglishOf(o.fromName), isAr ? preqArabicOf(o.fromPos) : preqEnglishOf(o.fromPos))}
                 ${party(t.reqFrom, t.employee, isAr ? preqArabicOf(o.toName) : preqEnglishOf(o.toName), isAr ? preqArabicOf(o.toPos) : preqEnglishOf(o.toPos))}
@@ -11477,7 +11481,7 @@ const CGX = (() => {
     function report({ name, title, subtitle, columns, landscape }) {
         const n = columns.length;
         const last = colName(n - 1);
-        const rows = [[], [{ v: 'إدارة المرافق - مدير المرافق', s: 'sub' }], [{ v: title, s: 'title' }], [{ v: subtitle || '', s: 'band' }], [], columns.map(c => ({ v: c.h, s: 'head' }))];
+        const rows = [[], [{ v: currentLang === 'ar' ? 'إدارة المرافق' : 'Facilities Management', s: 'sub' }], [{ v: title, s: 'title' }], [{ v: subtitle || '', s: 'band' }], [], columns.map(c => ({ v: c.h, s: 'head' }))];
         // fill merged band cells so the gold rule runs across the whole width
         for (let i = 1; i < n; i++) rows[3][i] = { v: '', s: 'band' };
         const sh = {
