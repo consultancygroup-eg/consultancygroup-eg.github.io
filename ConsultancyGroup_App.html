@@ -3142,6 +3142,12 @@ body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170,
 .cmp-bar { height: 5px; border-radius: 3px; background: var(--border-color); overflow: hidden; margin-top: 3px; }
 .cmp-bar span { display: block; height: 100%; }
 .cmp-group-row td { background: var(--bg-card); color: var(--primary); font-weight: 900; font-size: 0.85rem; }
+#cmp-floors { padding: 1rem 1.25rem 1.25rem; border-top: 1px solid var(--border-color); }
+.cmp-floors-head h3 { margin: 0 0 0.3rem 0; font-size: 1.05rem; font-weight: 900; color: var(--text-primary); }
+.cmp-floors-head p { margin: 0 0 0.6rem 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; }
+.cmp-floor-units { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin-bottom: 0.7rem; font-size: 0.8rem; color: var(--text-secondary); font-weight: 700; }
+.cmp-floor-units label { display: flex; align-items: center; gap: 0.3rem; }
+@media (max-width: 640px) { #cmp-floors { padding: 0.75rem 1rem 1rem; } }
 @media (max-width: 640px) { .cmp-settings { padding: 0.75rem 1rem; } #cmp-summary { padding: 0.75rem 1rem; } }
 
 </style>
@@ -4139,6 +4145,7 @@ body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170,
                                 <tbody id="cmp-table-body"></tbody>
                             </table>
                         </div>
+                        <div id="cmp-floors"></div>
                     </div>
                 </section>
 
@@ -9963,7 +9970,7 @@ function cmpAvgIssued() {
 // one row's numbers: needed per month, how it was worked out, and (for drinks) how much each employee gets now
 function cmpCalc(r) {
     const s = cmpS(), D = s.workDays, isAr = currentLang === 'ar';
-    let need = 0, how = '', extra = '';
+    let need = 0, how = '', extra = '', short = '';
     if (r.method === 'count') {
         need = r.places * r.times * D;
         how = isAr ? `${r.places} ${r.placeLbl} × ${r.times} مرة في اليوم × ${D} يوم شغل` : `${r.places} × ${r.times} a day × ${D} work days`;
@@ -9983,11 +9990,13 @@ function cmpCalc(r) {
         how = isAr ? `كل المشروبات: ${s.employees} موظف × ${s.drinksPerDay} مشروبات في اليوم (من كل الأنواع) × ${D} يوم = ${cmpFmt(all)} مشروب، نصيب ${r.name.split(' (')[0]} منهم ${r.share}% = ${cmpFmt(Math.round(cups))} ${r.servLbl} ÷ ${r.perUnit} ${r.servLbl} في ${r.unit === 'كيلو' ? 'الكيلو' : (r.unit === 'عبوة' ? 'العبوة' : 'العلبة')}`
                    : `All drinks: ${s.employees} × ${s.drinksPerDay} a day (all kinds) × ${D} days = ${cmpFmt(all)}; ${r.share}% of them = ${cmpFmt(Math.round(cups))} ÷ ${r.perUnit} per unit`;
         const per = (r.contract * r.perUnit) / s.employees;
+        short = isAr ? `${cmpFmt(all)} مشروب في الشهر × ${r.share}% = ${cmpFmt(Math.round(cups))} ${r.servLbl} ÷ ${r.perUnit}. المتعاقد عليه = ${cmpFmt(per.toFixed(1))} ${r.servLbl} للموظف في الشهر`
+                     : `${cmpFmt(all)} drinks × ${r.share}% = ${cmpFmt(Math.round(cups))} ÷ ${r.perUnit}. Contract = ${cmpFmt(per.toFixed(1))} per employee a month`;
         extra = isAr ? `المتعاقد عليه = ${cmpFmt(Math.round(r.contract * r.perUnit))} ${r.servLbl} في الشهر، يعني ${cmpFmt(per.toFixed(1))} للموظف في الشهر`
                      : `Contracted = ${cmpFmt(Math.round(r.contract * r.perUnit))} a month, ${cmpFmt(per.toFixed(1))} per employee a month`;
     }
     need = Math.ceil(need - 1e-9);
-    return { need, how, extra };
+    return { need, how, extra, short: short || how };
 }
 function cmpResult(need, contract) {
     const diff = need - contract;
@@ -10002,7 +10011,7 @@ function cmpAllRows() {
         const r = cmpRow(def), c = cmpCalc(r), res = cmpResult(c.need, r.contract);
         const note = cmpS().notes[def.key] !== undefined ? cmpS().notes[def.key] : (COMPARE_DEFAULT_NOTES[def.key] || '');
         const price = Number(r.price) || 0;
-        out.push({ key: def.key, row: r, group: 'formula', name: isAr ? r.name : r.nameEn, unit: trText(r.unit), how: c.how, extra: c.extra, need: c.need, contract: r.contract, diff: res.diff, cover: res.cover, price, cost: Math.max(0, res.diff) * price, note });
+        out.push({ key: def.key, row: r, group: 'formula', name: isAr ? r.name : r.nameEn, unit: trText(r.unit), how: c.how, extra: c.extra, short: c.short, need: c.need, contract: r.contract, diff: res.diff, cover: res.cover, price, cost: Math.max(0, res.diff) * price, note });
     });
     const used = new Set(COMPARE_ROWS.map(d => d.itemId));
     const { avg, cycles, partial } = cmpAvgIssued();
@@ -10125,6 +10134,7 @@ function renderCompareView() {
     });
     body.innerHTML = html;
     cmpRenderSummary(rows);
+    renderCompareFloors();
 }
 // the drinks' shares split the same 3 daily drinks, so together they should make 100%
 function cmpShareWarning() {
@@ -10164,6 +10174,7 @@ function cmpRefreshComputed() {
         set(`cmp-cost-${x.key}`, cmpCostHtml(x));
     });
     cmpRenderSummary(rows);
+    if (cmpS().drinksPerDay) renderCompareFloors();
 }
 function onCompareInput(key, field, val) {
     const s = cmpS();
@@ -10196,6 +10207,188 @@ function resetCompareSettings() {
     renderCompareView();
 }
 
+// --- per-floor consumption from the issue records (22 Nov 2026) ---
+// What each floor actually took in the cycle shown at the top, divided by the floor's employees.
+// Drinks are turned into cups (by the unit they are issued in) and compared with the daily drinks per employee.
+const CMP_FLOOR_EMP_DEFAULT = { 'الدور الرابع': 56, 'الدور الخامس': 53, 'الدور السادس': 46, 'الدور السابع': 47, 'الدور الثامن': 46, 'الدور التاسع': 9 };
+const CMP_FLOORS = ['الدور الرابع', 'الدور الخامس', 'الدور السادس', 'الدور السابع', 'الدور الثامن', 'الدور التاسع'];
+const CMP_FLOOR_OTHER = [{ id: 1, name: 'مناديل الحمامات' }, { id: 2, name: 'مناديل الوضوء' }, { id: 3, name: 'مناديل مكتب (فاين)', perEmpNeed: 'fine' }, { id: 4, name: 'ديتول' }, { id: 5, name: 'صابون يد' }];
+function cmpFloorEmp(fl) {
+    const m = cmpS().floorEmp || {};
+    return m[fl] !== undefined ? Number(m[fl]) || 0 : CMP_FLOOR_EMP_DEFAULT[fl];
+}
+function onCompareFloorEmp(fl, val) {
+    const s = cmpS();
+    if (!s.floorEmp) s.floorEmp = {};
+    s.floorEmp[fl] = Math.max(0, Number(val) || 0);
+    saveCompareSettings();
+    renderCompareFloors();
+}
+// cups in one issued unit of a drink item (the unit the floors are issued in, e.g. «ربع» of tea)
+function cmpIssueCups(def) {
+    const v = (cmpS().vals[def.key] || {}).issueCups;
+    if (v > 0) return v;
+    const it = inventory.find(i => i.id === def.itemId);
+    const u = String(it ? it.unit : '').trim();
+    if (def.key === 'tea') return u === 'ربع' ? 125 : u === 'كيلو' ? 500 : u === 'ثمن' ? 62 : 250;
+    if (def.key === 'coffee') return u === 'ثمن' ? 18 : u === 'ربع' ? 35 : u === 'نص' ? 70 : 140;
+    return def.perUnit;
+}
+// work days (Sunday to Thursday) of the cycle shown; a running cycle counts up to today
+function cmpCycleWorkDays() {
+    const key = stockActiveKey();
+    const from = cycleFromOfKey(key);
+    let to = cycleToOfKey(key);
+    const today = localTodayStr();
+    const running = today < to;
+    if (running) to = today;
+    let n = 0, d = from, guard = 0;
+    while (d && d <= to && guard++ < 400) {
+        const p = ymdParse(d);
+        const wd = new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay();
+        if (wd !== 5 && wd !== 6) n++;
+        d = ymdAddDays(d, 1);
+    }
+    return { key, days: Math.max(1, n), running };
+}
+// all the per-floor numbers, used by the screen, the PDF and Excel
+function cmpFloorData() {
+    const s = cmpS();
+    const { key, days, running } = cmpCycleWorkDays();
+    const trans = transactions.filter(t => t.date && getCycleKeyForDate(t.date) === key);
+    const q = (fl, id) => trans.filter(t => t.floor === fl && t.itemId === id).reduce((a, t) => a + (Number(t.qty) || 0), 0);
+    const drinks = COMPARE_ROWS.filter(d => d.method === 'drink').map(d => {
+        const it = inventory.find(i => i.id === d.itemId);
+        return { def: d, name: d.name.split(' (')[0], unit: it ? trText(it.unit) : '', cups: cmpIssueCups(d) };
+    });
+    const floors = CMP_FLOORS.map(fl => {
+        const emp = cmpFloorEmp(fl);
+        const dr = drinks.map(d => { const qty = q(fl, d.def.itemId); const cups = qty * d.cups; return { qty, cups, perEmpDay: emp ? cups / emp / days : 0 }; });
+        const totalPerEmpDay = dr.reduce((a, x) => a + x.perEmpDay, 0);
+        const other = CMP_FLOOR_OTHER.map(o => { const qty = q(fl, o.id); return { qty, perEmpMonth: emp ? qty / emp * (s.workDays / days) : 0 }; });
+        return { fl, emp, dr, totalPerEmpDay, cover: s.drinksPerDay ? Math.round(totalPerEmpDay / s.drinksPerDay * 100) : 0, other };
+    });
+    const empAll = floors.reduce((a, f) => a + f.emp, 0);
+    const tot = {
+        emp: empAll,
+        dr: drinks.map((d, i) => { const qty = floors.reduce((a, f) => a + f.dr[i].qty, 0); const cups = qty * d.cups; return { qty, cups, perEmpDay: empAll ? cups / empAll / days : 0 }; }),
+        other: CMP_FLOOR_OTHER.map((o, i) => { const qty = floors.reduce((a, f) => a + f.other[i].qty, 0); return { qty, perEmpMonth: empAll ? qty / empAll * (s.workDays / days) : 0 }; })
+    };
+    tot.totalPerEmpDay = tot.dr.reduce((a, x) => a + x.perEmpDay, 0);
+    tot.cover = s.drinksPerDay ? Math.round(tot.totalPerEmpDay / s.drinksPerDay * 100) : 0;
+    return { key, days, running, drinks, floors, tot };
+}
+const cmp1 = n => (Math.round((Number(n) || 0) * 100) / 100).toLocaleString('en-US', { maximumFractionDigits: 2 });
+function renderCompareFloors() {
+    const box = document.getElementById('cmp-floors');
+    if (!box) return;
+    const isAr = currentLang === 'ar';
+    const s = cmpS();
+    const D = cmpFloorData();
+    const empSum = D.tot.emp;
+    const fln = fl => trText(fl);
+    const coverCell = c => `<div style="font-weight:900; color:${c < 100 ? 'var(--danger)' : 'var(--success)'};">${c}%</div><div class="cmp-bar"><span style="width:${Math.min(100, c)}%; background:${c < 100 ? 'var(--danger)' : 'var(--success)'};"></span></div>`;
+    const drinkCell = x => `<div style="font-weight:800;">${cmp1(x.qty)}</div><div class="cmp-how">${cmp1(x.perEmpDay)} ${isAr ? 'للموظف/يوم' : 'per emp./day'}</div>`;
+    const otherCell = (x, o) => `<div style="font-weight:800;">${cmp1(x.qty)}</div><div class="cmp-how">${cmp1(x.perEmpMonth)} ${isAr ? 'للموظف/شهر' : 'per emp./month'}</div>`;
+    const drinkRows = D.floors.map(f => `<tr>
+            <td style="font-weight:800;">${fln(f.fl)}</td>
+            <td style="text-align:center;"><input type="number" min="0" value="${f.emp}" class="table-input" style="width:64px; text-align:center; font-weight:900;" onchange="onCompareFloorEmp('${f.fl}', this.value)"></td>
+            ${f.dr.map(drinkCell).map(c => `<td style="text-align:center;">${c}</td>`).join('')}
+            <td style="text-align:center; font-weight:900; background: var(--primary-light);">${cmp1(f.totalPerEmpDay)}</td>
+            <td style="text-align:center; min-width:80px;">${coverCell(f.cover)}</td>
+        </tr>`).join('');
+    const otherRows = D.floors.map(f => `<tr>
+            <td style="font-weight:800;">${fln(f.fl)}</td>
+            <td style="text-align:center; font-weight:800;">${f.emp}</td>
+            ${f.other.map(otherCell).map(c => `<td style="text-align:center;">${c}</td>`).join('')}
+        </tr>`).join('');
+    box.innerHTML = `
+        <div class="cmp-floors-head">
+            <h3>${isAr ? 'الاستهلاك لكل دور حسب السحب' : 'Consumption per floor from the issue records'}</h3>
+            <p>${isAr
+                ? `الدورة اللي فوق: ${cycleShortLabel(D.key)}. أيام الشغل اللي اتحسبت: ${D.days} يوم${D.running ? ' (الدورة لسه شغالة، فاتحسبت لحد النهارده)' : ''}. اللي اتسحب لكل دور من سجل الصرف، متقسم على عدد موظفين الدور.`
+                : `Cycle: ${cycleShortLabel(D.key)}. Work days counted: ${D.days}${D.running ? ' (running cycle, up to today)' : ''}. What each floor took, divided by its employees.`}
+            ${empSum !== s.employees ? `<br><span style="color: var(--danger); font-weight:800;">${isAr ? `مجموع موظفين الأدوار ${empSum}، وفوق مكتوب ${s.employees}.` : `Floors add up to ${empSum} employees; ${s.employees} is set above.`}</span>` : ''}</p>
+        </div>
+        <div class="cmp-floor-units">${D.drinks.map(d => `<label>${escHtml(d.name)}: ${isAr ? 'الـ' : ''}${escHtml(d.unit)} = <input type="number" min="1" value="${d.cups}" class="table-input" style="width:58px; text-align:center; font-weight:800;" onchange="onCompareInput('${d.def.key}','issueCups',this.value); renderCompareFloors();"> ${escHtml(d.def.servLbl)}</label>`).join('')}</div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead><tr>
+                    <th>${isAr ? 'الدور' : 'Floor'}</th><th style="text-align:center;">${isAr ? 'الموظفين' : 'Employees'}</th>
+                    ${D.drinks.map(d => `<th style="text-align:center;">${escHtml(d.name)}<br><small style="font-weight:600;">(${escHtml(d.unit)})</small></th>`).join('')}
+                    <th style="text-align:center; background: var(--primary-light); color: var(--primary);">${isAr ? 'مشروبات للموظف في اليوم' : 'Drinks per employee a day'}</th>
+                    <th style="text-align:center;">${isAr ? `من الـ ${s.drinksPerDay} المفروضين` : `Of the ${s.drinksPerDay} needed`}</th>
+                </tr></thead>
+                <tbody>${drinkRows}</tbody>
+                <tfoot><tr>
+                    <th>${isAr ? 'كل الأدوار' : 'All floors'}</th><th style="text-align:center;">${D.tot.emp}</th>
+                    ${D.tot.dr.map(x => `<th style="text-align:center;">${drinkCell(x)}</th>`).join('')}
+                    <th style="text-align:center;">${cmp1(D.tot.totalPerEmpDay)}</th>
+                    <th style="text-align:center;">${coverCell(D.tot.cover)}</th>
+                </tr></tfoot>
+            </table>
+        </div>
+        <div class="table-responsive" style="margin-top:0.9rem;">
+            <table class="data-table">
+                <thead><tr>
+                    <th>${isAr ? 'الدور' : 'Floor'}</th><th style="text-align:center;">${isAr ? 'الموظفين' : 'Employees'}</th>
+                    ${CMP_FLOOR_OTHER.map(o => { const it = inventory.find(i => i.id === o.id); return `<th style="text-align:center;">${escHtml(isAr ? o.name : trText(it ? it.name : o.name))}<br><small style="font-weight:600;">(${escHtml(it ? trText(it.unit) : '')})</small></th>`; }).join('')}
+                </tr></thead>
+                <tbody>${otherRows}</tbody>
+                <tfoot><tr>
+                    <th>${isAr ? 'كل الأدوار' : 'All floors'}</th><th style="text-align:center;">${D.tot.emp}</th>
+                    ${D.tot.other.map(x => `<th style="text-align:center;">${otherCell(x)}</th>`).join('')}
+                </tr></tfoot>
+            </table>
+        </div>`;
+}
+function cmpFloorsPrintHtml() {
+    const isAr = currentLang === 'ar';
+    const s = cmpS();
+    const D = cmpFloorData();
+    const c = x => `${cmp1(x.qty)}<br><span style="font-size:0.7rem; color:#8a8b8c;">${cmp1(x.perEmpDay)}</span>`;
+    const o = x => `${cmp1(x.qty)}<br><span style="font-size:0.7rem; color:#8a8b8c;">${cmp1(x.perEmpMonth)}</span>`;
+    const pc = v => `<span style="font-weight:800; color:${v < 100 ? '#b3261e' : '#1e7a46'};">${v}%</span>`;
+    return `
+        <div style="page-break-before: always;"></div>
+        ${buildCenteredPrintHeader(isAr ? 'الاستهلاك لكل دور حسب السحب' : 'Consumption per floor from the issue records',
+            `${isAr ? 'الدورة:' : 'Cycle:'} ${cycleShortLabel(D.key)} | ${isAr ? 'أيام الشغل اللي اتحسبت:' : 'Work days counted:'} ${D.days}${D.running ? (isAr ? ' (لحد النهارده)' : ' (up to today)') : ''}`)}
+        <p style="font-size:0.78rem; color:#55524b; margin:6px 0;">${isAr ? 'في كل خانة: الكمية اللي اتسحبت للدور، وتحتها نصيب الموظف (المشروبات بالكوباية في اليوم).' : 'Each cell: quantity issued to the floor, and under it the share per employee (drinks in cups a day).'}</p>
+        <table class="print-table">
+            <thead><tr><th>${isAr ? 'الدور' : 'Floor'}</th><th style="text-align:center !important;">${isAr ? 'الموظفين' : 'Employees'}</th>
+                ${D.drinks.map(d => `<th style="text-align:center !important;">${escHtml(d.name)} (${escHtml(d.unit)})</th>`).join('')}
+                <th style="text-align:center !important;">${isAr ? 'مشروبات للموظف في اليوم' : 'Drinks per employee a day'}</th><th style="text-align:center !important;">${isAr ? `من الـ ${s.drinksPerDay}` : `Of ${s.drinksPerDay}`}</th></tr></thead>
+            <tbody>${D.floors.map(f => `<tr><td style="font-weight:800;">${trText(f.fl)}</td><td style="text-align:center !important;">${f.emp}</td>${f.dr.map(x => `<td style="text-align:center !important;">${c(x)}</td>`).join('')}<td style="text-align:center !important; font-weight:900;">${cmp1(f.totalPerEmpDay)}</td><td style="text-align:center !important;">${pc(f.cover)}</td></tr>`).join('')}</tbody>
+            <tfoot><tr><th>${isAr ? 'كل الأدوار' : 'All floors'}</th><th style="text-align:center !important;">${D.tot.emp}</th>${D.tot.dr.map(x => `<th style="text-align:center !important;">${c(x)}</th>`).join('')}<th style="text-align:center !important;">${cmp1(D.tot.totalPerEmpDay)}</th><th style="text-align:center !important;">${pc(D.tot.cover)}</th></tr></tfoot>
+        </table>
+        <table class="print-table" style="margin-top:10px;">
+            <thead><tr><th>${isAr ? 'الدور' : 'Floor'}</th><th style="text-align:center !important;">${isAr ? 'الموظفين' : 'Employees'}</th>
+                ${CMP_FLOOR_OTHER.map(x => { const it = inventory.find(i => i.id === x.id); return `<th style="text-align:center !important;">${escHtml(isAr ? x.name : trText(it ? it.name : x.name))}</th>`; }).join('')}</tr></thead>
+            <tbody>${D.floors.map(f => `<tr><td style="font-weight:800;">${trText(f.fl)}</td><td style="text-align:center !important;">${f.emp}</td>${f.other.map(x => `<td style="text-align:center !important;">${o(x)}</td>`).join('')}</tr>`).join('')}</tbody>
+            <tfoot><tr><th>${isAr ? 'كل الأدوار' : 'All floors'}</th><th style="text-align:center !important;">${D.tot.emp}</th>${D.tot.other.map(x => `<th style="text-align:center !important;">${o(x)}</th>`).join('')}</tr></tfoot>
+        </table>
+        <p style="font-size:0.72rem; color:#8a8b8c; margin-top:4px;">${isAr ? 'الجدول التاني: تحت كل كمية نصيب الموظف في الشهر.' : 'Second table: under each quantity, the share per employee a month.'}</p>`;
+}
+function cmpFloorsSheet() {
+    const D = cmpFloorData();
+    const s = cmpS();
+    const cols = [{ h: 'الدور', w: 16 }, { h: 'الموظفين', w: 11 }];
+    D.drinks.forEach(d => { cols.push({ h: `${d.name} (${d.unit})`, w: 12 }); cols.push({ h: `${d.name}: كوباية للموظف في اليوم`, w: 14 }); });
+    cols.push({ h: 'مشروبات للموظف في اليوم', w: 14 }, { h: `من الـ ${s.drinksPerDay} المفروضين`, w: 13 });
+    CMP_FLOOR_OTHER.forEach(o => { cols.push({ h: o.name, w: 12 }); cols.push({ h: `${o.name}: للموظف في الشهر`, w: 14 }); });
+    const sh = CGX.report({ name: 'الاستهلاك لكل دور', title: 'الاستهلاك لكل دور حسب السحب', subtitle: `الدورة: ${D.key}   |   أيام الشغل اللي اتحسبت: ${D.days}${D.running ? ' (لحد النهارده)' : ''}   |   أيام الشغل في الشهر: ${s.workDays}`, columns: cols, landscape: true });
+    const add = (label, emp, dr, totalPerEmpDay, cover, other, st) => {
+        const cells = [{ v: label, s: st ? 'totLabel' : 'textBold' }, { v: emp, s: st ? 'totInt' : 'int' }];
+        dr.forEach(x => { cells.push({ v: x.qty, s: st ? 'totInt' : 'int' }); cells.push({ v: +x.perEmpDay.toFixed(2), s: st ? 'totMoney' : 'money' }); });
+        cells.push({ v: +totalPerEmpDay.toFixed(2), s: 'gold' }, { v: cover / 100, s: 'pct' });
+        other.forEach(x => { cells.push({ v: x.qty, s: st ? 'totInt' : 'int' }); cells.push({ v: +x.perEmpMonth.toFixed(2), s: st ? 'totMoney' : 'money' }); });
+        sh.add(cells);
+    };
+    D.floors.forEach(f => add(f.fl, f.emp, f.dr, f.totalPerEmpDay, f.cover, f.other));
+    add('كل الأدوار', D.tot.emp, D.tot.dr, D.tot.totalPerEmpDay, D.tot.cover, D.tot.other, true);
+    return sh;
+}
+
 function printCompareReport() {
     const printArea = document.getElementById('official-print-viewport');
     if (!printArea) return;
@@ -10216,7 +10409,7 @@ function printCompareReport() {
             <td style="width:28px; text-align:center !important;">${n}</td>
             <td class="print-item-name" style="width:17% !important; font-weight:800 !important; font-size:0.82rem !important;">${escHtml(x.name)}</td>
             <td style="width:6%; text-align:center !important; font-size:0.8rem !important;">${escHtml(x.unit)}</td>
-            <td style="width:24%; font-size:0.72rem !important; line-height:1.4;">${escHtml(x.how)}${x.extra ? `<br><span style="color:#94700f;">${escHtml(x.extra)}</span>` : ''}</td>
+            <td style="width:24%; font-size:0.72rem !important; line-height:1.4;">${escHtml(x.short || x.how)}</td>
             <td style="width:9%; text-align:center !important; font-weight:900;">${cmpFmt(x.need)}</td>
             <td style="width:9%; text-align:center !important;">${cmpFmt(x.contract)}</td>
             <td style="width:10%; text-align:center !important; font-weight:800;">${diffTxt}</td>
@@ -10254,6 +10447,7 @@ function printCompareReport() {
                 </tr></tfoot>
             </table>
             <div style="margin-top:10px; padding:8px 10px; border:1px solid #e0d6bd; border-radius:6px; font-size:0.84rem; color:#55524b; line-height:1.6;">${summary}</div>
+            ${cmpFloorsPrintHtml()}
             <div class="voucher-signatures">
                 <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
             </div>
@@ -10283,7 +10477,7 @@ function exportCompareExcel() {
     cgxTotalRow(sh, 9, [{ f: `SUM(J${F}:J${L})-J${wc2}`, v: cmpTotals(rows).extra, s: 'finMoney' }, { v: 'مناديل الحمامات محسوبة على 3 مرات', s: 'finLabel' }], true);
     sh.add([]);
     cmpSummary(rows).forEach(l => { const r = sh.add([{ v: l, s: 'note' }]); sh.merge(`A${r}:K${r}`); });
-    CGX.download(sh, `مقارنة_المتعاقد_عليه_${cgxToday()}`);
+    CGX.download([sh, cmpFloorsSheet()], `مقارنة_المتعاقد_عليه_${cgxToday()}`);
 }
 
 function exportPurchaseOrderToCSVLegacy() {

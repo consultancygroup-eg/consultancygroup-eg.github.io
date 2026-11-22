@@ -3096,4 +3096,10 @@ body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170,
 .cmp-bar { height: 5px; border-radius: 3px; background: var(--border-color); overflow: hidden; margin-top: 3px; }
 .cmp-bar span { display: block; height: 100%; }
 .cmp-group-row td { background: var(--bg-card); color: var(--primary); font-weight: 900; font-size: 0.85rem; }
+#cmp-floors { padding: 1rem 1.25rem 1.25rem; border-top: 1px solid var(--border-color); }
+.cmp-floors-head h3 { margin: 0 0 0.3rem 0; font-size: 1.05rem; font-weight: 900; color: var(--text-primary); }
+.cmp-floors-head p { margin: 0 0 0.6rem 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; }
+.cmp-floor-units { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin-bottom: 0.7rem; font-size: 0.8rem; color: var(--text-secondary); font-weight: 700; }
+.cmp-floor-units label { display: flex; align-items: center; gap: 0.3rem; }
+@media (max-width: 640px) { #cmp-floors { padding: 0.75rem 1rem 1rem; } }
 @media (max-width: 640px) { .cmp-settings { padding: 0.75rem 1rem; } #cmp-summary { padding: 0.75rem 1rem; } }
