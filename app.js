@@ -4173,6 +4173,7 @@ function cmpSummary(rows) {
         const T = COMPARE_INVOICE_TOTALS;
         const wc = rows.find(x => x.key === 'wc3');
         if (wc && wc.prev) lines.push(`الدورة اللي فاتت كانت الكميات أقل كمان (مناديل الحمامات ${cmpFmt(wc.prev.qty)} بدل ${cmpFmt(wc.contract)})، وفاتورتها ${cmpFmt(T.prev)} ج.م، والدورة دي ${cmpFmt(T.cur)} ج.م: الزيادة ${cmpFmt(+(T.cur - T.prev).toFixed(2))} ج.م جاية من زيادة الكميات المتعاقد عليها، ولسه أقل من الاحتياج.`);
+        if (rows.some(x => x.prev && x.contract < x.prev.qty)) lines.push('الأصناف اللي عليها ▼ اتطلبت أقل لأن كان فيه متبقي منها من الدورة اللي فاتت، فاتطلب على قد الناقص بس (ولو مفيش متبقي بتتطلب الكمية كاملة). يعني ده مش معناه إن الاستهلاك قل.');
         lines.push('يعني الاستهلاك مش عالي، لكن الكميات المتعاقد عليها أصلاً أقل من المفترض، والمطلوب زيادة الكميات في التعاقد.');
     } else {
         lines.push(`Based on ${s.employees} employees and ${s.workDays} work days a month, ${short.length} items have a contracted quantity below the actual need.`);
@@ -4181,6 +4182,7 @@ function cmpSummary(rows) {
         if (t.extra > 0) lines.push(`The current contract costs about ${cmpFmt(Math.round(t.now))} EGP a month; covering the shortfall needs about ${cmpFmt(Math.round(t.extra))} EGP a month more${t.missing ? ' (items without a price not included)' : ''}.`);
         const T = COMPARE_INVOICE_TOTALS;
         lines.push(`Last cycle the quantities were even lower: invoice ${cmpFmt(T.prev)} EGP, this cycle ${cmpFmt(T.cur)} EGP; the increase comes from larger contracted quantities, still below the need.`);
+        if (rows.some(x => x.prev && x.contract < x.prev.qty)) lines.push('Items marked ▼ were ordered less because some was left over from last cycle, so only the shortfall was ordered (with nothing left, the full quantity is ordered). It does not mean consumption went down.');
         lines.push('Consumption is not high: the contracted quantities are below what is needed, and should be increased.');
     }
     return lines;
