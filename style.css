@@ -3103,3 +3103,12 @@ body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170,
 .cmp-floor-units label { display: flex; align-items: center; gap: 0.3rem; }
 @media (max-width: 640px) { #cmp-floors { padding: 0.75rem 1rem 1rem; } }
 @media (max-width: 640px) { .cmp-settings { padding: 0.75rem 1rem; } #cmp-summary { padding: 0.75rem 1rem; } }
+
+/* comparison report (printCompareReport): 11 columns must fit A4, so names and headings wrap and cells are tighter */
+table.print-table.cmp-print th,
+table.print-table.cmp-print td { padding: 0.22rem 0.28rem !important; font-size: 0.74rem !important; }
+table.print-table.cmp-print th { white-space: normal !important; font-size: 0.7rem !important; line-height: 1.25 !important; }
+table.print-table.cmp-print td.print-item-name,
+table.print-table.cmp-print th.print-item-name { white-space: normal !important; width: 15% !important; min-width: 0 !important; max-width: none !important; font-size: 0.76rem !important; padding: 0.22rem 0.35rem !important; }
+table.print-table.cmp-print th:first-child,
+table.print-table.cmp-print td:first-child { width: 24px !important; min-width: 22px !important; }

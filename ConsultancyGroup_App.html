@@ -3150,6 +3150,15 @@ body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170,
 @media (max-width: 640px) { #cmp-floors { padding: 0.75rem 1rem 1rem; } }
 @media (max-width: 640px) { .cmp-settings { padding: 0.75rem 1rem; } #cmp-summary { padding: 0.75rem 1rem; } }
 
+/* comparison report (printCompareReport): 11 columns must fit A4, so names and headings wrap and cells are tighter */
+table.print-table.cmp-print th,
+table.print-table.cmp-print td { padding: 0.22rem 0.28rem !important; font-size: 0.74rem !important; }
+table.print-table.cmp-print th { white-space: normal !important; font-size: 0.7rem !important; line-height: 1.25 !important; }
+table.print-table.cmp-print td.print-item-name,
+table.print-table.cmp-print th.print-item-name { white-space: normal !important; width: 15% !important; min-width: 0 !important; max-width: none !important; font-size: 0.76rem !important; padding: 0.22rem 0.35rem !important; }
+table.print-table.cmp-print th:first-child,
+table.print-table.cmp-print td:first-child { width: 24px !important; min-width: 22px !important; }
+
 </style>
 
     <!-- Local Offline Chart.js & Lucide Icons -->
@@ -4134,7 +4143,8 @@ body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170,
                                         <th style="text-align: center;">الوحدة</th>
                                         <th>طريقة الحساب</th>
                                         <th style="text-align: center; background: var(--primary-light); color: var(--primary);">المفترض في الشهر</th>
-                                        <th style="text-align: center;">المتعاقد عليه</th>
+                                        <th style="text-align: center;">الدورة اللي فاتت</th>
+                                        <th style="text-align: center;">المتعاقد عليه (الحالية)</th>
                                         <th style="text-align: center;">الفرق</th>
                                         <th style="text-align: center;">المتعاقد بيغطي</th>
                                         <th style="text-align: center;">سعر الوحدة</th>
@@ -9909,6 +9919,14 @@ const COMPARE_ROWS = [
     { key: 'anise', itemId: 11, name: 'ينسون (علبة 100 فتلة)', nameEn: 'Anise (box of 100)', unit: 'علبة', method: 'drink', share: 10, perUnit: 100, contract: 3, price: 130, servLbl: 'فتلة' }
 ];
 // the other items on the same invoice: itemId -> [contracted qty, unit price]
+// the previous cycle's invoice (Hoor Company, 20 Oct 2026, total 51,495.5): row key or itemId -> [qty in this screen's unit, unit price, note]
+const COMPARE_PREV = {
+    wc2: [1050, 13], wc3: [1050, 13], wudu: [450, 18], fine: [240, 27.5], dettol: [19, 150, '+ 15 بخاخ 330 ملي'], soap: [40, 45], tea: [6, 120],
+    green: [12, 80, '6 علب × 50 فتلة'], hibiscus: [6, 130], anise: [6, 130],
+    6: [17, 57], 7: [24, 71], 8: [12, 28], 9: [30, 45], 10: [20, 30], 14: [15, 110], 16: [60, 36.5], 18: [6, 65], 19: [24, 25], 21: [22, 70], 22: [17, 97], 24: [5, 40], 25: [24, 15], 26: [12, 10]
+};
+const COMPARE_INVOICE_TOTALS = { prev: 51495.5, prevDate: '20/10/2026', cur: 55148.5, curDate: '19/11/2026' };
+function cmpPrev(key) { const p = COMPARE_PREV[key]; return p ? { qty: p[0], price: p[1], note: p[2] || '' } : null; }
 const COMPARE_INVOICE = { 6: [6, 62], 7: [24, 71], 8: [5, 28], 9: [30, 45], 10: [30, 30], 14: [18, 110], 16: [60, 40], 18: [8, 65], 19: [24, 25], 20: [3, 70], 21: [18, 70], 22: [20, 97], 24: [2, 40], 25: [24, 20], 26: [12, 15] };
 const COMPARE_DEFAULT_NOTES = {
     dettol: 'العلبة بتكفّي الحمام 4 أيام. كل دور فيه حمام رجالي (4 تواليت) وحريمي (3 تواليت)، والرابع فيه 2 رجالي و2 حريمي (كل واحد 2 تواليت): 14 حمام و43 تواليت',
@@ -10014,7 +10032,7 @@ function cmpAllRows() {
         const r = cmpRow(def), c = cmpCalc(r), res = cmpResult(c.need, r.contract);
         const note = cmpS().notes[def.key] !== undefined ? cmpS().notes[def.key] : (COMPARE_DEFAULT_NOTES[def.key] || '');
         const price = Number(r.price) || 0;
-        out.push({ key: def.key, row: r, group: 'formula', name: isAr ? r.name : r.nameEn, unit: trText(r.unit), how: c.how, extra: c.extra, short: c.short, need: c.need, contract: r.contract, diff: res.diff, cover: res.cover, price, cost: Math.max(0, res.diff) * price, note });
+        out.push({ key: def.key, row: r, group: 'formula', name: isAr ? r.name : r.nameEn, unit: trText(r.unit), how: c.how, extra: c.extra, short: c.short, need: c.need, contract: r.contract, prev: cmpPrev(def.key), diff: res.diff, cover: res.cover, price, cost: Math.max(0, res.diff) * price, note });
     });
     const used = new Set(COMPARE_ROWS.map(d => d.itemId));
     const { avg, cycles, partial } = cmpAvgIssued();
@@ -10030,7 +10048,7 @@ function cmpAllRows() {
         const res = cmpResult(need, contract);
         const how = isAr ? (cycles ? `متوسط المنصرف الفعلي${partial ? ' (الدورة الحالية لحد النهارده)' : ` في ${cycles} دورة`}: ${cmpFmt(auto)}` : 'مافيش صرف متسجل')
                          : (cycles ? `Average issued${partial ? ' (this cycle so far)' : ` over ${cycles} cycle(s)`}: ${cmpFmt(auto)}` : 'No issues recorded');
-        out.push({ key: 'item-' + item.id, item, group: 'actual', name: trText(item.name), unit: trText(item.unit), how, extra: '', need, auto, contract, diff: res.diff, cover: res.cover, price, cost: Math.max(0, res.diff) * price, note: cmpS().notes['item-' + item.id] || '' });
+        out.push({ key: 'item-' + item.id, item, group: 'actual', name: trText(item.name), unit: trText(item.unit), how, extra: '', need, auto, contract, prev: cmpPrev(item.id), diff: res.diff, cover: res.cover, price, cost: Math.max(0, res.diff) * price, note: cmpS().notes['item-' + item.id] || '' });
     });
     return out;
 }
@@ -10043,6 +10061,12 @@ function cmpCoverHtml(cover) {
     const col = cover < 100 ? 'var(--danger)' : 'var(--success)';
     const w = Math.max(0, Math.min(100, cover));
     return `<div style="font-weight: 900; color: ${col};">${cover}%</div><div class="cmp-bar"><span style="width:${w}%; background:${col};"></span></div>`;
+}
+function cmpPrevHtml(x, print) {
+    if (!x.prev) return `<span style="color:${print ? '#8a8b8c' : 'var(--text-muted)'};">—</span>`;
+    const up = x.contract > x.prev.qty, down = x.contract < x.prev.qty;
+    const arrow = up ? '▲' : (down ? '▼' : '');
+    return `<div style="font-weight:800;">${cmpFmt(x.prev.qty)} <span style="font-size:0.7em; color:${print ? '#8a8b8c' : 'var(--text-muted)'};">${arrow}</span></div>${x.prev.note ? `<div class="cmp-how" style="margin-top:1px;${print ? ' font-size:0.66rem; color:#8a8b8c;' : ''}">${escHtml(x.prev.note)}</div>` : ''}`;
 }
 function cmpCostHtml(x) {
     if (!(x.price > 0)) return '<span style="color: var(--text-muted);">—</span>';
@@ -10072,12 +10096,17 @@ function cmpSummary(rows) {
         if (key.length) lines.push('أهمهم: ' + key.slice(0, 6).map(x => `${x.row.name.split(' (')[0]} (المتعاقد عليه بيغطي ${x.cover}% بس)`).join('، ') + '.');
         const t = cmpTotals(rows);
         if (t.extra > 0) lines.push(`تكلفة التعاقد الحالي حوالي ${cmpFmt(Math.round(t.now))} ج.م في الشهر، والكميات الناقصة محتاجة زيادة حوالي ${cmpFmt(Math.round(t.extra))} ج.م في الشهر${t.missing ? ' (من غير الأصناف اللي مالهاش سعر)' : ''}.`);
+        const T = COMPARE_INVOICE_TOTALS;
+        const wc = rows.find(x => x.key === 'wc3');
+        if (wc && wc.prev) lines.push(`الدورة اللي فاتت كانت الكميات أقل كمان (مناديل الحمامات ${cmpFmt(wc.prev.qty)} بدل ${cmpFmt(wc.contract)})، وفاتورتها ${cmpFmt(T.prev)} ج.م، والدورة دي ${cmpFmt(T.cur)} ج.م: الزيادة ${cmpFmt(+(T.cur - T.prev).toFixed(2))} ج.م جاية من زيادة الكميات المتعاقد عليها، ولسه أقل من الاحتياج.`);
         lines.push('يعني الاستهلاك مش عالي، لكن الكميات المتعاقد عليها أصلاً أقل من المفترض، والمطلوب زيادة الكميات في التعاقد.');
     } else {
         lines.push(`Based on ${s.employees} employees and ${s.workDays} work days a month, ${short.length} items have a contracted quantity below the actual need.`);
         if (key.length) lines.push('Main ones: ' + key.slice(0, 6).map(x => `${x.row.nameEn.split(' (')[0]} (contract covers only ${x.cover}%)`).join(', ') + '.');
         const t = cmpTotals(rows);
         if (t.extra > 0) lines.push(`The current contract costs about ${cmpFmt(Math.round(t.now))} EGP a month; covering the shortfall needs about ${cmpFmt(Math.round(t.extra))} EGP a month more${t.missing ? ' (items without a price not included)' : ''}.`);
+        const T = COMPARE_INVOICE_TOTALS;
+        lines.push(`Last cycle the quantities were even lower: invoice ${cmpFmt(T.prev)} EGP, this cycle ${cmpFmt(T.cur)} EGP; the increase comes from larger contracted quantities, still below the need.`);
         lines.push('Consumption is not high: the contracted quantities are below what is needed, and should be increased.');
     }
     return lines;
@@ -10108,7 +10137,7 @@ function renderCompareView() {
     rows.forEach(x => {
         if (x.group !== lastGroup) {
             lastGroup = x.group;
-            html += `<tr class="cmp-group-row"><td colspan="11">${x.group === 'formula'
+            html += `<tr class="cmp-group-row"><td colspan="12">${x.group === 'formula'
                 ? (isAr ? 'أصناف محسوبة بعدد الحمامات والموظفين والأيام' : 'Items worked out from bathrooms, employees and days')
                 : (isAr ? 'باقي الأصناف: المفترض = متوسط المنصرف الفعلي في الشهر (تقدر تكتب رقم تاني)' : 'Other items: needed = average monthly issued (you can type another number)')}</td></tr>`;
         }
@@ -10128,6 +10157,7 @@ function renderCompareView() {
                 ${x.extra ? `<div class="cmp-how cmp-extra" id="cmp-extra-${x.key}">${escHtml(x.extra)}</div>` : ''}
             </td>
             <td style="text-align:center; background: var(--primary-light);">${needCell}</td>
+            <td style="text-align:center;">${cmpPrevHtml(x)}</td>
             <td style="text-align:center;">${contractCell}</td>
             <td style="text-align:center;" id="cmp-diff-${x.key}">${cmpDiffHtml(x.diff)}</td>
             <td style="text-align:center; min-width:90px;" id="cmp-cover-${x.key}">${cmpCoverHtml(x.cover)}</td>
@@ -10358,14 +10388,14 @@ function cmpFloorsPrintHtml() {
         ${buildCenteredPrintHeader(isAr ? 'الاستهلاك لكل دور حسب السحب' : 'Consumption per floor from the issue records',
             `${isAr ? 'الدورة:' : 'Cycle:'} ${cycleShortLabel(D.key)} | ${isAr ? 'أيام الشغل اللي اتحسبت:' : 'Work days counted:'} ${D.days}${D.running ? (isAr ? ' (لحد النهارده)' : ' (up to today)') : ''}`)}
         <p style="font-size:0.78rem; color:#55524b; margin:6px 0;">${isAr ? 'في كل خانة: الكمية اللي اتسحبت للدور، وتحتها نصيب الموظف (المشروبات بالكوباية في اليوم).' : 'Each cell: quantity issued to the floor, and under it the share per employee (drinks in cups a day).'}</p>
-        <table class="print-table">
+        <table class="print-table cmp-print">
             <thead><tr><th>${isAr ? 'الدور' : 'Floor'}</th><th style="text-align:center !important;">${isAr ? 'الموظفين' : 'Employees'}</th>
                 ${D.drinks.map(d => `<th style="text-align:center !important;">${escHtml(d.name)} (${escHtml(d.unit)})</th>`).join('')}
                 <th style="text-align:center !important;">${isAr ? 'مشروبات للموظف في اليوم' : 'Drinks per employee a day'}</th><th style="text-align:center !important;">${isAr ? `من الـ ${s.drinksPerDay}` : `Of ${s.drinksPerDay}`}</th></tr></thead>
             <tbody>${D.floors.map(f => `<tr><td style="font-weight:800;">${trText(f.fl)}</td><td style="text-align:center !important;">${f.emp}</td>${f.dr.map(x => `<td style="text-align:center !important;">${c(x)}</td>`).join('')}<td style="text-align:center !important; font-weight:900;">${cmp1(f.totalPerEmpDay)}</td><td style="text-align:center !important;">${pc(f.cover)}</td></tr>`).join('')}</tbody>
             <tfoot><tr><th>${isAr ? 'كل الأدوار' : 'All floors'}</th><th style="text-align:center !important;">${D.tot.emp}</th>${D.tot.dr.map(x => `<th style="text-align:center !important;">${c(x)}</th>`).join('')}<th style="text-align:center !important;">${cmp1(D.tot.totalPerEmpDay)}</th><th style="text-align:center !important;">${pc(D.tot.cover)}</th></tr></tfoot>
         </table>
-        <table class="print-table" style="margin-top:10px;">
+        <table class="print-table cmp-print" style="margin-top:10px;">
             <thead><tr><th>${isAr ? 'الدور' : 'Floor'}</th><th style="text-align:center !important;">${isAr ? 'الموظفين' : 'Employees'}</th>
                 ${CMP_FLOOR_OTHER.map(x => { const it = inventory.find(i => i.id === x.id); return `<th style="text-align:center !important;">${escHtml(isAr ? x.name : trText(it ? it.name : x.name))}</th>`; }).join('')}</tr></thead>
             <tbody>${D.floors.map(f => `<tr><td style="font-weight:800;">${trText(f.fl)}</td><td style="text-align:center !important;">${f.emp}</td>${f.other.map(x => `<td style="text-align:center !important;">${o(x)}</td>`).join('')}</tr>`).join('')}</tbody>
@@ -10403,7 +10433,7 @@ function printCompareReport() {
     rows.forEach(x => {
         if (x.group !== lastGroup) {
             lastGroup = x.group;
-            body += `<tr><td colspan="10" style="background:#fbf8f1 !important; font-weight:800; color:#94700f; font-size:0.82rem !important;">${x.group === 'formula'
+            body += `<tr><td colspan="11" style="background:#fbf8f1 !important; font-weight:800; color:#94700f; font-size:0.82rem !important;">${x.group === 'formula'
                 ? (isAr ? 'أصناف محسوبة بعدد الحمامات والموظفين والأيام' : 'Items worked out from bathrooms, employees and days')
                 : (isAr ? 'باقي الأصناف: المفترض = متوسط المنصرف الفعلي في الشهر' : 'Other items: needed = average monthly issued')}</td></tr>`;
         }
@@ -10415,7 +10445,8 @@ function printCompareReport() {
             <td style="width:6%; text-align:center !important; font-size:0.8rem !important;">${escHtml(x.unit)}</td>
             <td style="width:24%; font-size:0.72rem !important; line-height:1.4;">${escHtml(x.short || x.how)}</td>
             <td style="width:9%; text-align:center !important; font-weight:900;">${cmpFmt(x.need)}</td>
-            <td style="width:9%; text-align:center !important;">${cmpFmt(x.contract)}</td>
+            <td style="width:8%; text-align:center !important; font-size:0.8rem !important;">${cmpPrevHtml(x, true)}</td>
+            <td style="width:8%; text-align:center !important;">${cmpFmt(x.contract)}</td>
             <td style="width:10%; text-align:center !important; font-weight:800;">${diffTxt}</td>
             <td style="width:7%; text-align:center !important; font-weight:800; color:${x.cover < 100 ? '#b3261e' : '#1e7a46'};">${x.cover}%</td>
             <td style="width:7%; text-align:center !important;">${x.price > 0 ? cmpFmt(x.price) : '—'}</td>
@@ -10425,9 +10456,9 @@ function printCompareReport() {
     const summary = cmpSummary(rows).map(l => `<p style="margin:0 0 3px 0;">${escHtml(l)}</p>`).join('');
     printArea.innerHTML = `
         <div class="voucher-print-container" dir="${isAr ? 'rtl' : 'ltr'}">
-            <table class="print-table">
+            <table class="print-table cmp-print">
                 <thead>
-                    <tr><th colspan="10" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
+                    <tr><th colspan="11" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                         ${buildCenteredPrintHeader(isAr ? 'مقارنة الكميات المتعاقد عليها بالاحتياج الفعلي' : 'Contracted vs. Needed Quantities',
                             `${isAr ? 'عدد الموظفين:' : 'Employees:'} ${s.employees} | ${isAr ? 'أيام الشغل في الشهر:' : 'Work days a month:'} ${s.workDays} | ${isAr ? 'إجمالي المشروبات للموظف في اليوم (كل الأنواع):' : 'Drinks per employee a day (all kinds):'} ${s.drinksPerDay} | ${isAr ? 'التاريخ:' : 'Date:'} ${getFormattedTodayDate(isAr)}`)}
                     </th></tr>
@@ -10437,7 +10468,8 @@ function printCompareReport() {
                         <th style="text-align:center !important;">${isAr ? 'الوحدة' : 'Unit'}</th>
                         <th>${isAr ? 'طريقة الحساب' : 'How it is worked out'}</th>
                         <th style="text-align:center !important;">${isAr ? 'المفترض في الشهر' : 'Needed a month'}</th>
-                        <th style="text-align:center !important;">${isAr ? 'المتعاقد عليه' : 'Contracted'}</th>
+                        <th style="text-align:center !important;">${isAr ? 'الدورة اللي فاتت' : 'Last cycle'}</th>
+                        <th style="text-align:center !important;">${isAr ? 'المتعاقد عليه (الحالية)' : 'Contracted (now)'}</th>
                         <th style="text-align:center !important;">${isAr ? 'الفرق' : 'Difference'}</th>
                         <th style="text-align:center !important;">${isAr ? 'التغطية' : 'Coverage'}</th>
                         <th style="text-align:center !important;">${isAr ? 'سعر الوحدة' : 'Unit price'}</th>
@@ -10446,7 +10478,7 @@ function printCompareReport() {
                 </thead>
                 <tbody>${body}</tbody>
                 <tfoot><tr>
-                    <th colspan="9" style="text-align: inherit;">${isAr ? 'الزيادة المطلوبة في الشهر (مناديل الحمامات محسوبة على 3 مرات)' : 'Extra needed a month (bathroom tissues at 3 times a day)'}</th>
+                    <th colspan="10" style="text-align: inherit;">${isAr ? 'الزيادة المطلوبة في الشهر (مناديل الحمامات محسوبة على 3 مرات)' : 'Extra needed a month (bathroom tissues at 3 times a day)'}</th>
                     <th style="text-align:center !important; font-weight:900;">${cmpFmt(Math.round(cmpTotals(rows).extra))} ${isAr ? 'ج.م' : 'EGP'}</th>
                 </tr></tfoot>
             </table>
@@ -10466,21 +10498,21 @@ function exportCompareExcel() {
     const sh = CGX.report({
         name: 'مقارنة المتعاقد عليه', title: 'مقارنة الكميات المتعاقد عليها بالاحتياج الفعلي',
         subtitle: `عدد الموظفين: ${s.employees}   |   أيام الشغل في الشهر: ${s.workDays}   |   إجمالي المشروبات للموظف في اليوم (كل الأنواع): ${s.drinksPerDay}   |   تاريخ التقرير: ${cgxToday()}`,
-        columns: [{ h: 'م', w: 6 }, { h: 'الصنف', w: 34 }, { h: 'الوحدة', w: 9 }, { h: 'طريقة الحساب', w: 52 }, { h: 'المفترض في الشهر', w: 14 }, { h: 'المتعاقد عليه', w: 13 }, { h: 'الفرق (ناقص)', w: 13 }, { h: 'التغطية', w: 10 }, { h: 'سعر الوحدة', w: 12 }, { h: 'تكلفة الناقص', w: 14 }, { h: 'ملاحظات', w: 34 }],
+        columns: [{ h: 'م', w: 6 }, { h: 'الصنف', w: 34 }, { h: 'الوحدة', w: 9 }, { h: 'طريقة الحساب', w: 52 }, { h: 'المفترض في الشهر', w: 14 }, { h: 'الدورة اللي فاتت', w: 13 }, { h: 'المتعاقد عليه (الحالية)', w: 13 }, { h: 'الفرق (ناقص)', w: 13 }, { h: 'التغطية', w: 10 }, { h: 'سعر الوحدة', w: 12 }, { h: 'تكلفة الناقص', w: 14 }, { h: 'ملاحظات', w: 34 }],
         landscape: true
     });
     rows.forEach((x, i) => {
         const r = sh.row();
         sh.add([{ v: i + 1, s: 'center' }, { v: x.name, s: 'textBold' }, { v: x.unit, s: 'center' }, { v: x.how + (x.extra ? ' — ' + x.extra : ''), s: 'text' },
-            { v: x.need, s: 'int' }, { v: x.contract, s: 'money' }, { f: `E${r}-F${r}`, v: x.diff, s: x.diff > 0 ? 'moneyBad' : 'money' },
-            { f: `IF(E${r}>0,F${r}/E${r},1)`, v: x.need > 0 ? x.contract / x.need : 1, s: 'pct' }, { v: x.price || 0, s: 'input' },
-            { f: `MAX(0,G${r})*I${r}`, v: x.cost, s: 'gold' }, { v: x.note || '', s: 'text' }]);
+            { v: x.need, s: 'int' }, x.prev ? { v: x.prev.qty, s: 'money' } : { v: '—', s: 'center' }, { v: x.contract, s: 'money' }, { f: `E${r}-G${r}`, v: x.diff, s: x.diff > 0 ? 'moneyBad' : 'money' },
+            { f: `IF(E${r}>0,G${r}/E${r},1)`, v: x.need > 0 ? x.contract / x.need : 1, s: 'pct' }, { v: x.price || 0, s: 'input' },
+            { f: `MAX(0,H${r})*J${r}`, v: x.cost, s: 'gold' }, { v: [x.note, x.prev && x.prev.note ? 'الدورة اللي فاتت: ' + x.prev.note : ''].filter(Boolean).join(' — '), s: 'text' }]);
     });
     const L = sh.row() - 1;
     const wc2 = rows.findIndex(x => x.key === 'wc2') + F;
-    cgxTotalRow(sh, 9, [{ f: `SUM(J${F}:J${L})-J${wc2}`, v: cmpTotals(rows).extra, s: 'finMoney' }, { v: 'مناديل الحمامات محسوبة على 3 مرات', s: 'finLabel' }], true);
+    cgxTotalRow(sh, 10, [{ f: `SUM(K${F}:K${L})-K${wc2}`, v: cmpTotals(rows).extra, s: 'finMoney' }, { v: 'مناديل الحمامات محسوبة على 3 مرات', s: 'finLabel' }], true);
     sh.add([]);
-    cmpSummary(rows).forEach(l => { const r = sh.add([{ v: l, s: 'note' }]); sh.merge(`A${r}:K${r}`); });
+    cmpSummary(rows).forEach(l => { const r = sh.add([{ v: l, s: 'note' }]); sh.merge(`A${r}:L${r}`); });
     CGX.download([sh, cmpFloorsSheet()], `مقارنة_المتعاقد_عليه_${cgxToday()}`);
 }
 
