@@ -4116,7 +4116,7 @@ body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170,
                         <div class="cmp-settings">
                             <label>أيام الشغل في الشهر <input type="number" min="1" id="cmp-work-days" class="table-input" oninput="onCompareGlobal('workDays', this.value)"></label>
                             <label>عدد الموظفين <input type="number" min="1" id="cmp-employees" class="table-input" oninput="onCompareGlobal('employees', this.value)"></label>
-                            <label>المشروبات للموظف في اليوم <input type="number" min="1" id="cmp-drinks" class="table-input" oninput="onCompareGlobal('drinksPerDay', this.value)"></label>
+                            <label>إجمالي المشروبات للموظف في اليوم (كل الأنواع) <input type="number" min="1" id="cmp-drinks" class="table-input" oninput="onCompareGlobal('drinksPerDay', this.value)"></label>
                         </div>
                         <div id="cmp-summary"></div>
                         <div class="table-responsive">
@@ -9979,8 +9979,9 @@ function cmpCalc(r) {
     } else if (r.method === 'drink') {
         const cups = s.employees * s.drinksPerDay * D * (r.share / 100);
         need = cups / (r.perUnit || 1);
-        how = isAr ? `${s.employees} موظف × ${s.drinksPerDay} مشروب × ${D} يوم × ${r.share}% = ${cmpFmt(Math.round(cups))} ${r.servLbl} ÷ ${r.perUnit} ${r.servLbl} في ${r.unit === 'كيلو' ? 'الكيلو' : 'العلبة'}`
-                   : `${s.employees} × ${s.drinksPerDay} drinks × ${D} days × ${r.share}% = ${cmpFmt(Math.round(cups))} cups ÷ ${r.perUnit} per unit`;
+        const all = s.employees * s.drinksPerDay * D;
+        how = isAr ? `كل المشروبات: ${s.employees} موظف × ${s.drinksPerDay} مشروبات في اليوم (من كل الأنواع) × ${D} يوم = ${cmpFmt(all)} مشروب، نصيب ${r.name.split(' (')[0]} منهم ${r.share}% = ${cmpFmt(Math.round(cups))} ${r.servLbl} ÷ ${r.perUnit} ${r.servLbl} في ${r.unit === 'كيلو' ? 'الكيلو' : (r.unit === 'عبوة' ? 'العبوة' : 'العلبة')}`
+                   : `All drinks: ${s.employees} × ${s.drinksPerDay} a day (all kinds) × ${D} days = ${cmpFmt(all)}; ${r.share}% of them = ${cmpFmt(Math.round(cups))} ÷ ${r.perUnit} per unit`;
         const per = (r.contract * r.perUnit) / s.employees;
         extra = isAr ? `المتعاقد عليه = ${cmpFmt(Math.round(r.contract * r.perUnit))} ${r.servLbl} في الشهر، يعني ${cmpFmt(per.toFixed(1))} للموظف في الشهر`
                      : `Contracted = ${cmpFmt(Math.round(r.contract * r.perUnit))} a month, ${cmpFmt(per.toFixed(1))} per employee a month`;
@@ -10125,6 +10126,13 @@ function renderCompareView() {
     body.innerHTML = html;
     cmpRenderSummary(rows);
 }
+// the drinks' shares split the same 3 daily drinks, so together they should make 100%
+function cmpShareWarning() {
+    const sum = COMPARE_ROWS.filter(d => d.method === 'drink').reduce((a, d) => a + (Number(cmpRow(d).share) || 0), 0);
+    if (Math.round(sum) === 100) return '';
+    const isAr = currentLang === 'ar';
+    return `<p style="color: var(--danger); font-weight: 800; margin: 0 0 0.6rem 0;">${isAr ? `نصيب المشروبات مع بعض = ${cmpFmt(sum)}%، والمفروض يبقى 100% (الـ ${cmpS().drinksPerDay} مشروبات بتتقسم على كل الأنواع).` : `Drink shares add up to ${cmpFmt(sum)}%; they should make 100%.`}</p>`;
+}
 function cmpRenderSummary(rows) {
     const box = document.getElementById('cmp-summary');
     if (!box) return;
@@ -10140,6 +10148,7 @@ function cmpRenderSummary(rows) {
             <div class="cmp-kpi"><span>${isAr ? 'تكلفة التعاقد الحالي في الشهر' : 'Current contract a month'}</span><strong>${cmpFmt(Math.round(cmpTotals(rows).now))} ${isAr ? 'ج.م' : 'EGP'}</strong></div>
             <div class="cmp-kpi"><span>${isAr ? 'الزيادة المطلوبة في الشهر' : 'Extra needed a month'}</span><strong style="color: var(--danger);">${cmpFmt(Math.round(cmpTotals(rows).extra))} ${isAr ? 'ج.م' : 'EGP'}</strong></div>
         </div>
+        ${cmpShareWarning()}
         <div class="cmp-text">${cmpSummary(rows).map(l => `<p>${escHtml(l)}</p>`).join('')}</div>`;
 }
 // typing must not rebuild the inputs (focus would be lost): only the worked-out cells are refreshed
@@ -10223,7 +10232,7 @@ function printCompareReport() {
                 <thead>
                     <tr><th colspan="10" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
                         ${buildCenteredPrintHeader(isAr ? 'مقارنة الكميات المتعاقد عليها بالاحتياج الفعلي' : 'Contracted vs. Needed Quantities',
-                            `${isAr ? 'عدد الموظفين:' : 'Employees:'} ${s.employees} | ${isAr ? 'أيام الشغل في الشهر:' : 'Work days a month:'} ${s.workDays} | ${isAr ? 'المشروبات للموظف في اليوم:' : 'Drinks per employee a day:'} ${s.drinksPerDay} | ${isAr ? 'التاريخ:' : 'Date:'} ${getFormattedTodayDate(isAr)}`)}
+                            `${isAr ? 'عدد الموظفين:' : 'Employees:'} ${s.employees} | ${isAr ? 'أيام الشغل في الشهر:' : 'Work days a month:'} ${s.workDays} | ${isAr ? 'إجمالي المشروبات للموظف في اليوم (كل الأنواع):' : 'Drinks per employee a day (all kinds):'} ${s.drinksPerDay} | ${isAr ? 'التاريخ:' : 'Date:'} ${getFormattedTodayDate(isAr)}`)}
                     </th></tr>
                     <tr>
                         <th style="width:28px; text-align:center !important;">#</th>
@@ -10258,7 +10267,7 @@ function exportCompareExcel() {
     const F = CGX.FIRST;
     const sh = CGX.report({
         name: 'مقارنة المتعاقد عليه', title: 'مقارنة الكميات المتعاقد عليها بالاحتياج الفعلي',
-        subtitle: `عدد الموظفين: ${s.employees}   |   أيام الشغل في الشهر: ${s.workDays}   |   المشروبات للموظف في اليوم: ${s.drinksPerDay}   |   تاريخ التقرير: ${cgxToday()}`,
+        subtitle: `عدد الموظفين: ${s.employees}   |   أيام الشغل في الشهر: ${s.workDays}   |   إجمالي المشروبات للموظف في اليوم (كل الأنواع): ${s.drinksPerDay}   |   تاريخ التقرير: ${cgxToday()}`,
         columns: [{ h: 'م', w: 6 }, { h: 'الصنف', w: 34 }, { h: 'الوحدة', w: 9 }, { h: 'طريقة الحساب', w: 52 }, { h: 'المفترض في الشهر', w: 14 }, { h: 'المتعاقد عليه', w: 13 }, { h: 'الفرق (ناقص)', w: 13 }, { h: 'التغطية', w: 10 }, { h: 'سعر الوحدة', w: 12 }, { h: 'تكلفة الناقص', w: 14 }, { h: 'ملاحظات', w: 34 }],
         landscape: true
     });
