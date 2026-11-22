@@ -3077,3 +3077,23 @@ table.data-table.dept-list-table tfoot th { background: var(--brand-cream, #fef2
 body.dark table.data-table.dept-list-table tfoot th { background: rgba(217, 170, 40, 0.14); }
 /* Invoice menu: opens upward when there is no room below (last rows) */
 .custody-inv-dropdown.up .custody-inv-menu { top: auto; bottom: 100%; }
+
+/* --- Contract vs. needed comparison (pane-compare) --- */
+.cmp-settings { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border-color); }
+.cmp-settings label { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.85rem; color: var(--text-secondary); }
+.cmp-settings input { width: 80px; text-align: center; font-weight: 900; }
+#cmp-summary { padding: 0.85rem 1.25rem; }
+.cmp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem; }
+.cmp-kpi { background: var(--primary-light); border: 1px solid var(--border-color); border-radius: 10px; padding: 0.65rem 0.85rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.cmp-kpi span { font-size: 0.78rem; color: var(--text-muted); font-weight: 700; }
+.cmp-kpi strong { font-size: 1.25rem; font-weight: 900; color: var(--text-primary); }
+.cmp-text { font-size: 0.88rem; line-height: 1.7; color: var(--text-secondary); border-inline-start: 3px solid var(--primary-fill); padding-inline-start: 0.75rem; }
+.cmp-text p { margin: 0 0 0.2rem 0; }
+.cmp-params { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; font-size: 0.82rem; }
+.cmp-lbl { color: var(--text-secondary); font-weight: 700; }
+.cmp-how { font-size: 0.74rem; color: var(--text-muted); margin-top: 0.3rem; line-height: 1.5; }
+.cmp-extra { color: var(--primary); font-weight: 700; }
+.cmp-bar { height: 5px; border-radius: 3px; background: var(--border-color); overflow: hidden; margin-top: 3px; }
+.cmp-bar span { display: block; height: 100%; }
+.cmp-group-row td { background: var(--bg-card); color: var(--primary); font-weight: 900; font-size: 0.85rem; }
+@media (max-width: 640px) { .cmp-settings { padding: 0.75rem 1rem; } #cmp-summary { padding: 0.75rem 1rem; } }

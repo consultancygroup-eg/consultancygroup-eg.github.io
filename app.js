@@ -3973,6 +3973,401 @@ function sharePurchaseOrderWhatsApp() {
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
 }
 
+// --- CONTRACT vs. NEEDED COMPARISON (22 Nov 2026) ---
+// Shows the company that the contracted monthly quantities are below what the building really needs.
+// Each row has a way of working out the monthly need from numbers the facilities manager types in;
+// the rest of the items use the average monthly issued from the issue records.
+// Saved in buffet_v9_compare: { workDays, employees, drinksPerDay, vals: { rowKey: { field: number } }, manual: { itemId: number } }
+// quantities and prices from the supplier invoice of the cycle that started 19 Nov 2026 (Super Clean, invoice no. 1)
+const COMPARE_ROWS = [
+    { key: 'wc2', itemId: 1, name: 'مناديل الحمامات (مرتين في اليوم، الوضع الحالي)', nameEn: 'Bathroom tissues (twice a day, current)', unit: 'بكرة', method: 'count', places: 43, times: 2, contract: 1200, price: 13, placeLbl: 'حمام' },
+    { key: 'wc3', itemId: 1, name: 'مناديل الحمامات (3 مرات في اليوم، طلب الموظفين)', nameEn: 'Bathroom tissues (3 times a day, staff request)', unit: 'بكرة', method: 'count', places: 43, times: 3, contract: 1200, price: 13, placeLbl: 'حمام' },
+    { key: 'wudu', itemId: 2, name: 'مناديل الوضوء', nameEn: 'Ablution tissues', unit: 'بكرة', method: 'count', places: 14, times: 2, contract: 500, price: 18, placeLbl: 'ماكينة' },
+    { key: 'fine', itemId: 3, name: 'مناديل مكتب (فاين)', nameEn: 'Desk tissues (Fine)', unit: 'علبة', method: 'perEmp', perEmp: 1, contract: 250, price: 27.5 },
+    { key: 'dettol', itemId: 4, name: 'ديتول (بزيادة مياه)', nameEn: 'Dettol (diluted)', unit: 'علبة', method: 'every', places: 12, everyDays: 4, contract: 29, price: 150, placeLbl: 'حمام' },
+    { key: 'soap', itemId: 5, name: 'صابون يد', nameEn: 'Hand soap', unit: 'لتر', method: 'lasts', places: 6, perPlace: 5, lastsDays: 17, contract: 40, price: 45, placeLbl: 'دور' },
+    { key: 'tea', itemId: 17, name: 'شاي ليبتون (عبوة 500 جرام)', nameEn: 'Lipton tea (500 g pack)', unit: 'عبوة', method: 'drink', share: 30, perUnit: 250, contract: 8, price: 120, servLbl: 'كوباية' },
+    { key: 'coffee', itemId: 15, name: 'قهوة', nameEn: 'Coffee', unit: 'كيلو', method: 'drink', share: 30, perUnit: 140, contract: 5.25, price: 0, servLbl: 'فنجان' },
+    { key: 'green', itemId: 13, name: 'شاي أخضر (علبة 25 فتلة)', nameEn: 'Green tea (box of 25)', unit: 'علبة', method: 'drink', share: 15, perUnit: 25, contract: 10, price: 45, servLbl: 'فتلة' },
+    { key: 'hibiscus', itemId: 12, name: 'كركديه (علبة 100 فتلة)', nameEn: 'Hibiscus (box of 100)', unit: 'علبة', method: 'drink', share: 15, perUnit: 100, contract: 6, price: 130, servLbl: 'فتلة' },
+    { key: 'anise', itemId: 11, name: 'ينسون (علبة 100 فتلة)', nameEn: 'Anise (box of 100)', unit: 'علبة', method: 'drink', share: 10, perUnit: 100, contract: 3, price: 130, servLbl: 'فتلة' }
+];
+// the other items on the same invoice: itemId -> [contracted qty, unit price]
+const COMPARE_INVOICE = { 6: [6, 62], 7: [24, 71], 8: [5, 28], 9: [30, 45], 10: [30, 30], 14: [18, 110], 16: [60, 40], 18: [8, 65], 19: [24, 25], 20: [3, 70], 21: [18, 70], 22: [20, 97], 24: [2, 40], 25: [24, 20], 26: [12, 15] };
+const COMPARE_DEFAULT_NOTES = {
+    dettol: 'العلبة بتكفّي الحمام 4 أيام. محسوب حمام رجالي وحمام حريمي في كل دور (12 حمام)',
+    soap: '5 لتر لكل دور من الرابع للتاسع، والكمية بتخلص قبل آخر الشهر',
+    coffee: 'المتاح ربع كيلو في اليوم بس (21 × ربع = 5.25 كيلو)، ومابيكفّيش كل الموظفين',
+    tea: 'الفاتورة: 8 عبوات × 500 جرام',
+    green: 'بيخلص قبل آخر الشهر',
+    hibiscus: 'بيخلص بدري لأنه بيتعمل مشروب ساقع',
+    anise: 'مش كل الموظفين بيشربوه، والمتعاقد عليه بيكفّي فعلياً'
+};
+let compareSettings = (() => { try { return JSON.parse(localStorage.getItem('buffet_v9_compare')) || null; } catch (e) { return null; } })();
+function cmpS() {
+    if (!compareSettings || typeof compareSettings !== 'object') compareSettings = {};
+    const s = compareSettings;
+    if (!(s.workDays > 0)) s.workDays = 21;
+    if (!(s.employees > 0)) s.employees = 257;
+    if (!(s.drinksPerDay > 0)) s.drinksPerDay = 3;
+    if (!s.vals || typeof s.vals !== 'object') s.vals = {};
+    if (!s.manual || typeof s.manual !== 'object') s.manual = {};
+    if (!s.notes || typeof s.notes !== 'object') s.notes = {};
+    return s;
+}
+function saveCompareSettings() {
+    localStorage.setItem('buffet_v9_compare', JSON.stringify(compareSettings));
+    syncToCloud();
+}
+function cmpRow(def) {
+    const v = cmpS().vals[def.key] || {};
+    const r = Object.assign({}, def, v);
+    if (r.contract === null || r.contract === undefined) {
+        const it = inventory.find(i => i.id === def.itemId);
+        r.contract = it ? itemContractQty(it) : 0;
+    }
+    if (!(r.price > 0) && v.price === undefined) r.price = poEntryPrice(def.itemId) || 0;
+    return r;
+}
+const cmpFmt = n => (Math.round((Number(n) || 0) * 100) / 100).toLocaleString('en-US', { maximumFractionDigits: 2 });
+// average issued per completed cycle (the cycle running now is left out unless it is the only one)
+function cmpAvgIssued() {
+    const cur = getCycleKeyForDate(localTodayStr());
+    const by = new Map();
+    transactions.forEach(t => {
+        if (!t.date) return;
+        const c = getCycleKeyForDate(t.date);
+        if (!by.has(c)) by.set(c, new Map());
+        const m = by.get(c);
+        m.set(t.itemId, (m.get(t.itemId) || 0) + (Number(t.qty) || 0));
+    });
+    let keys = Array.from(by.keys()).filter(k => k !== cur);
+    const partial = keys.length === 0;
+    if (partial) keys = by.has(cur) ? [cur] : [];
+    const avg = new Map();
+    inventory.forEach(item => {
+        let s = 0; keys.forEach(k => { s += by.get(k).get(item.id) || 0; });
+        avg.set(item.id, keys.length ? s / keys.length : 0);
+    });
+    return { avg, cycles: keys.length, partial };
+}
+// one row's numbers: needed per month, how it was worked out, and (for drinks) how much each employee gets now
+function cmpCalc(r) {
+    const s = cmpS(), D = s.workDays, isAr = currentLang === 'ar';
+    let need = 0, how = '', extra = '';
+    if (r.method === 'count') {
+        need = r.places * r.times * D;
+        how = isAr ? `${r.places} ${r.placeLbl} × ${r.times} مرة في اليوم × ${D} يوم شغل` : `${r.places} × ${r.times} a day × ${D} work days`;
+    } else if (r.method === 'perEmp') {
+        need = s.employees * r.perEmp;
+        how = isAr ? `${s.employees} موظف × ${r.perEmp} ${r.unit} للموظف في الشهر` : `${s.employees} employees × ${r.perEmp} a month`;
+    } else if (r.method === 'every') {
+        need = r.places * D / (r.everyDays || 1);
+        how = isAr ? `${r.places} ${r.placeLbl} × (${D} يوم ÷ ${r.everyDays} أيام للعلبة)` : `${r.places} × (${D} days ÷ ${r.everyDays} days per bottle)`;
+    } else if (r.method === 'lasts') {
+        need = r.places * r.perPlace * D / (r.lastsDays || 1);
+        how = isAr ? `${r.places} ${r.placeLbl} × ${r.perPlace} ${r.unit}، بتكفّي ${r.lastsDays} يوم من ${D}` : `${r.places} × ${r.perPlace}, lasts ${r.lastsDays} of ${D} days`;
+    } else if (r.method === 'drink') {
+        const cups = s.employees * s.drinksPerDay * D * (r.share / 100);
+        need = cups / (r.perUnit || 1);
+        how = isAr ? `${s.employees} موظف × ${s.drinksPerDay} مشروب × ${D} يوم × ${r.share}% = ${cmpFmt(Math.round(cups))} ${r.servLbl} ÷ ${r.perUnit} ${r.servLbl} في ${r.unit === 'كيلو' ? 'الكيلو' : 'العلبة'}`
+                   : `${s.employees} × ${s.drinksPerDay} drinks × ${D} days × ${r.share}% = ${cmpFmt(Math.round(cups))} cups ÷ ${r.perUnit} per unit`;
+        const per = (r.contract * r.perUnit) / s.employees;
+        extra = isAr ? `المتعاقد عليه = ${cmpFmt(Math.round(r.contract * r.perUnit))} ${r.servLbl} في الشهر، يعني ${cmpFmt(per.toFixed(1))} للموظف في الشهر`
+                     : `Contracted = ${cmpFmt(Math.round(r.contract * r.perUnit))} a month, ${cmpFmt(per.toFixed(1))} per employee a month`;
+    }
+    need = Math.ceil(need - 1e-9);
+    return { need, how, extra };
+}
+function cmpResult(need, contract) {
+    const diff = need - contract;
+    const cover = need > 0 ? Math.round(contract / need * 100) : 100;
+    return { diff, cover };
+}
+// all rows (formula rows + the other items from the issue records), used by the screen, PDF and Excel
+function cmpAllRows() {
+    const isAr = currentLang === 'ar';
+    const out = [];
+    COMPARE_ROWS.forEach(def => {
+        const r = cmpRow(def), c = cmpCalc(r), res = cmpResult(c.need, r.contract);
+        const note = cmpS().notes[def.key] !== undefined ? cmpS().notes[def.key] : (COMPARE_DEFAULT_NOTES[def.key] || '');
+        const price = Number(r.price) || 0;
+        out.push({ key: def.key, row: r, group: 'formula', name: isAr ? r.name : r.nameEn, unit: trText(r.unit), how: c.how, extra: c.extra, need: c.need, contract: r.contract, diff: res.diff, cover: res.cover, price, cost: Math.max(0, res.diff) * price, note });
+    });
+    const used = new Set(COMPARE_ROWS.map(d => d.itemId));
+    const { avg, cycles, partial } = cmpAvgIssued();
+    inventory.forEach(item => {
+        if (used.has(item.id)) return;
+        const ov = cmpS().vals['item-' + item.id] || {};
+        const inv = COMPARE_INVOICE[item.id];
+        const contract = ov.contract !== undefined ? ov.contract : (inv ? inv[0] : itemContractQty(item));
+        const price = ov.price !== undefined ? ov.price : (inv ? inv[1] : (poEntryPrice(item.id) || 0));
+        const auto = Math.ceil(avg.get(item.id) || 0);
+        const man = cmpS().manual[item.id];
+        const need = (man !== undefined && man !== null && man !== '') ? Number(man) : auto;
+        const res = cmpResult(need, contract);
+        const how = isAr ? (cycles ? `متوسط المنصرف الفعلي${partial ? ' (الدورة الحالية لحد النهارده)' : ` في ${cycles} دورة`}: ${cmpFmt(auto)}` : 'مافيش صرف متسجل')
+                         : (cycles ? `Average issued${partial ? ' (this cycle so far)' : ` over ${cycles} cycle(s)`}: ${cmpFmt(auto)}` : 'No issues recorded');
+        out.push({ key: 'item-' + item.id, item, group: 'actual', name: trText(item.name), unit: trText(item.unit), how, extra: '', need, auto, contract, diff: res.diff, cover: res.cover, price, cost: Math.max(0, res.diff) * price, note: cmpS().notes['item-' + item.id] || '' });
+    });
+    return out;
+}
+function cmpDiffHtml(diff, unit) {
+    if (diff > 0) return `<span style="color: var(--danger); font-weight: 900;">${currentLang === 'ar' ? 'ناقص' : 'Short'} ${cmpFmt(diff)}</span>`;
+    if (diff < 0) return `<span style="color: var(--success); font-weight: 800;">${currentLang === 'ar' ? 'زيادة' : 'Extra'} ${cmpFmt(-diff)}</span>`;
+    return `<span style="color: var(--success); font-weight: 800;">${currentLang === 'ar' ? 'مظبوط' : 'Exact'}</span>`;
+}
+function cmpCoverHtml(cover) {
+    const col = cover < 100 ? 'var(--danger)' : 'var(--success)';
+    const w = Math.max(0, Math.min(100, cover));
+    return `<div style="font-weight: 900; color: ${col};">${cover}%</div><div class="cmp-bar"><span style="width:${w}%; background:${col};"></span></div>`;
+}
+function cmpCostHtml(x) {
+    if (!(x.price > 0)) return '<span style="color: var(--text-muted);">—</span>';
+    if (x.cost <= 0) return '0';
+    return `<span style="color: var(--danger);">${cmpFmt(x.cost)}</span>`;
+}
+// money per month: the contract now, what the need costs, and the extra; the bathroom tissues are counted once (the 3-times row)
+function cmpTotals(rows) {
+    let now = 0, need = 0, extra = 0, missing = 0;
+    rows.forEach(x => {
+        if (x.key === 'wc2') return;
+        if (!(x.price > 0)) { if (x.diff > 0) missing++; return; }
+        now += x.contract * x.price;
+        need += Math.max(x.need, x.contract) * x.price;
+        extra += x.cost;
+    });
+    return { now, need, extra, missing };
+}
+function cmpSummary(rows) {
+    const isAr = currentLang === 'ar';
+    const short = rows.filter(x => x.diff > 0 && x.need > 0 && x.key !== 'wc2');
+    const key = rows.filter(x => x.group === 'formula' && x.diff > 0 && x.key !== 'wc2');
+    const s = cmpS();
+    const lines = [];
+    if (isAr) {
+        lines.push(`على أساس ${s.employees} موظف و${s.workDays} يوم شغل في الشهر، فيه ${short.length} صنف الكمية المتعاقد عليها فيهم أقل من احتياج الشغل الفعلي.`);
+        if (key.length) lines.push('أهمهم: ' + key.slice(0, 6).map(x => `${x.row.name.split(' (')[0]} (المتعاقد عليه بيغطي ${x.cover}% بس)`).join('، ') + '.');
+        const t = cmpTotals(rows);
+        if (t.extra > 0) lines.push(`تكلفة التعاقد الحالي حوالي ${cmpFmt(Math.round(t.now))} ج.م في الشهر، والكميات الناقصة محتاجة زيادة حوالي ${cmpFmt(Math.round(t.extra))} ج.م في الشهر${t.missing ? ' (من غير الأصناف اللي مالهاش سعر)' : ''}.`);
+        lines.push('يعني الاستهلاك مش عالي، لكن الكميات المتعاقد عليها أصلاً أقل من المفترض، والمطلوب زيادة الكميات في التعاقد.');
+    } else {
+        lines.push(`Based on ${s.employees} employees and ${s.workDays} work days a month, ${short.length} items have a contracted quantity below the actual need.`);
+        if (key.length) lines.push('Main ones: ' + key.slice(0, 6).map(x => `${x.row.nameEn.split(' (')[0]} (contract covers only ${x.cover}%)`).join(', ') + '.');
+        const t = cmpTotals(rows);
+        if (t.extra > 0) lines.push(`The current contract costs about ${cmpFmt(Math.round(t.now))} EGP a month; covering the shortfall needs about ${cmpFmt(Math.round(t.extra))} EGP a month more${t.missing ? ' (items without a price not included)' : ''}.`);
+        lines.push('Consumption is not high: the contracted quantities are below what is needed, and should be increased.');
+    }
+    return lines;
+}
+function cmpInput(key, field, val, w = 62, step = 1) {
+    return `<input type="number" min="0" step="${step}" value="${val}" class="table-input cmp-in" style="width:${w}px; text-align:center; font-weight:800; padding:2px 4px;" oninput="onCompareInput('${key}','${field}',this.value)">`;
+}
+function cmpParamsHtml(x) {
+    const r = x.row, k = x.key, isAr = currentLang === 'ar';
+    const L = (a, e) => `<span class="cmp-lbl">${isAr ? a : e}</span>`;
+    if (x.group === 'actual') return '';
+    if (r.method === 'count') return `${cmpInput(k, 'places', r.places)} ${L(r.placeLbl, '')} × ${cmpInput(k, 'times', r.times, 48)} ${L('مرة في اليوم', 'a day')}`;
+    if (r.method === 'perEmp') return `${cmpInput(k, 'perEmp', r.perEmp, 52, 0.5)} ${L(r.unit + ' للموظف في الشهر', 'per employee a month')}`;
+    if (r.method === 'every') return `${cmpInput(k, 'places', r.places)} ${L(r.placeLbl, '')} ، ${L('العلبة بتكفّي', 'one lasts')} ${cmpInput(k, 'everyDays', r.everyDays, 48)} ${L('أيام', 'days')}`;
+    if (r.method === 'lasts') return `${cmpInput(k, 'places', r.places, 48)} ${L(r.placeLbl, '')} × ${cmpInput(k, 'perPlace', r.perPlace, 52, 0.5)} ${L(r.unit + '، بتكفّي', ', lasts')} ${cmpInput(k, 'lastsDays', r.lastsDays, 48)} ${L('يوم', 'days')}`;
+    if (r.method === 'drink') return `${L('نصيبه من المشروبات', 'share')} ${cmpInput(k, 'share', r.share, 52)}% ، ${cmpInput(k, 'perUnit', r.perUnit, 60)} ${L(r.servLbl + ' في ' + (r.unit === 'كيلو' ? 'الكيلو' : 'العلبة'), 'per unit')}`;
+    return '';
+}
+function renderCompareView() {
+    const body = document.getElementById('cmp-table-body');
+    if (!body) return;
+    const s = cmpS(), isAr = currentLang === 'ar';
+    const setV = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v; };
+    setV('cmp-work-days', s.workDays); setV('cmp-employees', s.employees); setV('cmp-drinks', s.drinksPerDay);
+    const rows = cmpAllRows();
+    let html = '', n = 0, lastGroup = '';
+    rows.forEach(x => {
+        if (x.group !== lastGroup) {
+            lastGroup = x.group;
+            html += `<tr class="cmp-group-row"><td colspan="11">${x.group === 'formula'
+                ? (isAr ? 'أصناف محسوبة بعدد الحمامات والموظفين والأيام' : 'Items worked out from bathrooms, employees and days')
+                : (isAr ? 'باقي الأصناف: المفترض = متوسط المنصرف الفعلي في الشهر (تقدر تكتب رقم تاني)' : 'Other items: needed = average monthly issued (you can type another number)')}</td></tr>`;
+        }
+        n++;
+        const needCell = x.group === 'actual'
+            ? `<input type="number" min="0" value="${x.need}" class="table-input cmp-in" style="width:70px; text-align:center; font-weight:900;" oninput="onCompareManual(${x.item.id}, this.value)">`
+            : `<span id="cmp-need-${x.key}" style="font-weight:900; font-size:1rem;">${cmpFmt(x.need)}</span>`;
+        const contractCell = cmpInput(x.key, 'contract', x.contract, 70, 0.25);
+        const priceCell = cmpInput(x.key, 'price', x.price || '', 70, 0.5);
+        html += `<tr>
+            <td style="text-align:center; font-weight:800; color: var(--text-muted);">${n}</td>
+            <td style="font-weight:800; min-width:170px;">${escHtml(x.name)}</td>
+            <td style="text-align:center; color: var(--text-muted); font-weight:700;">${escHtml(x.unit)}</td>
+            <td style="min-width:260px;">
+                <div class="cmp-params">${cmpParamsHtml(x)}</div>
+                <div class="cmp-how" id="cmp-how-${x.key}">${escHtml(x.how)}</div>
+                ${x.extra ? `<div class="cmp-how cmp-extra" id="cmp-extra-${x.key}">${escHtml(x.extra)}</div>` : ''}
+            </td>
+            <td style="text-align:center; background: var(--primary-light);">${needCell}</td>
+            <td style="text-align:center;">${contractCell}</td>
+            <td style="text-align:center;" id="cmp-diff-${x.key}">${cmpDiffHtml(x.diff)}</td>
+            <td style="text-align:center; min-width:90px;" id="cmp-cover-${x.key}">${cmpCoverHtml(x.cover)}</td>
+            <td style="text-align:center;">${priceCell}</td>
+            <td style="text-align:center; font-weight:800;" id="cmp-cost-${x.key}">${cmpCostHtml(x)}</td>
+            <td><input type="text" value="${escHtml(x.note)}" placeholder="${isAr ? 'ملاحظة...' : 'Note...'}" class="table-input" style="width:100%; min-width:170px;" onchange="onCompareNote('${x.key}', this.value)"></td>
+        </tr>`;
+    });
+    body.innerHTML = html;
+    cmpRenderSummary(rows);
+}
+function cmpRenderSummary(rows) {
+    const box = document.getElementById('cmp-summary');
+    if (!box) return;
+    const isAr = currentLang === 'ar';
+    // the bathroom tissues are counted once (the 3-times row)
+    const short = rows.filter(x => x.diff > 0 && x.need > 0 && x.key !== 'wc2').length;
+    const f = rows.filter(x => x.group === 'formula' && x.key !== 'wc2');
+    const avgCover = f.length ? Math.round(f.reduce((a, x) => a + Math.min(100, x.cover), 0) / f.length) : 100;
+    box.innerHTML = `
+        <div class="cmp-kpis">
+            <div class="cmp-kpi"><span>${isAr ? 'أصناف المتعاقد عليه فيها أقل من الاحتياج' : 'Items contracted below need'}</span><strong style="color: var(--danger);">${short}</strong></div>
+            <div class="cmp-kpi"><span>${isAr ? 'متوسط تغطية المتعاقد عليه (الأصناف المحسوبة)' : 'Average contract coverage (worked-out items)'}</span><strong style="color: ${avgCover < 100 ? 'var(--danger)' : 'var(--success)'};">${avgCover}%</strong></div>
+            <div class="cmp-kpi"><span>${isAr ? 'تكلفة التعاقد الحالي في الشهر' : 'Current contract a month'}</span><strong>${cmpFmt(Math.round(cmpTotals(rows).now))} ${isAr ? 'ج.م' : 'EGP'}</strong></div>
+            <div class="cmp-kpi"><span>${isAr ? 'الزيادة المطلوبة في الشهر' : 'Extra needed a month'}</span><strong style="color: var(--danger);">${cmpFmt(Math.round(cmpTotals(rows).extra))} ${isAr ? 'ج.م' : 'EGP'}</strong></div>
+        </div>
+        <div class="cmp-text">${cmpSummary(rows).map(l => `<p>${escHtml(l)}</p>`).join('')}</div>`;
+}
+// typing must not rebuild the inputs (focus would be lost): only the worked-out cells are refreshed
+function cmpRefreshComputed() {
+    const rows = cmpAllRows();
+    rows.forEach(x => {
+        const set = (id, h) => { const el = document.getElementById(id); if (el) el.innerHTML = h; };
+        if (x.group === 'formula') set(`cmp-need-${x.key}`, cmpFmt(x.need));
+        set(`cmp-how-${x.key}`, escHtml(x.how));
+        set(`cmp-extra-${x.key}`, escHtml(x.extra));
+        set(`cmp-diff-${x.key}`, cmpDiffHtml(x.diff));
+        set(`cmp-cover-${x.key}`, cmpCoverHtml(x.cover));
+        set(`cmp-cost-${x.key}`, cmpCostHtml(x));
+    });
+    cmpRenderSummary(rows);
+}
+function onCompareInput(key, field, val) {
+    const s = cmpS();
+    if (!s.vals[key]) s.vals[key] = {};
+    s.vals[key][field] = Math.max(0, Number(val) || 0);
+    saveCompareSettings();
+    cmpRefreshComputed();
+}
+function onCompareGlobal(field, val) {
+    const s = cmpS();
+    const n = Math.max(0, Number(val) || 0);
+    if (n > 0) s[field] = n;
+    saveCompareSettings();
+    cmpRefreshComputed();
+}
+function onCompareManual(itemId, val) {
+    const s = cmpS();
+    if (val === '' || val === null) delete s.manual[itemId]; else s.manual[itemId] = Math.max(0, Number(val) || 0);
+    saveCompareSettings();
+    cmpRefreshComputed();
+}
+function onCompareNote(key, val) {
+    cmpS().notes[key] = String(val || '').trim();
+    saveCompareSettings();
+}
+function resetCompareSettings() {
+    if (!confirm(currentLang === 'ar' ? 'ترجّع كل أرقام المقارنة للأرقام الأصلية؟' : 'Reset all comparison numbers to the defaults?')) return;
+    compareSettings = {};
+    saveCompareSettings();
+    renderCompareView();
+}
+
+function printCompareReport() {
+    const printArea = document.getElementById('official-print-viewport');
+    if (!printArea) return;
+    const isAr = currentLang === 'ar';
+    const rows = cmpAllRows();
+    const s = cmpS();
+    let body = '', n = 0, lastGroup = '';
+    rows.forEach(x => {
+        if (x.group !== lastGroup) {
+            lastGroup = x.group;
+            body += `<tr><td colspan="10" style="background:#fbf8f1 !important; font-weight:800; color:#94700f; font-size:0.82rem !important;">${x.group === 'formula'
+                ? (isAr ? 'أصناف محسوبة بعدد الحمامات والموظفين والأيام' : 'Items worked out from bathrooms, employees and days')
+                : (isAr ? 'باقي الأصناف: المفترض = متوسط المنصرف الفعلي في الشهر' : 'Other items: needed = average monthly issued')}</td></tr>`;
+        }
+        n++;
+        const diffTxt = x.diff > 0 ? `<span style="color:#b3261e;">${isAr ? 'ناقص' : 'Short'} ${cmpFmt(x.diff)}</span>` : (x.diff < 0 ? `<span style="color:#1e7a46;">${isAr ? 'زيادة' : 'Extra'} ${cmpFmt(-x.diff)}</span>` : (isAr ? 'مظبوط' : 'Exact'));
+        body += `<tr>
+            <td style="width:28px; text-align:center !important;">${n}</td>
+            <td class="print-item-name" style="width:17% !important; font-weight:800 !important; font-size:0.82rem !important;">${escHtml(x.name)}</td>
+            <td style="width:6%; text-align:center !important; font-size:0.8rem !important;">${escHtml(x.unit)}</td>
+            <td style="width:24%; font-size:0.72rem !important; line-height:1.4;">${escHtml(x.how)}${x.extra ? `<br><span style="color:#94700f;">${escHtml(x.extra)}</span>` : ''}</td>
+            <td style="width:9%; text-align:center !important; font-weight:900;">${cmpFmt(x.need)}</td>
+            <td style="width:9%; text-align:center !important;">${cmpFmt(x.contract)}</td>
+            <td style="width:10%; text-align:center !important; font-weight:800;">${diffTxt}</td>
+            <td style="width:7%; text-align:center !important; font-weight:800; color:${x.cover < 100 ? '#b3261e' : '#1e7a46'};">${x.cover}%</td>
+            <td style="width:7%; text-align:center !important;">${x.price > 0 ? cmpFmt(x.price) : '—'}</td>
+            <td style="width:9%; text-align:center !important; font-weight:800;">${x.price > 0 ? (x.cost > 0 ? `<span style="color:#b3261e;">${cmpFmt(x.cost)}</span>` : '0') : '—'}</td>
+        </tr>`;
+    });
+    const summary = cmpSummary(rows).map(l => `<p style="margin:0 0 3px 0;">${escHtml(l)}</p>`).join('');
+    printArea.innerHTML = `
+        <div class="voucher-print-container" dir="${isAr ? 'rtl' : 'ltr'}">
+            <table class="print-table">
+                <thead>
+                    <tr><th colspan="10" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.55rem 0 !important;">
+                        ${buildCenteredPrintHeader(isAr ? 'مقارنة الكميات المتعاقد عليها بالاحتياج الفعلي' : 'Contracted vs. Needed Quantities',
+                            `${isAr ? 'عدد الموظفين:' : 'Employees:'} ${s.employees} | ${isAr ? 'أيام الشغل في الشهر:' : 'Work days a month:'} ${s.workDays} | ${isAr ? 'المشروبات للموظف في اليوم:' : 'Drinks per employee a day:'} ${s.drinksPerDay} | ${isAr ? 'التاريخ:' : 'Date:'} ${getFormattedTodayDate(isAr)}`)}
+                    </th></tr>
+                    <tr>
+                        <th style="width:28px; text-align:center !important;">#</th>
+                        <th class="print-item-name">${isAr ? 'الصنف' : 'Item'}</th>
+                        <th style="text-align:center !important;">${isAr ? 'الوحدة' : 'Unit'}</th>
+                        <th>${isAr ? 'طريقة الحساب' : 'How it is worked out'}</th>
+                        <th style="text-align:center !important;">${isAr ? 'المفترض في الشهر' : 'Needed a month'}</th>
+                        <th style="text-align:center !important;">${isAr ? 'المتعاقد عليه' : 'Contracted'}</th>
+                        <th style="text-align:center !important;">${isAr ? 'الفرق' : 'Difference'}</th>
+                        <th style="text-align:center !important;">${isAr ? 'التغطية' : 'Coverage'}</th>
+                        <th style="text-align:center !important;">${isAr ? 'سعر الوحدة' : 'Unit price'}</th>
+                        <th style="text-align:center !important;">${isAr ? 'تكلفة الناقص' : 'Shortfall cost'}</th>
+                    </tr>
+                </thead>
+                <tbody>${body}</tbody>
+                <tfoot><tr>
+                    <th colspan="9" style="text-align: inherit;">${isAr ? 'الزيادة المطلوبة في الشهر (مناديل الحمامات محسوبة على 3 مرات)' : 'Extra needed a month (bathroom tissues at 3 times a day)'}</th>
+                    <th style="text-align:center !important; font-weight:900;">${cmpFmt(Math.round(cmpTotals(rows).extra))} ${isAr ? 'ج.م' : 'EGP'}</th>
+                </tr></tfoot>
+            </table>
+            <div style="margin-top:10px; padding:8px 10px; border:1px solid #e0d6bd; border-radius:6px; font-size:0.84rem; color:#55524b; line-height:1.6;">${summary}</div>
+            <div class="voucher-signatures">
+                <div class="sig-line">${isAr ? 'مدير المرافق' : 'Facility Manager'}</div>
+            </div>
+        </div>`;
+    safeWindowPrint();
+}
+
+function exportCompareExcel() {
+    const rows = cmpAllRows();
+    const s = cmpS();
+    const F = CGX.FIRST;
+    const sh = CGX.report({
+        name: 'مقارنة المتعاقد عليه', title: 'مقارنة الكميات المتعاقد عليها بالاحتياج الفعلي',
+        subtitle: `عدد الموظفين: ${s.employees}   |   أيام الشغل في الشهر: ${s.workDays}   |   المشروبات للموظف في اليوم: ${s.drinksPerDay}   |   تاريخ التقرير: ${cgxToday()}`,
+        columns: [{ h: 'م', w: 6 }, { h: 'الصنف', w: 34 }, { h: 'الوحدة', w: 9 }, { h: 'طريقة الحساب', w: 52 }, { h: 'المفترض في الشهر', w: 14 }, { h: 'المتعاقد عليه', w: 13 }, { h: 'الفرق (ناقص)', w: 13 }, { h: 'التغطية', w: 10 }, { h: 'سعر الوحدة', w: 12 }, { h: 'تكلفة الناقص', w: 14 }, { h: 'ملاحظات', w: 34 }],
+        landscape: true
+    });
+    rows.forEach((x, i) => {
+        const r = sh.row();
+        sh.add([{ v: i + 1, s: 'center' }, { v: x.name, s: 'textBold' }, { v: x.unit, s: 'center' }, { v: x.how + (x.extra ? ' — ' + x.extra : ''), s: 'text' },
+            { v: x.need, s: 'int' }, { v: x.contract, s: 'money' }, { f: `E${r}-F${r}`, v: x.diff, s: x.diff > 0 ? 'moneyBad' : 'money' },
+            { f: `IF(E${r}>0,F${r}/E${r},1)`, v: x.need > 0 ? x.contract / x.need : 1, s: 'pct' }, { v: x.price || 0, s: 'input' },
+            { f: `MAX(0,G${r})*I${r}`, v: x.cost, s: 'gold' }, { v: x.note || '', s: 'text' }]);
+    });
+    const L = sh.row() - 1;
+    const wc2 = rows.findIndex(x => x.key === 'wc2') + F;
+    cgxTotalRow(sh, 9, [{ f: `SUM(J${F}:J${L})-J${wc2}`, v: cmpTotals(rows).extra, s: 'finMoney' }, { v: 'مناديل الحمامات محسوبة على 3 مرات', s: 'finLabel' }], true);
+    sh.add([]);
+    cmpSummary(rows).forEach(l => { const r = sh.add([{ v: l, s: 'note' }]); sh.merge(`A${r}:K${r}`); });
+    CGX.download(sh, `مقارنة_المتعاقد_عليه_${cgxToday()}`);
+}
+
 function exportPurchaseOrderToCSVLegacy() {
     const currentCycleTrans = getCycleTransactions();
     let csvContent = '\uFEFF';
@@ -6205,6 +6600,7 @@ function exportDataBackup() {
         purchaseReqs,
         cycleStartDay,
         cycleRanges,
+        compareSettings,
         exportDate: new Date().toISOString()
     };
 
@@ -6237,6 +6633,7 @@ function importDataBackup(e) {
                 if (data.deptLayout) deptLayout = data.deptLayout;
                 if (data.elecData) elecData = data.elecData;
                 if (data.purchaseReqs) purchaseReqs = data.purchaseReqs;
+                if (data.compareSettings) { compareSettings = data.compareSettings; localStorage.setItem('buffet_v9_compare', JSON.stringify(compareSettings)); }
                 if (data.cycleStartDay) cycleStartDay = data.cycleStartDay;
                 if (Array.isArray(data.cycleRanges)) cycleRanges = data.cycleRanges;
 
@@ -6375,6 +6772,10 @@ function getTabTitles() {
             title: I18N[currentLang].navPO,
             sub: isAr ? 'إدارة المرافق | أمر شراء للمورد بناءً على الاستهلاك' : 'Facilities Management | Supplier Purchase Order'
         },
+        compare: {
+            title: isAr ? 'مقارنة المتعاقد عليه بالاحتياج' : 'Contracted vs. Needed',
+            sub: isAr ? 'إدارة المرافق | الكميات المتعاقد عليها مقارنة بالاحتياج الفعلي للشهر' : 'Facilities Management | Contracted quantities against the real monthly need'
+        },
         furniture: {
             title: isAr ? 'جرد أصول الشركة (الأدوار 4 - 9)' : 'Company Assets Inventory (Floors 4 - 9)',
             sub: isAr ? 'إدارة المرافق | تسجيل ومراجعة الأعداد المتواجدة بالفعل في كل طابق' : 'Facilities Management | Actual Furniture Counts per Floor'
@@ -6451,6 +6852,7 @@ const TAB_RENDERERS = {
     floors: () => { renderFloorsMatrix(); const c = document.getElementById('floors-compare-card'); if (c && c.style.display !== 'none') renderFloorsCompare(); },
     history: () => renderHistoryTable(),
     po: () => renderPurchaseOrder(),
+    compare: () => renderCompareView(),
     furniture: () => renderFurnitureView(),
     'furniture-matrix': () => renderFurnitureMatrix(),
     'furniture-depts': () => renderDeptsView(),
@@ -6882,6 +7284,10 @@ function connectToFirebase(config, wsId) {
                     cycleStartDay = Number(cloudData.cycleStartDay);
                 }
                 if (Array.isArray(cloudData.cycleRanges)) cycleRanges = cloudData.cycleRanges;
+                if (cloudData.compareSettings && typeof cloudData.compareSettings === 'object') {
+                    compareSettings = cloudData.compareSettings;
+                    localStorage.setItem('buffet_v9_compare', JSON.stringify(compareSettings));
+                }
 
                 // Cache in local storage
                 localStorage.setItem('buffet_v9_inv', JSON.stringify(inventory));
@@ -7282,6 +7688,7 @@ function syncToCloud(isInitial = false) {
             purchaseReqs,
             cycleStartDay,
             cycleRanges,
+            compareSettings: compareSettings || {},
             lastUpdated: new Date().toISOString()
         };
         tx.set(ref, payload, { merge: true });
@@ -11345,6 +11752,7 @@ const CGX = (() => {
     xf('groupMain', 4, 4, 1, 0, 'right', 'center');
     xf('note', 7, 0, 0, 0, 'right', 'center', 1);
     xf('gold', 8, 0, 1, 164, 'center', 'center');
+    xf('pct', 4, 0, 1, 9, 'center', 'center');
     // purchase order form (L = left-aligned, R = right-aligned; the start side depends on the language)
     ['L', 'R'].forEach(k => { const h = k === 'L' ? 'left' : 'right';
         xf('docSub' + k, 2, 0, 0, 0, h, 'bottom'); xf('docTitle' + k, 5, 0, 0, 0, h, 'top');

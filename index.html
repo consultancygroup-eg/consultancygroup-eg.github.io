@@ -266,6 +266,11 @@
                     <span data-i18n="navPO">أمر شراء للمورد</span>
                 </button>
 
+                <button onclick="switchTab('compare')" id="nav-btn-compare" class="sidebar-nav-item nav-group-buffet">
+                    <i data-lucide="scale"></i>
+                    <span>مقارنة المتعاقد عليه بالاحتياج</span>
+                </button>
+
                 <!-- ==================== MODULE 2 NAV: COMPANY ASSETS INVENTORY ONLY ==================== -->
                 <span class="nav-section-label nav-group-furniture" style="display: none;">جرد أصول الشركة</span>
 
@@ -985,6 +990,52 @@
                                 </thead>
                                 <tbody id="po-table-body"></tbody>
                                 <tfoot id="po-table-foot"></tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== 6b. CONTRACT vs. NEEDED COMPARISON ==================== -->
+                <section id="pane-compare" class="tab-pane">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title-group">
+                                <i data-lucide="scale" style="color: var(--primary);"></i>
+                                <div>
+                                    <h2>مقارنة المتعاقد عليه بالاحتياج الفعلي</h2>
+                                    <span style="font-size: 0.78rem; color: var(--text-muted);">بيوضح للشركة إن الاستهلاك مش عالي، وإن الكميات المتعاقد عليها أصلاً أقل من احتياج الشغل. كل الأرقام اللي في المربعات تقدر تعدّلها.</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <button onclick="printCompareReport()" class="btn cg-dl btn-sm"><span><b class="cg-dl-arrow">⬇</b> PDF</span></button>
+                                <button onclick="exportCompareExcel()" class="btn cg-dl btn-sm"><span><b class="cg-dl-arrow">⬇</b> Excel</span></button>
+                                <button onclick="resetCompareSettings()" class="btn btn-secondary btn-sm"><i data-lucide="rotate-ccw"></i><span>رجّع الأرقام الأصلية</span></button>
+                            </div>
+                        </div>
+                        <div class="cmp-settings">
+                            <label>أيام الشغل في الشهر <input type="number" min="1" id="cmp-work-days" class="table-input" oninput="onCompareGlobal('workDays', this.value)"></label>
+                            <label>عدد الموظفين <input type="number" min="1" id="cmp-employees" class="table-input" oninput="onCompareGlobal('employees', this.value)"></label>
+                            <label>المشروبات للموظف في اليوم <input type="number" min="1" id="cmp-drinks" class="table-input" oninput="onCompareGlobal('drinksPerDay', this.value)"></label>
+                        </div>
+                        <div id="cmp-summary"></div>
+                        <div class="table-responsive">
+                            <table class="data-table cmp-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px; text-align: center;">#</th>
+                                        <th>الصنف</th>
+                                        <th style="text-align: center;">الوحدة</th>
+                                        <th>طريقة الحساب</th>
+                                        <th style="text-align: center; background: var(--primary-light); color: var(--primary);">المفترض في الشهر</th>
+                                        <th style="text-align: center;">المتعاقد عليه</th>
+                                        <th style="text-align: center;">الفرق</th>
+                                        <th style="text-align: center;">المتعاقد بيغطي</th>
+                                        <th style="text-align: center;">سعر الوحدة</th>
+                                        <th style="text-align: center;">تكلفة الناقص</th>
+                                        <th>ملاحظات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cmp-table-body"></tbody>
                             </table>
                         </div>
                     </div>
