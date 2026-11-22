@@ -9900,10 +9900,10 @@ const COMPARE_ROWS = [
     { key: 'wc3', itemId: 1, name: 'مناديل الحمامات (3 مرات في اليوم، طلب الموظفين)', nameEn: 'Bathroom tissues (3 times a day, staff request)', unit: 'بكرة', method: 'count', places: 43, times: 3, contract: 1200, price: 13, placeLbl: 'حمام' },
     { key: 'wudu', itemId: 2, name: 'مناديل الوضوء', nameEn: 'Ablution tissues', unit: 'بكرة', method: 'count', places: 14, times: 2, contract: 500, price: 18, placeLbl: 'ماكينة' },
     { key: 'fine', itemId: 3, name: 'مناديل مكتب (فاين)', nameEn: 'Desk tissues (Fine)', unit: 'علبة', method: 'perEmp', perEmp: 1, contract: 250, price: 27.5 },
-    { key: 'dettol', itemId: 4, name: 'ديتول (بزيادة مياه)', nameEn: 'Dettol (diluted)', unit: 'علبة', method: 'every', places: 12, everyDays: 4, contract: 29, price: 150, placeLbl: 'حمام' },
+    { key: 'dettol', itemId: 4, name: 'ديتول (بزيادة مياه)', nameEn: 'Dettol (diluted)', unit: 'علبة', method: 'every', places: 14, everyDays: 4, contract: 29, price: 150, placeLbl: 'حمام' },
     { key: 'soap', itemId: 5, name: 'صابون يد', nameEn: 'Hand soap', unit: 'لتر', method: 'lasts', places: 6, perPlace: 5, lastsDays: 17, contract: 40, price: 45, placeLbl: 'دور' },
     { key: 'tea', itemId: 17, name: 'شاي ليبتون (عبوة 500 جرام)', nameEn: 'Lipton tea (500 g pack)', unit: 'عبوة', method: 'drink', share: 30, perUnit: 250, contract: 8, price: 120, servLbl: 'كوباية' },
-    { key: 'coffee', itemId: 15, name: 'قهوة', nameEn: 'Coffee', unit: 'كيلو', method: 'drink', share: 30, perUnit: 140, contract: 5.25, price: 0, servLbl: 'فنجان' },
+    { key: 'coffee', itemId: 15, name: 'قهوة', nameEn: 'Coffee', unit: 'كيلو', method: 'drink', share: 30, perUnit: 140, contract: 31.5, price: 0, servLbl: 'فنجان' },
     { key: 'green', itemId: 13, name: 'شاي أخضر (علبة 25 فتلة)', nameEn: 'Green tea (box of 25)', unit: 'علبة', method: 'drink', share: 15, perUnit: 25, contract: 10, price: 45, servLbl: 'فتلة' },
     { key: 'hibiscus', itemId: 12, name: 'كركديه (علبة 100 فتلة)', nameEn: 'Hibiscus (box of 100)', unit: 'علبة', method: 'drink', share: 15, perUnit: 100, contract: 6, price: 130, servLbl: 'فتلة' },
     { key: 'anise', itemId: 11, name: 'ينسون (علبة 100 فتلة)', nameEn: 'Anise (box of 100)', unit: 'علبة', method: 'drink', share: 10, perUnit: 100, contract: 3, price: 130, servLbl: 'فتلة' }
@@ -9911,9 +9911,9 @@ const COMPARE_ROWS = [
 // the other items on the same invoice: itemId -> [contracted qty, unit price]
 const COMPARE_INVOICE = { 6: [6, 62], 7: [24, 71], 8: [5, 28], 9: [30, 45], 10: [30, 30], 14: [18, 110], 16: [60, 40], 18: [8, 65], 19: [24, 25], 20: [3, 70], 21: [18, 70], 22: [20, 97], 24: [2, 40], 25: [24, 20], 26: [12, 15] };
 const COMPARE_DEFAULT_NOTES = {
-    dettol: 'العلبة بتكفّي الحمام 4 أيام. محسوب حمام رجالي وحمام حريمي في كل دور (12 حمام)',
+    dettol: 'العلبة بتكفّي الحمام 4 أيام. كل دور فيه حمام رجالي (4 تواليت) وحريمي (3 تواليت)، والرابع فيه 2 رجالي و2 حريمي (كل واحد 2 تواليت): 14 حمام و43 تواليت',
     soap: '5 لتر لكل دور من الرابع للتاسع، والكمية بتخلص قبل آخر الشهر',
-    coffee: 'المتاح ربع كيلو في اليوم بس (21 × ربع = 5.25 كيلو)، ومابيكفّيش كل الموظفين',
+    coffee: 'ربع كيلو لكل دور في اليوم: 6 أدوار × 21 يوم × ربع = 31.5 كيلو، ومابيكفّيش كل الموظفين',
     tea: 'الفاتورة: 8 عبوات × 500 جرام',
     green: 'بيخلص قبل آخر الشهر',
     hibiscus: 'بيخلص بدري لأنه بيتعمل مشروب ساقع',
