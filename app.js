@@ -3760,7 +3760,7 @@ function buildCenteredPrintHeader(reportTitle, itemOrSubDef = '') {
     const logoSrc = getPrintLogoSrc();
     return `
         <div class="voucher-header" style="border:none; margin:0; padding:6px 0 0.45rem 0;">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding-bottom:8px; border-bottom:1px solid #d9aa28;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; padding-bottom:8px; border-bottom:1px solid #d9aa28; width:100%; align-self:stretch; box-sizing:border-box;">
                 <img src="${logoSrc}" alt="المجموعة الإستشارية | Consultancy Group" style="width:62mm; height:14.5mm; display:block; margin:0;">
                 <div style="text-align:end;">
                     <div style="font-size:1.05rem; font-weight:800; color:#2a2722;">${isAr ? 'إدارة المرافق' : 'Facilities Management'}</div>
@@ -4459,11 +4459,13 @@ function cmpFloorsPrintHtml() {
     const pc = v => `<span style="font-weight:800; color:${v < 100 ? '#b3261e' : '#1e7a46'};">${v}%</span>`;
     return `
         <div style="page-break-before: always;"></div>
-        ${buildCenteredPrintHeader(isAr ? 'الاستهلاك لكل دور حسب السحب' : 'Consumption per floor from the issue records',
-            `${isAr ? 'الدورة:' : 'Cycle:'} ${cycleShortLabel(D.key)} | ${isAr ? 'أيام الشغل اللي اتحسبت:' : 'Work days counted:'} ${D.days}${D.running ? (isAr ? ' (لحد النهارده)' : ' (up to today)') : ''}`)}
-        <p style="font-size:0.78rem; color:#55524b; margin:6px 0;">${isAr ? 'في كل خانة: الكمية اللي اتسحبت للدور، وتحتها نصيب الموظف (المشروبات بالكوباية في اليوم).' : 'Each cell: quantity issued to the floor, and under it the share per employee (drinks in cups a day).'}</p>
         <table class="print-table cmp-print">
-            <thead><tr><th>${isAr ? 'الدور' : 'Floor'}</th><th style="text-align:center !important;">${isAr ? 'الموظفين' : 'Employees'}</th>
+            <thead><tr><th colspan="${D.drinks.length + 4}" style="background:white !important; border:none !important; border-bottom:1.5px solid #2a2722 !important; padding:0 0 0.4rem 0 !important; white-space:normal !important;">
+                ${buildCenteredPrintHeader(isAr ? 'الاستهلاك لكل دور حسب السحب' : 'Consumption per floor from the issue records',
+            `${isAr ? 'الدورة:' : 'Cycle:'} ${cycleShortLabel(D.key)} | ${isAr ? 'أيام الشغل اللي اتحسبت:' : 'Work days counted:'} ${D.days}${D.running ? (isAr ? ' (لحد النهارده)' : ' (up to today)') : ''}`)}
+            </th></tr>
+            <tr><th colspan="${D.drinks.length + 4}" style="background:white !important; border:none !important; text-align:start !important; font-weight:400 !important; padding:4px 0 !important;"><span style="font-size:0.78rem; color:#55524b; margin:6px 0;">${isAr ? 'في كل خانة: الكمية اللي اتسحبت للدور، وتحتها نصيب الموظف (المشروبات بالكوباية في اليوم).' : 'Each cell: quantity issued to the floor, and under it the share per employee (drinks in cups a day).'}</span></th></tr>
+            <tr><th>${isAr ? 'الدور' : 'Floor'}</th><th style="text-align:center !important;">${isAr ? 'الموظفين' : 'Employees'}</th>
                 ${D.drinks.map(d => `<th style="text-align:center !important;">${escHtml(d.name)} (${escHtml(d.unit)})</th>`).join('')}
                 <th style="text-align:center !important;">${isAr ? 'مشروبات للموظف في اليوم' : 'Drinks per employee a day'}</th><th style="text-align:center !important;">${isAr ? `من الـ ${s.drinksPerDay}` : `Of ${s.drinksPerDay}`}</th></tr></thead>
             <tbody>${D.floors.map(f => `<tr><td style="font-weight:800;">${trText(f.fl)}</td><td style="text-align:center !important;">${f.emp}</td>${f.dr.map(x => `<td style="text-align:center !important;">${c(x)}</td>`).join('')}<td style="text-align:center !important; font-weight:900;">${cmp1(f.totalPerEmpDay)}</td><td style="text-align:center !important;">${pc(f.cover)}</td></tr>`).join('')}</tbody>
