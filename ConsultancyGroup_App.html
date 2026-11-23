@@ -10656,6 +10656,7 @@ function openHomePortal() {
         portal.style.display = 'flex';
         translateDOMNodes(currentLang);
     }
+    cgTabTrail = [];
 }
 
 function enterPortalSection(section) {
@@ -10674,6 +10675,7 @@ function enterPortalSection(section) {
     } else if (section === 'custody') {
         switchTab('custody');
     }
+    cgTabTrail = []; // a section opened from the home screen: Back from here goes to the home screen
 }
 
 // Helper to compute purchase date, unit price/batches summary, and total cost for a furniture item
@@ -13039,6 +13041,11 @@ function renderTab(tabId) {
 }
 
 function switchTab(tabId) {
+    // Remember the screen we came from, so the phone's Back button returns to it (cgHandleBack)
+    if (!cgBackNavigating && activeTab && activeTab !== tabId) {
+        cgTabTrail.push(activeTab);
+        if (cgTabTrail.length > 30) cgTabTrail.shift();
+    }
     activeTab = tabId;
 
     // Determine which module owns this tab and isolate its UI completely
@@ -18673,6 +18680,89 @@ function printDeptsReportNow(opts) {
     }
     printCgTable(title, subtitle, N, buffetList.length ? `<tr><th colspan="${N}" style="text-align:right !important; background:#fff !important; font-size:0.9rem !important;">المكاتب والأقسام</th></tr>` + head : head, body, foot, extra);
 }
+
+// ==========================================================================
+// PHONE BACK BUTTON (installed app / browser): one step back at a time instead of leaving the program.
+// Order: close an open window (modal) or menu → previous screen → the home screen (portal).
+// On the home screen (or the lock screen) Back has to be pressed twice within 2.5 s to close the program.
+// How: one extra history entry ("guard") is kept on top; each Back removes it, we do one step and put it back.
+// The guard is first added after the user's first tap, because Chrome skips entries added before any tap.
+// ==========================================================================
+var cgTabTrail = [];
+var cgBackNavigating = false;
+var cgBackGuardOn = false;
+var cgExitArmedUntil = 0;
+var cgExitTimer = null;
+
+function cgPushBackGuard() {
+    try { history.pushState({ cgBackGuard: true }, ''); cgBackGuardOn = true; } catch (_) {}
+}
+
+function cgIsShown(el) {
+    return !!el && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
+}
+
+// Close the top open window or menu. Returns true if something was closed.
+function cgCloseTopLayer() {
+    // Windows made on the fly (e.g. the scanner choice): their own Cancel button, or a click on the dark background
+    const dyn = Array.from(document.body.children).reverse().find(el =>
+        el.tagName === 'DIV' && !el.id && el.style && el.style.position === 'fixed' && cgIsShown(el));
+    if (dyn) {
+        const cancel = dyn.querySelector('[data-act="cancel"]');
+        if (cancel) cancel.click(); else dyn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        return true;
+    }
+    const modals = Array.from(document.querySelectorAll('.modal-overlay.show, .modal-overlay.active')).filter(cgIsShown);
+    if (modals.length) {
+        const top = modals.sort((a, b) => (parseInt(getComputedStyle(b).zIndex) || 0) - (parseInt(getComputedStyle(a).zIndex) || 0))[0];
+        const btn = top.querySelector('.modal-close-btn');
+        if (btn) btn.click(); else closeModal(top.id);
+        if (top.classList.contains('show') || top.classList.contains('active')) closeModal(top.id);
+        return true;
+    }
+    const menus = document.querySelectorAll('.dropdown-pane.show');
+    if (menus.length) { menus.forEach(d => d.classList.remove('show')); return true; }
+    return false;
+}
+
+function cgHandleBack() {
+    const lock = document.getElementById('app-lock-overlay');
+    const portal = document.getElementById('app-home-portal');
+    const locked = cgIsShown(lock);
+
+    if (!locked) {
+        if (cgCloseTopLayer()) return cgPushBackGuard();
+        if (!cgIsShown(portal)) {
+            const prev = cgTabTrail.pop();
+            if (prev && prev !== activeTab) {
+                cgBackNavigating = true;
+                try { switchTab(prev); } finally { cgBackNavigating = false; }
+            } else {
+                openHomePortal();
+            }
+            return cgPushBackGuard();
+        }
+    }
+
+    // Home screen / lock screen: the second Back within 2.5 s closes the program (no guard is put back,
+    // so the next Back leaves). Otherwise warn and put the guard back after the 2.5 s.
+    if (Date.now() < cgExitArmedUntil) return;
+    cgExitArmedUntil = Date.now() + 2500;
+    cgBackGuardOn = false;
+    showToast(currentLang === 'ar' ? 'اضغط رجوع مرة تانية للخروج من البرنامج' : 'Press Back again to exit', 'info');
+    clearTimeout(cgExitTimer);
+    cgExitTimer = setTimeout(() => { cgExitArmedUntil = 0; if (!cgBackGuardOn) cgPushBackGuard(); }, 2500);
+}
+
+window.addEventListener('popstate', () => {
+    cgBackGuardOn = false;
+    cgHandleBack();
+});
+function cgFirstTapGuard() {
+    if (!cgBackGuardOn && !cgExitArmedUntil) cgPushBackGuard();
+    ['pointerdown', 'keydown', 'touchstart'].forEach(ev => window.removeEventListener(ev, cgFirstTapGuard, true));
+}
+['pointerdown', 'keydown', 'touchstart'].forEach(ev => window.addEventListener(ev, cgFirstTapGuard, true));
 
 </script>
 
