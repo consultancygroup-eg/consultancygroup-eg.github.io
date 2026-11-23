@@ -3325,6 +3325,8 @@ table.print-table.cmp-print td:first-child { width: 24px !important; min-width: 
                     <span>🔗 مشاركة الرابط والباركود</span>
                 </button>
             </div>
+            <!-- Version stamp: shows whether a phone/computer already has the latest update (APP_BUILD in app.js) -->
+            <div id="app-build-stamp" style="margin-top:0.9rem; text-align:center; font-size:0.72rem; color:rgba(255,255,255,0.38); direction:ltr;"></div>
         </div>
     </div>
 
@@ -18681,44 +18683,41 @@ function printDeptsReportNow(opts) {
     printCgTable(title, subtitle, N, buffetList.length ? `<tr><th colspan="${N}" style="text-align:right !important; background:#fff !important; font-size:0.9rem !important;">المكاتب والأقسام</th></tr>` + head : head, body, foot, extra);
 }
 
+// Build stamp shown small under the home screen buttons: tells if a device already has the latest update.
+// Raise it with every change that should be checked on the phone.
+const APP_BUILD = '2026-11-23 · 4';
+document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('app-build-stamp');
+    if (el) el.textContent = 'v ' + APP_BUILD;
+});
+
 // ==========================================================================
 // PHONE BACK (button or edge swipe), installed app / browser: one step back at a time instead of leaving.
 // Order: close an open window (modal) or menu → previous screen → the home screen (portal).
 // On the home screen (or the lock screen) Back has to be done twice within 2.5 s to close the program.
 //
-// How: extra history entries ("guards") are kept on top of the page's own entry; each Back removes one and we
-// do one step instead. Chrome skips entries the page added without a real touch, and after every Back it
-// needs a new touch again. A touch counts at its END (touchend / pointerup / click), not at touchstart.
-// So on every touch we top the guards up to CG_BACK_DEPTH (enough for several Backs in a row without
-// touching), and never add them from the Back handler itself. To exit, we jump back to the page's own entry,
-// so the next Back leaves the program.
+// Way 1 (Chrome/Edge/Samsung on Android, version 120+): CloseWatcher. The phone's Back closes the watcher
+// instead of leaving the page; we do one step and open a new watcher. On the home screen we wait 2.5 s before
+// opening a new one, so a second Back in that time reaches the page itself and closes the program.
+// Way 2 (older browsers): extra history entries ("guards"). Chrome skips entries the page added without a real
+// touch, and each touch allows only one, so one guard is added per completed touch (touchend / pointerup /
+// click; touchstart does not count), up to CG_BACK_DEPTH, never from the Back handler itself.
 // ==========================================================================
 var cgTabTrail = [];
 var cgBackNavigating = false;
 var cgExitArmedUntil = 0;
 var cgIgnorePop = 0;
+var cgWatcher = null;
+var cgWatcherTimer = null;
 const CG_BACK_DEPTH = 12;
-
-function cgGuardIndex() {
-    const st = history.state;
-    return st && st.cgBackGuard ? (Number(st.cgBackGuard) || 0) : 0;
-}
-
-function cgTopUpBackGuards(e) {
-    if (e && e.isTrusted === false) return; // only a real touch counts for Chrome
-    // Run after the tap's own action, so a tap that leaves the home screen right after the exit warning counts
-    setTimeout(() => {
-        const atHomeOrLock = cgIsShown(document.getElementById('app-home-portal')) || cgIsShown(document.getElementById('app-lock-overlay'));
-        if (Date.now() < cgExitArmedUntil && atHomeOrLock) return;
-        cgExitArmedUntil = 0;
-        try {
-            for (let d = cgGuardIndex() + 1; d <= CG_BACK_DEPTH; d++) history.pushState({ cgBackGuard: d }, '');
-        } catch (_) {}
-    }, 0);
-}
+// Only on touch screens: on the computer Esc also counts as Back for a watcher, and Esc should keep just closing windows there.
+const CG_USE_CLOSEWATCHER = typeof window.CloseWatcher === 'function' && !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
 
 function cgIsShown(el) {
     return !!el && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
+}
+function cgAtHomeOrLock() {
+    return cgIsShown(document.getElementById('app-home-portal')) || cgIsShown(document.getElementById('app-lock-overlay'));
 }
 
 // Close the top open window or menu. Returns true if something was closed.
@@ -18744,37 +18743,72 @@ function cgCloseTopLayer() {
     return false;
 }
 
-function cgHandleBack() {
+// One step back. Returns false when on the home/lock screen (the caller then arms the exit).
+function cgBackStep() {
     const locked = cgIsShown(document.getElementById('app-lock-overlay'));
-    const atHome = cgIsShown(document.getElementById('app-home-portal'));
-
-    if (!locked) {
-        if (cgCloseTopLayer()) return;
-        if (!atHome) {
-            const prev = cgTabTrail.pop();
-            if (prev && prev !== activeTab) {
-                cgBackNavigating = true;
-                try { switchTab(prev); } finally { cgBackNavigating = false; }
-            } else {
-                openHomePortal();
-            }
-            return;
-        }
+    if (locked) return false;
+    if (cgCloseTopLayer()) return true;
+    if (cgIsShown(document.getElementById('app-home-portal'))) return false;
+    const prev = cgTabTrail.pop();
+    if (prev && prev !== activeTab) {
+        cgBackNavigating = true;
+        try { switchTab(prev); } finally { cgBackNavigating = false; }
+    } else {
+        openHomePortal();
     }
-
-    // Home screen / lock screen: warn, and go down to the page's own entry so the next Back closes the program.
-    cgExitArmedUntil = Date.now() + 2500;
-    showToast(currentLang === 'ar' ? 'ارجع مرة تانية للخروج من البرنامج' : 'Go Back again to exit', 'info');
-    const d = cgGuardIndex();
-    if (d > 0) { cgIgnorePop++; history.go(-d); }
+    return true;
 }
 
+function cgShowExitHint() {
+    cgExitArmedUntil = Date.now() + 2500;
+    showToast(currentLang === 'ar' ? 'ارجع مرة تانية للخروج من البرنامج' : 'Go Back again to exit', 'info');
+}
+
+// ---- Way 1: CloseWatcher ----
+function cgOpenWatcher() {
+    if (cgWatcher) return;
+    try {
+        cgWatcher = new CloseWatcher();
+        cgWatcher.onclose = () => {
+            cgWatcher = null;
+            if (cgBackStep()) return cgOpenWatcher();
+            cgShowExitHint();
+            clearTimeout(cgWatcherTimer);
+            cgWatcherTimer = setTimeout(() => { cgExitArmedUntil = 0; cgOpenWatcher(); }, 2500);
+        };
+    } catch (_) { cgWatcher = null; }
+}
+
+// ---- Way 2: history guards ----
+function cgGuardIndex() {
+    const st = history.state;
+    return st && st.cgBackGuard ? (Number(st.cgBackGuard) || 0) : 0;
+}
+function cgTopUpBackGuards(e) {
+    if (e && e.isTrusted === false) return; // only a real touch counts for Chrome
+    setTimeout(() => { // after the tap's own action (a tap that leaves the home screen right after the warning counts)
+        if (CG_USE_CLOSEWATCHER) {
+            // A real touch also lets a watcher be opened again if the browser refused one before
+            if (!cgWatcher && !(Date.now() < cgExitArmedUntil && cgAtHomeOrLock())) { cgExitArmedUntil = 0; cgOpenWatcher(); }
+            return;
+        }
+        if (Date.now() < cgExitArmedUntil && cgAtHomeOrLock()) return;
+        cgExitArmedUntil = 0;
+        const d = cgGuardIndex();
+        if (d < CG_BACK_DEPTH) { try { history.pushState({ cgBackGuard: d + 1 }, ''); } catch (_) {} }
+    }, 0);
+}
 window.addEventListener('popstate', () => {
+    if (CG_USE_CLOSEWATCHER) return;
     if (cgIgnorePop > 0) { cgIgnorePop--; return; }
     if (Date.now() < cgExitArmedUntil) return; // a second Back that still landed here: let it be
-    cgHandleBack();
+    if (cgBackStep()) return;
+    cgShowExitHint();
+    const d = cgGuardIndex();
+    if (d > 0) { cgIgnorePop++; history.go(-d); } // down to the page's own entry: the next Back leaves
 });
 ['click', 'touchend', 'pointerup', 'keydown'].forEach(ev => window.addEventListener(ev, cgTopUpBackGuards, true));
+if (CG_USE_CLOSEWATCHER) cgOpenWatcher();
 
 </script>
 
