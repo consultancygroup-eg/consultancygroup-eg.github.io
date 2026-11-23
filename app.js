@@ -12741,20 +12741,39 @@ function printDeptsReportNow(opts) {
 }
 
 // ==========================================================================
-// PHONE BACK BUTTON (installed app / browser): one step back at a time instead of leaving the program.
+// PHONE BACK (button or edge swipe), installed app / browser: one step back at a time instead of leaving.
 // Order: close an open window (modal) or menu → previous screen → the home screen (portal).
-// On the home screen (or the lock screen) Back has to be pressed twice within 2.5 s to close the program.
-// How: one extra history entry ("guard") is kept on top; each Back removes it, we do one step and put it back.
-// The guard is first added after the user's first tap, because Chrome skips entries added before any tap.
+// On the home screen (or the lock screen) Back has to be done twice within 2.5 s to close the program.
+//
+// How: extra history entries ("guards") are kept on top of the page's own entry; each Back removes one and we
+// do one step instead. Chrome skips entries the page added without a real touch, and after every Back it
+// needs a new touch again. A touch counts at its END (touchend / pointerup / click), not at touchstart.
+// So on every touch we top the guards up to CG_BACK_DEPTH (enough for several Backs in a row without
+// touching), and never add them from the Back handler itself. To exit, we jump back to the page's own entry,
+// so the next Back leaves the program.
 // ==========================================================================
 var cgTabTrail = [];
 var cgBackNavigating = false;
-var cgBackGuardOn = false;
 var cgExitArmedUntil = 0;
-var cgExitTimer = null;
+var cgIgnorePop = 0;
+const CG_BACK_DEPTH = 12;
 
-function cgPushBackGuard() {
-    try { history.pushState({ cgBackGuard: true }, ''); cgBackGuardOn = true; } catch (_) {}
+function cgGuardIndex() {
+    const st = history.state;
+    return st && st.cgBackGuard ? (Number(st.cgBackGuard) || 0) : 0;
+}
+
+function cgTopUpBackGuards(e) {
+    if (e && e.isTrusted === false) return; // only a real touch counts for Chrome
+    // Run after the tap's own action, so a tap that leaves the home screen right after the exit warning counts
+    setTimeout(() => {
+        const atHomeOrLock = cgIsShown(document.getElementById('app-home-portal')) || cgIsShown(document.getElementById('app-lock-overlay'));
+        if (Date.now() < cgExitArmedUntil && atHomeOrLock) return;
+        cgExitArmedUntil = 0;
+        try {
+            for (let d = cgGuardIndex() + 1; d <= CG_BACK_DEPTH; d++) history.pushState({ cgBackGuard: d }, '');
+        } catch (_) {}
+    }, 0);
 }
 
 function cgIsShown(el) {
@@ -12775,7 +12794,7 @@ function cgCloseTopLayer() {
     if (modals.length) {
         const top = modals.sort((a, b) => (parseInt(getComputedStyle(b).zIndex) || 0) - (parseInt(getComputedStyle(a).zIndex) || 0))[0];
         const btn = top.querySelector('.modal-close-btn');
-        if (btn) btn.click(); else closeModal(top.id);
+        if (btn) btn.click();
         if (top.classList.contains('show') || top.classList.contains('active')) closeModal(top.id);
         return true;
     }
@@ -12785,13 +12804,12 @@ function cgCloseTopLayer() {
 }
 
 function cgHandleBack() {
-    const lock = document.getElementById('app-lock-overlay');
-    const portal = document.getElementById('app-home-portal');
-    const locked = cgIsShown(lock);
+    const locked = cgIsShown(document.getElementById('app-lock-overlay'));
+    const atHome = cgIsShown(document.getElementById('app-home-portal'));
 
     if (!locked) {
-        if (cgCloseTopLayer()) return cgPushBackGuard();
-        if (!cgIsShown(portal)) {
+        if (cgCloseTopLayer()) return;
+        if (!atHome) {
             const prev = cgTabTrail.pop();
             if (prev && prev !== activeTab) {
                 cgBackNavigating = true;
@@ -12799,26 +12817,20 @@ function cgHandleBack() {
             } else {
                 openHomePortal();
             }
-            return cgPushBackGuard();
+            return;
         }
     }
 
-    // Home screen / lock screen: the second Back within 2.5 s closes the program (no guard is put back,
-    // so the next Back leaves). Otherwise warn and put the guard back after the 2.5 s.
-    if (Date.now() < cgExitArmedUntil) return;
+    // Home screen / lock screen: warn, and go down to the page's own entry so the next Back closes the program.
     cgExitArmedUntil = Date.now() + 2500;
-    cgBackGuardOn = false;
-    showToast(currentLang === 'ar' ? 'اضغط رجوع مرة تانية للخروج من البرنامج' : 'Press Back again to exit', 'info');
-    clearTimeout(cgExitTimer);
-    cgExitTimer = setTimeout(() => { cgExitArmedUntil = 0; if (!cgBackGuardOn) cgPushBackGuard(); }, 2500);
+    showToast(currentLang === 'ar' ? 'ارجع مرة تانية للخروج من البرنامج' : 'Go Back again to exit', 'info');
+    const d = cgGuardIndex();
+    if (d > 0) { cgIgnorePop++; history.go(-d); }
 }
 
 window.addEventListener('popstate', () => {
-    cgBackGuardOn = false;
+    if (cgIgnorePop > 0) { cgIgnorePop--; return; }
+    if (Date.now() < cgExitArmedUntil) return; // a second Back that still landed here: let it be
     cgHandleBack();
 });
-function cgFirstTapGuard() {
-    if (!cgBackGuardOn && !cgExitArmedUntil) cgPushBackGuard();
-    ['pointerdown', 'keydown', 'touchstart'].forEach(ev => window.removeEventListener(ev, cgFirstTapGuard, true));
-}
-['pointerdown', 'keydown', 'touchstart'].forEach(ev => window.addEventListener(ev, cgFirstTapGuard, true));
+['click', 'touchend', 'pointerup', 'keydown'].forEach(ev => window.addEventListener(ev, cgTopUpBackGuards, true));
